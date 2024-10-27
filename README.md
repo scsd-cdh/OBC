@@ -117,6 +117,8 @@ _Stuff that may be helpful_
 
 [https://nvie.com/posts/a-successful-git-branching-model/](https://nvie.com/posts/a-successful-git-branching-model/)
 
+Commit Convention: [https://www.conventionalcommits.org/en/v1.0.0/]
+
 [
 
 gist.github.com
