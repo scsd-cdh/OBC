@@ -1,3 +1,5 @@
+#ifdef __ROWAN__ 
+
 #ifndef APP_APP_H_
 #define APP_APP_H_
 

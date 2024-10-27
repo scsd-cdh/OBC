@@ -27,16 +27,14 @@
 //   April 2017
 //   Built with CCS V7.0
 //******************************************************************************
-
+#ifdef __ROWAN__ 
 #include <app/AppMulti.h>
-
 
 // Address of this board
 #define SLAVE_ADDR  0x08
 
 // The state of this board
 static volatile appStatus app;
-
 
 // Buffers to hold command arguments sent from the master (to then be processed in command)
 uint8_t SystemStatusBuf [SYSTEM_STATUS_LEN] = {0};
@@ -442,3 +440,4 @@ void updateTransmissionBuffer(uint8_t *inputBuffer, uint8_t respLength) {
       }
 
   }
+#endif

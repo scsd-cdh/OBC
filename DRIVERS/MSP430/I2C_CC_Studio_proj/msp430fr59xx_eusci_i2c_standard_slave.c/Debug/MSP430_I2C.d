@@ -1,6 +1,7 @@
 # FIXED
 
 MSP430_I2C.obj: ../MSP430_I2C.c
+MSP430_I2C.obj: ../MSP430_I2C.h
 MSP430_I2C.obj: C:/ti/ccstheia151/ccs/ccs_base/msp430/include/msp430.h
 MSP430_I2C.obj: C:/ti/ccstheia151/ccs/ccs_base/msp430/include/msp430fr5969.h
 MSP430_I2C.obj: C:/ti/ccstheia151/ccs/ccs_base/msp430/include/in430.h
@@ -16,9 +17,10 @@ MSP430_I2C.obj: C:/ti/ccstheia151/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/in
 MSP430_I2C.obj: C:/ti/ccstheia151/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/machine/_types.h
 MSP430_I2C.obj: C:/ti/ccstheia151/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/machine/_stdint.h
 MSP430_I2C.obj: C:/ti/ccstheia151/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/sys/_stdint.h
-MSP430_I2C.obj: ../MSP430_I2C.h
 
 ../MSP430_I2C.c:
+
+../MSP430_I2C.h:
 
 C:/ti/ccstheia151/ccs/ccs_base/msp430/include/msp430.h:
 
@@ -49,6 +51,4 @@ C:/ti/ccstheia151/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/machine/_t
 C:/ti/ccstheia151/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/machine/_stdint.h:
 
 C:/ti/ccstheia151/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/sys/_stdint.h:
-
-../MSP430_I2C.h:
 

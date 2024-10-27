@@ -11,6 +11,8 @@ GEN_CMDS__FLAG :=
 
 ORDERED_OBJS += \
 "./MSP430_I2C.obj" \
+"./rowan_PDS/AppMulti.obj" \
+"./rowan_PDS/main.obj" \
 "../lnk_msp430fr5969.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibmpu_init.a \
@@ -25,7 +27,9 @@ RMDIR := RMDIR /S/Q
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include subdir_vars.mk
+-include rowan_PDS/subdir_vars.mk
 -include subdir_rules.mk
+-include rowan_PDS/subdir_rules.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -143,8 +147,8 @@ msp430fr59xx_eusci_i2c_standard_slave.c.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "MSP430_I2C.obj" 
-	-$(RM) "MSP430_I2C.d" 
+	-$(RM) "MSP430_I2C.obj" "rowan_PDS\AppMulti.obj" "rowan_PDS\main.obj" 
+	-$(RM) "MSP430_I2C.d" "rowan_PDS\AppMulti.d" "rowan_PDS\main.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

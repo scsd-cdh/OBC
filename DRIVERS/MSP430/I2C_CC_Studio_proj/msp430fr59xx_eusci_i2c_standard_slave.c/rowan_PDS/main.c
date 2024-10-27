@@ -53,21 +53,20 @@
 //   vector table.
 //   - None.
 //******************************************************************************
+
+#ifdef __ROWAN__ 
+
 #include "app/AppMulti.h"
-#define PDS
+
 int main(void)
 {
-
     WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
     //WDT_A_hold(WDT_A_BASE);     // Stop watchdog timer
     //PMM_unlockLPM5();           // Disable the GPIO power-on default high-impedance mode
 
     //init_App();
-#ifdef PDS
     initialize();
 
-#elif defined()
-#endif
     //WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
     initClockTo16MHz();
     initGPIO();
@@ -76,8 +75,6 @@ int main(void)
     while(1){
         run();
     }
-
-
-
 }
 
+#endif:waiting

@@ -1,7 +1,7 @@
 ******************************************************************************
                   MSP430 Linker PC v21.6.1                     
 ******************************************************************************
->> Linked Wed Oct 23 18:36:41 2024
+>> Linked Sun Oct 27 07:31:16 2024
 
 OUTPUT FILE NAME:   <msp430fr59xx_eusci_i2c_standard_slave.c.out>
 ENTRY POINT SYMBOL: "_c_int00_noargs_mpu"  address: 000044f8
@@ -18,8 +18,8 @@ MEMORY CONFIGURATION
   INFOC                 00001880   00000080  00000000  00000080  RWIX
   INFOB                 00001900   00000080  00000000  00000080  RWIX
   INFOA                 00001980   00000080  00000000  00000080  RWIX
-  RAM                   00001c00   00000800  000000e3  0000071d  RWIX
-  FRAM                  00004400   0000bb80  0000014a  0000ba36  RWIX
+  RAM                   00001c00   00000800  000000f9  00000707  RWIX
+  FRAM                  00004400   0000bb80  0000015c  0000ba24  RWIX
   JTAGSIGNATURE         0000ff80   00000004  00000004  00000000  RWIX  ffff 
   BSLSIGNATURE          0000ff84   00000004  00000004  00000000  RWIX  ffff 
   IPESIGNATURE          0000ff88   00000008  00000008  00000000  RWIX  ffff 
@@ -79,7 +79,7 @@ MEMORY CONFIGURATION
   INT53                 0000fffa   00000002  00000002  00000000  RWIX
   INT54                 0000fffc   00000002  00000002  00000000  RWIX
   RESET                 0000fffe   00000002  00000002  00000000  RWIX
-  FRAM2                 00010000   00003ff8  0000030a  00003cee  RWIX
+  FRAM2                 00010000   00003ff8  00000462  00003b96  RWIX
 
 
 SECTION ALLOCATION MAP
@@ -87,6 +87,24 @@ SECTION ALLOCATION MAP
  output                                  attributes/
 section   page    origin      length       input sections
 --------  ----  ----------  ----------   ----------------
+.data      0    00001c00    00000057     UNINITIALIZED
+                  00001c00    00000014     MSP430_I2C.obj (.data:ReceiveBuffer)
+                  00001c14    00000014     MSP430_I2C.obj (.data:TransmitBuffer)
+                  00001c28    00000010     MSP430_I2C.obj (.data:HealthCheckRespBuf)
+                  00001c38    00000007     MSP430_I2C.obj (.data)
+                  00001c3f    00000001     --HOLE--
+                  00001c40    00000005     MSP430_I2C.obj (.data:SystemStatusRespBuf)
+                  00001c45    00000001     --HOLE--
+                  00001c46    00000003     MSP430_I2C.obj (.data:ConverterMonitorRespBuf)
+                  00001c49    00000001     --HOLE--
+                  00001c4a    00000002     MSP430_I2C.obj (.data:ConverterMonitorBuf)
+                  00001c4c    00000002     MSP430_I2C.obj (.data:HealthCheckBuf)
+                  00001c4e    00000002     MSP430_I2C.obj (.data:RebootBuf)
+                  00001c50    00000002     MSP430_I2C.obj (.data:SystemStatusBuf)
+                  00001c52    00000002     MSP430_I2C.obj (.data:TelecommandAckBuf)
+                  00001c54    00000002     MSP430_I2C.obj (.data:TelecommandAckRespBuf)
+                  00001c56    00000001     MSP430_I2C.obj (.data:RebootRespBuf)
+
 .TI.persistent 
 *          0    00004400    00000000     UNINITIALIZED
 
@@ -108,10 +126,11 @@ section   page    origin      length       input sections
 .ipe_vars 
 *          0    00004400    00000000     UNINITIALIZED
 
-.cinit     0    00004520    0000002a     
-                  00004520    0000001a     (.cinit..data.load) [load image, compression = lzss]
-                  0000453a    00000008     (__TI_handler_table)
-                  00004542    00000008     (__TI_cinit_table)
+.cinit     0    0000452e    0000002e     
+                  0000452e    0000000c     (.cinit..data.load) [load image, compression = lzss]
+                  0000453a    0000000c     (__TI_handler_table)
+                  00004546    00000006     (.cinit..bss.load) [load image, compression = zero_init]
+                  0000454c    00000010     (__TI_cinit_table)
 
 .binit     0    00004400    00000000     
 
@@ -124,18 +143,8 @@ section   page    origin      length       input sections
                   000044f8    00000020     rts430x_lc_rd_eabi.lib : boot.c.obj (.text:_isr:_c_int00_noargs_mpu)
                   00004518    00000008                            : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
 
-.data      0    00001c00    00000043     UNINITIALIZED
-                  00001c00    00000014     MSP430_I2C.obj (.data:ReceiveBuffer)
-                  00001c14    00000014     MSP430_I2C.obj (.data:TransmitBuffer)
-                  00001c28    00000007     MSP430_I2C.obj (.data)
-                  00001c2f    00000001     --HOLE--
-                  00001c30    00000006     MSP430_I2C.obj (.data:MasterType2)
-                  00001c36    00000006     MSP430_I2C.obj (.data:SlaveType2)
-                  00001c3c    00000002     MSP430_I2C.obj (.data:MasterType1)
-                  00001c3e    00000002     MSP430_I2C.obj (.data:SlaveType1)
-                  00001c40    00000001     MSP430_I2C.obj (.data:MasterType0)
-                  00001c41    00000001     --HOLE--
-                  00001c42    00000001     MSP430_I2C.obj (.data:SlaveType0)
+.bss       0    00001c58    00000002     UNINITIALIZED
+                  00001c58    00000002     MSP430_I2C.obj (.bss)
 
 .stack     0    00002360    000000a0     UNINITIALIZED
                   00002360    00000004     rts430x_lc_rd_eabi.lib : boot.c.obj (.stack)
@@ -238,31 +247,41 @@ SYSNMI     0    0000fffc    00000002
 .reset     0    0000fffe    00000002     
                   0000fffe    00000002     rts430x_lc_rd_eabi.lib : boot.c.obj (.reset)
 
-.text      0    00010000    0000030a     
-                  00010000    0000010a     MSP430_I2C.obj (.text:I2C_Slave_ProcessCMD)
-                  0001010a    00000076     rts430x_lc_rd_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
-                  00010180    00000054                            : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit_hold_wdt:__TI_auto_init_nobinit_nopinit_hold_wdt)
-                  000101d4    0000004c     MSP430_I2C.obj (.text:I2C_Slave_TransactionDone)
-                  00010220    0000002c     MSPMPU_INIT_LIB_CCS_msp430_large_code_restricted_data.lib : mpu_init.o (.text:__mpu_init)
-                  0001024c    00000022     MSP430_I2C.obj (.text:initClockTo16MHz)
-                  0001026e    0000001e     MSP430_I2C.obj (.text:main)
-                  0001028c    0000001c     MSP430_I2C.obj (.text:CopyArray)
-                  000102a8    0000001c     MSP430_I2C.obj (.text:initI2C)
-                  000102c4    00000014     MSP430_I2C.obj (.text:initGPIO)
-                  000102d8    00000014     rts430x_lc_rd_eabi.lib : memcpy.c.obj (.text:memcpy)
-                  000102ec    00000012                            : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
-                  000102fe    00000006                            : exit.c.obj (.text:abort)
-                  00010304    00000004                            : pre_init.c.obj (.text:_system_pre_init)
-                  00010308    00000002                            : startup.c.obj (.text:_system_post_cinit)
+.const     0    00004520    0000000e     
+                  00004520    0000000e     MSP430_I2C.obj (.const:.string:$P$T0$1)
+
+.text      0    00010000    00000462     
+                  00010000    000000c6     MSP430_I2C.obj (.text:I2C_Slave_ProcessCMD)
+                  000100c6    00000098     MSP430_I2C.obj (.text:begin_state_machine)
+                  0001015e    00000082     MSP430_I2C.obj (.text:I2C_Slave_TransactionDone)
+                  000101e0    00000076     rts430x_lc_rd_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
+                  00010256    00000056     MSP430_I2C.obj (.text:setup_health_check_test)
+                  000102ac    00000054     rts430x_lc_rd_eabi.lib : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit_hold_wdt:__TI_auto_init_nobinit_nopinit_hold_wdt)
+                  00010300    0000002c     MSPMPU_INIT_LIB_CCS_msp430_large_code_restricted_data.lib : mpu_init.o (.text:__mpu_init)
+                  0001032c    00000024     rts430x_lc_rd_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset:__TI_zero_init_nomemset)
+                  00010350    00000022     MSP430_I2C.obj (.text:initClockTo16MHz)
+                  00010372    0000001e     MSP430_I2C.obj (.text:setup_system_status_test)
+                  00010390    0000001c     MSP430_I2C.obj (.text:CopyArray)
+                  000103ac    0000001c     MSP430_I2C.obj (.text:initI2C)
+                  000103c8    0000001a     MSP430_I2C.obj (.text:main)
+                  000103e2    00000018     MSP430_I2C.obj (.text:updateTransmissionBuffer)
+                  000103fa    00000014     MSP430_I2C.obj (.text:initGPIO)
+                  0001040e    00000014     rts430x_lc_rd_eabi.lib : memcpy.c.obj (.text:memcpy)
+                  00010422    00000014     MSP430_I2C.obj (.text:setup_converter_monitor_test)
+                  00010436    00000012     rts430x_lc_rd_eabi.lib : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
+                  00010448    0000000e     MSP430_I2C.obj (.text:setup_telecom_acknowledge_test)
+                  00010456    00000006     rts430x_lc_rd_eabi.lib : exit.c.obj (.text:abort)
+                  0001045c    00000004                            : pre_init.c.obj (.text:_system_pre_init)
+                  00010460    00000002                            : startup.c.obj (.text:_system_post_cinit)
 
 MODULE SUMMARY
 
        Module                       code   ro data   rw data
        ------                       ----   -------   -------
     .\
-       MSP430_I2C.obj               730    2         65     
+       MSP430_I2C.obj               1038   16        86     
     +--+----------------------------+------+---------+---------+
-       Total:                       730    2         65     
+       Total:                       1038   16        86     
                                                             
     C:\ti\ccstheia151\ccs\ccs_base\msp430\lib\FR59xx\MSPMPU_INIT_LIB_CCS_msp430_large_code_restricted_data.lib
        mpu_init.o                   44     0         0      
@@ -272,6 +291,7 @@ MODULE SUMMARY
     C:\ti\ccstheia151\ccs\tools\compiler\ti-cgt-msp430_21.6.1.LTS\lib\rts430x_lc_rd_eabi.lib
        copy_decompress_lzss.c.obj   118    0         0      
        autoinit.c.obj               84     0         0      
+       copy_zero_init.c.obj         36     0         0      
        boot.c.obj                   32     2         0      
        memcpy.c.obj                 20     0         0      
        copy_decompress_none.c.obj   18     0         0      
@@ -304,25 +324,27 @@ MODULE SUMMARY
        int54.asm.obj                0      2         0      
        startup.c.obj                2      0         0      
     +--+----------------------------+------+---------+---------+
-       Total:                       292    50        0      
+       Total:                       328    50        0      
                                                             
        Stack:                       0      0         160    
-       Linker Generated:            0      42        0      
+       Linker Generated:            0      46        0      
     +--+----------------------------+------+---------+---------+
-       Grand Total:                 1066   94        225    
+       Grand Total:                 1410   112       246    
 
 
 LINKER GENERATED COPY TABLES
 
-__TI_cinit_table @ 00004542 records: 1, size/record: 8, table size: 8
-	.data: load addr=00004520, load size=0000001a bytes, run addr=00001c00, run size=00000043 bytes, compression=lzss
+__TI_cinit_table @ 0000454c records: 2, size/record: 8, table size: 16
+	.data: load addr=0000452e, load size=0000000c bytes, run addr=00001c00, run size=00000057 bytes, compression=lzss
+	.bss: load addr=00004546, load size=00000006 bytes, run addr=00001c58, run size=00000002 bytes, compression=zero_init
 
 
 LINKER GENERATED HANDLER TABLE
 
-__TI_handler_table @ 0000453a records: 2, size/record: 4, table size: 8
-	index: 0, handler: __TI_decompress_lzss
-	index: 1, handler: __TI_decompress_none
+__TI_handler_table @ 0000453a records: 3, size/record: 4, table size: 12
+	index: 0, handler: __TI_zero_init
+	index: 1, handler: __TI_decompress_lzss
+	index: 2, handler: __TI_decompress_none
 
 
 GLOBAL SYMBOLS: SORTED ALPHABETICALLY BY Name 
@@ -586,7 +608,7 @@ address   name
 000009ce  AESAXIN_L                              
 000004be  BCD2BIN                                
 000004bc  BIN2BCD                                
-000102fe  C$$EXIT                                
+00010456  C$$EXIT                                
 0000043e  CAPTIO0CTL                             
 0000043f  CAPTIO0CTL_H                           
 0000043e  CAPTIO0CTL_L                           
@@ -644,7 +666,9 @@ address   name
 0000016c  CSCTL6                                 
 0000016d  CSCTL6_H                               
 0000016c  CSCTL6_L                               
-0001028c  CopyArray                              
+00001c4a  ConverterMonitorBuf                    
+00001c46  ConverterMonitorRespBuf                
+00010390  CopyArray                              
 00000510  DMA0CTL                                
 00000516  DMA0DA                                 
 00000518  DMA0DAH                                
@@ -684,8 +708,10 @@ address   name
 00000146  GCCTL1                                 
 00000147  GCCTL1_H                               
 00000146  GCCTL1_L                               
+00001c4c  HealthCheckBuf                         
+00001c28  HealthCheckRespBuf                     
 00010000  I2C_Slave_ProcessCMD                   
-000101d4  I2C_Slave_TransactionDone              
+0001015e  I2C_Slave_TransactionDone              
 000004c4  MAC                                    
 000004da  MAC32H                                 
 000004db  MAC32H_H                               
@@ -749,9 +775,6 @@ address   name
 000004c2  MPYS_L                                 
 000004c1  MPY_H                                  
 000004c0  MPY_L                                  
-00001c40  MasterType0                            
-00001c3c  MasterType1                            
-00001c30  MasterType2                            
 000004c8  OP2                                    
 000004e2  OP2H                                   
 000004e3  OP2H_H                                 
@@ -910,10 +933,12 @@ address   name
 000004b6  RTCYEAR                                
 000004b7  RTCYEAR_H                              
 000004b6  RTCYEAR_L                              
-00001c2b  RXByteCtr                              
+00001c3b  RXByteCtr                              
+00001c4e  RebootBuf                              
+00001c56  RebootRespBuf                          
 00001c00  ReceiveBuffer                          
-00001c2c  ReceiveIndex                           
-00001c2a  ReceiveRegAddr                         
+00001c3c  ReceiveIndex                           
+00001c3a  ReceiveRegAddr                         
 00000100  SFRIE1                                 
 00000101  SFRIE1_H                               
 00000100  SFRIE1_L                               
@@ -953,10 +978,9 @@ address   name
 0000019a  SYSUNIV                                
 0000019b  SYSUNIV_H                              
 0000019a  SYSUNIV_L                              
-00001c28  SlaveMode                              
-00001c42  SlaveType0                             
-00001c3e  SlaveType1                             
-00001c36  SlaveType2                             
+00001c38  SlaveMode                              
+00001c50  SystemStatusBuf                        
+00001c40  SystemStatusRespBuf                    
 00000352  TA0CCR0                                
 00000354  TA0CCR1                                
 00000356  TA0CCR2                                
@@ -1011,9 +1035,11 @@ address   name
 000003e0  TB0EX0                                 
 000003ee  TB0IV                                  
 000003d0  TB0R                                   
-00001c2d  TXByteCtr                              
+00001c3d  TXByteCtr                              
+00001c52  TelecommandAckBuf                      
+00001c54  TelecommandAckRespBuf                  
 00001c14  TransmitBuffer                         
-00001c2e  TransmitIndex                          
+00001c3e  TransmitIndex                          
 000005d0  UCA0ABCTL                              
 000005c6  UCA0BRW                                
 000005c7  UCA0BRW_H                              
@@ -1129,15 +1155,15 @@ address   name
 0000015c  WDTCTL_L                               
 00002400  __STACK_END                            
 000000a0  __STACK_SIZE                           
-00004542  __TI_CINIT_Base                        
-0000454a  __TI_CINIT_Limit                       
-0000454a  __TI_CINIT_Warm                        
+0000454c  __TI_CINIT_Base                        
+0000455c  __TI_CINIT_Limit                       
+0000455c  __TI_CINIT_Warm                        
 0000453a  __TI_Handler_Table_Base                
-00004542  __TI_Handler_Table_Limit               
+00004546  __TI_Handler_Table_Limit               
 00004518  __TI_ISR_TRAP                          
-00010180  __TI_auto_init_nobinit_nopinit_hold_wdt
-0001010a  __TI_decompress_lzss                   
-000102ec  __TI_decompress_none                   
+000102ac  __TI_auto_init_nobinit_nopinit_hold_wdt
+000101e0  __TI_decompress_lzss                   
+00010436  __TI_decompress_none                   
 0000ffcc  __TI_int30                             
 0000ffce  __TI_int31                             
 0000ffd0  __TI_int32                             
@@ -1166,28 +1192,35 @@ address   name
 ffffffff  __TI_pprof_out_hndl                    
 ffffffff  __TI_prof_data_size                    
 ffffffff  __TI_prof_data_start                   
+0001032c  __TI_zero_init_nomemset                
 ffffffff  __c_args__                             
 00000001  __mpu_enable                           
-00010220  __mpu_init                             
+00010300  __mpu_init                             
 000044f8  _c_int00_noargs_mpu                    
 0000fffe  _reset_vector                          
 00002360  _stack                                 
-00010308  _system_post_cinit                     
-00010304  _system_pre_init                       
-000102fe  abort                                  
+00010460  _system_post_cinit                     
+0001045c  _system_pre_init                       
+00010456  abort                                  
+000100c6  begin_state_machine                    
 00004400  fram_ipe_end                           
 00004400  fram_ipe_start                         
 00004400  fram_rw_start                          
 00004400  fram_rx_start                          
-0001024c  initClockTo16MHz                       
-000102c4  initGPIO                               
-000102a8  initI2C                                
-0001026e  main                                   
-000102d8  memcpy                                 
+00010350  initClockTo16MHz                       
+000103fa  initGPIO                               
+000103ac  initI2C                                
+000103c8  main                                   
+0001040e  memcpy                                 
 0000a501  mpu_ctl0_value                         
 00001513  mpu_sam_value                          
 00000440  mpu_segment_border1                    
 00000440  mpu_segment_border2                    
+00010422  setup_converter_monitor_test           
+00010256  setup_health_check_test                
+00010372  setup_system_status_test               
+00010448  setup_telecom_acknowledge_test         
+000103e2  updateTransmissionBuffer               
 
 
 GLOBAL SYMBOLS: SORTED BY Symbol Address 
@@ -1980,18 +2013,22 @@ address   name
 00001513  mpu_sam_value                          
 00001c00  ReceiveBuffer                          
 00001c14  TransmitBuffer                         
-00001c28  SlaveMode                              
-00001c2a  ReceiveRegAddr                         
-00001c2b  RXByteCtr                              
-00001c2c  ReceiveIndex                           
-00001c2d  TXByteCtr                              
-00001c2e  TransmitIndex                          
-00001c30  MasterType2                            
-00001c36  SlaveType2                             
-00001c3c  MasterType1                            
-00001c3e  SlaveType1                             
-00001c40  MasterType0                            
-00001c42  SlaveType0                             
+00001c28  HealthCheckRespBuf                     
+00001c38  SlaveMode                              
+00001c3a  ReceiveRegAddr                         
+00001c3b  RXByteCtr                              
+00001c3c  ReceiveIndex                           
+00001c3d  TXByteCtr                              
+00001c3e  TransmitIndex                          
+00001c40  SystemStatusRespBuf                    
+00001c46  ConverterMonitorRespBuf                
+00001c4a  ConverterMonitorBuf                    
+00001c4c  HealthCheckBuf                         
+00001c4e  RebootBuf                              
+00001c50  SystemStatusBuf                        
+00001c52  TelecommandAckBuf                      
+00001c54  TelecommandAckRespBuf                  
+00001c56  RebootRespBuf                          
 00002360  _stack                                 
 00002400  __STACK_END                            
 00004400  USCI_B0_ISR                            
@@ -2002,10 +2039,10 @@ address   name
 000044f8  _c_int00_noargs_mpu                    
 00004518  __TI_ISR_TRAP                          
 0000453a  __TI_Handler_Table_Base                
-00004542  __TI_CINIT_Base                        
-00004542  __TI_Handler_Table_Limit               
-0000454a  __TI_CINIT_Limit                       
-0000454a  __TI_CINIT_Warm                        
+00004546  __TI_Handler_Table_Limit               
+0000454c  __TI_CINIT_Base                        
+0000455c  __TI_CINIT_Limit                       
+0000455c  __TI_CINIT_Warm                        
 0000a501  mpu_ctl0_value                         
 0000ffcc  __TI_int30                             
 0000ffce  __TI_int31                             
@@ -2034,24 +2071,31 @@ address   name
 0000fffc  __TI_int54                             
 0000fffe  _reset_vector                          
 00010000  I2C_Slave_ProcessCMD                   
-0001010a  __TI_decompress_lzss                   
-00010180  __TI_auto_init_nobinit_nopinit_hold_wdt
-000101d4  I2C_Slave_TransactionDone              
-00010220  __mpu_init                             
-0001024c  initClockTo16MHz                       
-0001026e  main                                   
-0001028c  CopyArray                              
-000102a8  initI2C                                
-000102c4  initGPIO                               
-000102d8  memcpy                                 
-000102ec  __TI_decompress_none                   
-000102fe  C$$EXIT                                
-000102fe  abort                                  
-00010304  _system_pre_init                       
-00010308  _system_post_cinit                     
+000100c6  begin_state_machine                    
+0001015e  I2C_Slave_TransactionDone              
+000101e0  __TI_decompress_lzss                   
+00010256  setup_health_check_test                
+000102ac  __TI_auto_init_nobinit_nopinit_hold_wdt
+00010300  __mpu_init                             
+0001032c  __TI_zero_init_nomemset                
+00010350  initClockTo16MHz                       
+00010372  setup_system_status_test               
+00010390  CopyArray                              
+000103ac  initI2C                                
+000103c8  main                                   
+000103e2  updateTransmissionBuffer               
+000103fa  initGPIO                               
+0001040e  memcpy                                 
+00010422  setup_converter_monitor_test           
+00010436  __TI_decompress_none                   
+00010448  setup_telecom_acknowledge_test         
+00010456  C$$EXIT                                
+00010456  abort                                  
+0001045c  _system_pre_init                       
+00010460  _system_post_cinit                     
 ffffffff  __TI_pprof_out_hndl                    
 ffffffff  __TI_prof_data_size                    
 ffffffff  __TI_prof_data_start                   
 ffffffff  __c_args__                             
 
-[859 symbols]
+[870 symbols]

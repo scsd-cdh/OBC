@@ -27,150 +27,90 @@
 //   April 2017
 //   Built with CCS V7.0
 //******************************************************************************
-
-#include <msp430.h> 
-#include <stdint.h>
 #include "MSP430_I2C.h"
-
-//******************************************************************************
-// General I2C State Machine ***************************************************
-//******************************************************************************
-
-typedef enum I2C_ModeEnum{
-    IDLE_MODE,
-    NACK_MODE,
-    TX_REG_ADDRESS_MODE,
-    RX_REG_ADDRESS_MODE,
-    TX_DATA_MODE,
-    RX_DATA_MODE,
-    SWITCH_TO_RX_MODE,
-    SWITHC_TO_TX_MODE,
-    TIMEOUT_MODE,
-
-} I2C_Mode;
-
-/* Used to track the state of the software state machine*/
-I2C_Mode SlaveMode = RX_REG_ADDRESS_MODE;
-
-/* The Register Address/Command to use*/
-uint8_t ReceiveRegAddr = 0;
-
-/* ReceiveBuffer: Buffer used to receive data in the ISR
- * RXByteCtr: Number of bytes left to receive
- * ReceiveIndex: The index of the next byte to be received in ReceiveBuffer
- * TransmitBuffer: Buffer used to transmit data in the ISR
- * TXByteCtr: Number of bytes left to transfer
- * TransmitIndex: The index of the next byte to be transmitted in TransmitBuffer
- * */
-uint8_t ReceiveBuffer[MAX_BUFFER_SIZE] = {0};
-uint8_t RXByteCtr = 0;
-uint8_t ReceiveIndex = 0;
-uint8_t TransmitBuffer[MAX_BUFFER_SIZE] = {0};
-uint8_t TXByteCtr = 0;
-uint8_t TransmitIndex = 0;
-
-
 
 
 void I2C_Slave_ProcessCMD(uint8_t cmd)
 {
+    // Reset these values in order to receive a new command
     ReceiveIndex = 0;
     TransmitIndex = 0;
     RXByteCtr = 0;
     TXByteCtr = 0;
 
-    switch (cmd)
+    switch (cmd)   // For each command, set the board state, set it to data recv mode, set the expected bytes counter, switch interrupts
     {
-        case (CMD_TYPE_0_SLAVE):                        //Send slave device id (This device's id)
-            SlaveMode = TX_DATA_MODE;
-            TXByteCtr = TYPE_0_LENGTH;
-            //Fill out the TransmitBuffer
-            CopyArray(SlaveType0, TransmitBuffer, TYPE_0_LENGTH);
-            UCB0IE &= ~UCRXIE;                       // Disable RX interrupt
-            UCB0IE |= UCTXIE;                        // Enable TX interrupt
-            break;
-        case (CMD_TYPE_1_SLAVE):                      //Send slave device time (This device's time)
-            SlaveMode = TX_DATA_MODE;
-            TXByteCtr = TYPE_1_LENGTH;
-            //Fill out the TransmitBuffer
-            CopyArray(SlaveType1, TransmitBuffer, TYPE_1_LENGTH);
-            UCB0IE &= ~UCRXIE;                       // Disable RX interrupt
-            UCB0IE |= UCTXIE;                        // Enable TX interrupt
-            break;
-        case (CMD_TYPE_2_SLAVE):                  //Send slave device location (This device's location)
-            SlaveMode = TX_DATA_MODE;
-            TXByteCtr = TYPE_2_LENGTH;
-            //Fill out the TransmitBuffer
-            CopyArray(SlaveType2, TransmitBuffer, TYPE_2_LENGTH);
-            UCB0IE &= ~UCRXIE;                       // Disable RX interrupt
-            UCB0IE |= UCTXIE;                        // Enable TX interrupt
-            break;
-        case (CMD_TYPE_0_MASTER):
+        case (SYSTEM_STATUS_ID):
+            app = system_status;      // Change the board state
             SlaveMode = RX_DATA_MODE;
-            RXByteCtr = TYPE_0_LENGTH;
-            UCB0IE &= ~UCTXIE;                       // Disable RX interrupt
-            UCB0IE |= UCRXIE;                        // Enable TX interrupt
+            RXByteCtr = SYSTEM_STATUS_CMD_LEN;
+            UCB0IE &= ~UCTXIE;                       // Disable TX interrupt
+            UCB0IE |= UCRXIE;                        // Enable RX interrupt
             break;
-        case (CMD_TYPE_1_MASTER):
+        case (HEALTH_CHECK_ID):
+            app = health_check;
             SlaveMode = RX_DATA_MODE;
-            RXByteCtr = TYPE_1_LENGTH;
-            UCB0IE &= ~UCTXIE;                       // Disable RX interrupt
-            UCB0IE |= UCRXIE;                        // Enable TX interrupt
+            RXByteCtr = HEALTH_CHECK_CMD_LEN;
+            UCB0IE &= ~UCTXIE;                       // Disable TX interrupt
+            UCB0IE |= UCRXIE;                        // Enable RX interrupt
             break;
-        case (CMD_TYPE_2_MASTER):
+        case (REBOOT_ID):
+            app = reboot;
             SlaveMode = RX_DATA_MODE;
-            RXByteCtr = TYPE_2_LENGTH;
-            UCB0IE &= ~UCTXIE;                       // Disable RX interrupt
-            UCB0IE |= UCRXIE;                        // Enable TX interrupt
+            RXByteCtr = REBOOT_CMD_LEN;
+            UCB0IE &= ~UCTXIE;                       // Disable TX interrupt
+            UCB0IE |= UCRXIE;                        // Enable RX interrupt
+            break;
+        case (CONVERTER_MONITOR_ID):
+            app = converter_monitor;
+            SlaveMode = RX_DATA_MODE;
+            RXByteCtr = CONVERTER_MONITOR_CMD_LEN;
+            UCB0IE &= ~UCTXIE;                       // Disable TX interrupt
+            UCB0IE |= UCRXIE;                        // Enable RX interrupt
+            break;
+        case (TELECOMMAND_ACK_ID):
+            app = telecom_acknowledge;
+            SlaveMode = RX_DATA_MODE;
+            RXByteCtr = TELECOMMAND_ACK_CMD_LEN;
+            UCB0IE &= ~UCTXIE;                       // Disable TX interrupt
+            UCB0IE |= UCRXIE;                        // Enable RX interrupt
             break;
         case (BINGO_BONGO):
             SlaveMode = RX_DATA_MODE;
-            TXByteCtr = TYPE_3_LENGTH;
-            RXByteCtr = TYPE_3_LENGTH;
-            UCB0IE &= ~UCTXIE;                       // Disable RX interrupt
-            UCB0IE |= UCRXIE;                        // Enable TX interrupt
+            TXByteCtr = 10;
+            RXByteCtr = 10;
+            UCB0IE &= ~UCTXIE;                       // Disable TX interrupt
+            UCB0IE |= UCRXIE;                        // Enable RX interrupt
             break;
-        default:
+        default:  // Unrecognized command
             __no_operation();
             break;
     }
 }
 
-void ProcessCMD(uint8_t cmd)
-{
-
-    switch(cmd)
-    {
-
-    // The following section implements the BMS
-        case ():
-
-
-    // The following section implements the PDS
-        default:
-
-    }
-}
-
+// When all bytes are received, copy the args array
 void I2C_Slave_TransactionDone(uint8_t cmd)
 {
     switch (cmd)
     {
-        case (CMD_TYPE_0_SLAVE):                        //Slave device id was sent(This device's id)
+        case (SYSTEM_STATUS_ID):
+            CopyArray(ReceiveBuffer, SystemStatusBuf, SYSTEM_STATUS_CMD_LEN);
             break;
-        case (CMD_TYPE_1_SLAVE):                      //Slave device time was sent(This device's time)
+        case (HEALTH_CHECK_ID):
+            CopyArray(ReceiveBuffer, HealthCheckBuf, HEALTH_CHECK_CMD_LEN);
             break;
-        case (CMD_TYPE_2_SLAVE):                  //Send slave device location (This device's location)
+        case (REBOOT_ID):
+            CopyArray(ReceiveBuffer, RebootBuf, REBOOT_CMD_LEN);
             break;
-        case (CMD_TYPE_0_MASTER):
-            CopyArray(ReceiveBuffer, MasterType0, TYPE_0_LENGTH);
+        case (CONVERTER_MONITOR_ID):
+            CopyArray(ReceiveBuffer, ConverterMonitorBuf, CONVERTER_MONITOR_CMD_LEN);
             break;
-        case (CMD_TYPE_1_MASTER):
-            CopyArray(ReceiveBuffer, MasterType1, TYPE_1_LENGTH);
+        case (TELECOMMAND_ACK_ID):
+            CopyArray(ReceiveBuffer, TelecommandAckBuf, TELECOMMAND_ACK_CMD_LEN);
             break;
-        case (CMD_TYPE_2_MASTER):
-            CopyArray(ReceiveBuffer, MasterType2, TYPE_2_LENGTH);
-            break;
+        case (BINGO_BONGO):
+            SlaveMode = TX_DATA_MODE;
+            CopyArray(ReceiveBuffer, TransmitBuffer, 10);
         default:
             __no_operation();
             break;
@@ -241,7 +181,9 @@ int main(void) {
     initGPIO();
     initI2C();
 
-    __bis_SR_register(LPM0_bits + GIE);
+    while(1){
+        begin_state_machine();
+    }
 	return 0;
 }
 
@@ -342,4 +284,126 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
         break;                      // Interrupt Vector: I2C Mode: UCTXIFG
     default: break;
   }
+}
+
+//******************************************************************************
+// State Machine ***************************************************************
+//******************************************************************************
+
+void begin_state_machine()
+{
+
+    switch(app){
+
+        /* Idle state */
+        case idle:
+            // Resume LPM after any command is executed
+            __bis_SR_register(LPM0_bits + GIE);  // Enter LPM with interrupts
+            break;
+
+        /* Modes used for each command */
+        case system_status:
+            setup_system_status_test(SystemStatusRespBuf,SystemStatusBuf);
+            updateTransmissionBuffer(SystemStatusRespBuf, SYSTEM_STATUS_RESP_LEN);
+            app = idle;
+
+            // GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);  // Green LED on
+            // GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+
+            break;
+        case health_check:
+            setup_health_check_test(HealthCheckRespBuf, HealthCheckBuf);
+            updateTransmissionBuffer(HealthCheckRespBuf, HEALTH_CHECK_RESP_LEN);
+            app = idle;
+
+            //ToggleGPIO(1, 0, 0); // Port 0, Pin 1, set to low  -> Green LED off
+            //ToggleGPIO(4, 6, 1); // Port 4, Pin 6, set to high -> Red LED on
+
+            //
+            // GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);  // Green LED off
+            // GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            // GPIO_setAsOutputPin(GPIO_PORT_P4, GPIO_PIN6);  // Red LED on
+            // GPIO_setOutputHighOnPin(GPIO_PORT_P4, GPIO_PIN6);
+            //
+
+            break;
+        case reboot:
+            // FUNCTION CALL TO REBOOT GOES HERE -> Response?
+
+            updateTransmissionBuffer(RebootRespBuf, REBOOT_RESP_LEN);
+            app = idle;
+            break;
+        case converter_monitor:
+            // FUNCTION CALL GOES HERE fills ConverterMonitorRespBuf (len = 3)
+            setup_converter_monitor_test(ConverterMonitorRespBuf);
+            updateTransmissionBuffer(ConverterMonitorRespBuf, CONVERTER_MONITOR_RESP_LEN);
+            app = idle;
+
+            // GPIO_setAsOutputPin(GPIO_PORT_P4, GPIO_PIN6);  // Red and Green LEDs on
+            // GPIO_setOutputHighOnPin(GPIO_PORT_P4, GPIO_PIN6);
+            // GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
+            // GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+
+            break;
+        case telecom_acknowledge:
+            setup_telecom_acknowledge_test(TelecommandAckRespBuf);
+            updateTransmissionBuffer(TelecommandAckRespBuf, TELECOMMAND_ACK_RESP_LEN);
+            app = idle;
+
+            // GPIO_setAsOutputPin(GPIO_PORT_P4, GPIO_PIN6);  // Flash both LEDs
+            // GPIO_toggleOutputOnPin(GPIO_PORT_P4, GPIO_PIN6);
+            // GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
+            // GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+
+            break;
+    }
+
+}
+
+void updateTransmissionBuffer(uint8_t *inputBuffer, uint8_t respLength) 
+{
+    CopyArray(inputBuffer, TransmitBuffer, respLength);  // Copy response to TransmitBuffer
+    TXByteCtr = respLength;
+    SlaveMode = TX_DATA_MODE;  // Switch to transfer mode
+    UCB0IE |= UCRXIE;          // Enable TX interrupt
+}
+
+//******************************************************************************
+// Test Functions **************************************************************
+//******************************************************************************
+
+
+void setup_system_status_test(uint8_t *SystemStatusRespBuf, uint8_t *SystemStatusBuf)
+{
+  // FUNCTION CALL TO RETRIEVE SYSTEM STATUS GOES HERE -> fills SystemStatusRespBuf (len=5)
+  SystemStatusRespBuf[0] = 'S';
+  SystemStatusRespBuf[1] = 'y';
+  SystemStatusRespBuf[2] = 's';
+  SystemStatusRespBuf[3] = SystemStatusBuf[0];  // Whichever byte was sent as an arg
+  SystemStatusRespBuf[4] = SystemStatusBuf[1];
+}
+
+void setup_health_check_test(uint8_t *HealthCheckRespBuf, uint8_t *HealthCheckBuf) {
+    // Fills HealthCheckRespBuf (len = 16)
+    const char testMessage[] = "TestingHealth";
+    int i;
+    for (i = 0; i < 12; i++) {
+        HealthCheckRespBuf[i] = testMessage[i];
+    }
+    HealthCheckRespBuf[13] = HealthCheckBuf[0];
+    HealthCheckRespBuf[14] = HealthCheckBuf[1];
+    HealthCheckRespBuf[15] = '2';
+}
+
+void setup_converter_monitor_test(uint8_t *ConverterMonitorRespBuf) {
+    // Fills ConverterMonitorRespBuf (len = 3)
+    ConverterMonitorRespBuf[0] = 'H';
+    ConverterMonitorRespBuf[1] = 'i';
+    ConverterMonitorRespBuf[2] = '4';
+}
+
+void setup_telecom_acknowledge_test(uint8_t *TelecommandAckRespBuf) {
+    // Fills TelecommandAckRespBuf (len = 2)
+    TelecommandAckRespBuf[0] = 'O';
+    TelecommandAckRespBuf[1] = '5';
 }
