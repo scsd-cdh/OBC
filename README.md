@@ -1,34 +1,5 @@
-# Software Design Document
 
 [![](https://t9014385614.p.clickup-attachments.com/t9014385614/ef91f96b-fe1c-4da7-ae60-9722250d628f/image.png)](https://nvie.com/posts/a-successful-git-branching-model/)
-
-  
-
-_Latest as of 30 September_
-
-| Date | Revision | Member |
-| ---| ---| --- |
-| 30th September 2024 | Revision A - Document Created | [@Mohammed Zahed](javascript: void;) |
-
-### Introduction
-
-* * *
-
-  
-
-#### Purpose
-
-The purpose of this Software Design Document (SDD) is to outline the design of the software architecture and modules for the CubeSat Imaging and Communications System (CUBICs) project. This document will serve as a guide to the development team, explaining the structure, functionality, and interactions between the various software components, ensuring that all requirements are met with a clear and systematic approach.
-
-  
-
-#### Scope
-
-This document will show you how we intend to fulfill all our functional requirements by giving you a comprehensive overview of the overall system design. Firstly all of the components (_both hardware and software_) will be listed. Using these components we will extract the several deliverables we need to produce for the mission, this includes low level drivers, the middleware and the testing software.
-
-  
-
-Finally, a development guide will be presented. This guide will highlight all of the coding principles to be followed. This will include several things such as github repostory structure, development cycles and branching strategies.
 
 ### Components involved
 
