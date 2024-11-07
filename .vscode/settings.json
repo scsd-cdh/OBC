@@ -1,1 +1,8 @@
-{}
+{
+    "files.associations": {
+        "gpio.h": "c",
+        "i2c.h": "c",
+        "bsp.h": "c",
+        "appcomm.h": "c"
+    }
+}

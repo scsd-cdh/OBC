@@ -54,9 +54,8 @@
 //   - None.
 //******************************************************************************
 
-#ifdef __ROWAN__ 
 
-#include "AppMulti.h"
+#include "bsp.h"
 #include "mram.h"
 
 int main(void)
@@ -65,17 +64,9 @@ int main(void)
     //WDT_A_hold(WDT_A_BASE);     // Stop watchdog timer
     //PMM_unlockLPM5();           // Disable the GPIO power-on default high-impedance mode
 
-    //init_App();
-    initialize();
-
-    //WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
-    initClockTo16MHz();
-    initGPIO();
-    initI2C();
+    initBsp()
 
     while(1){
         run();
     }
 }
-
-#endif:waiting
