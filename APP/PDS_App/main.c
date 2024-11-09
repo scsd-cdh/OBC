@@ -56,7 +56,7 @@
 
 
 #include "bsp.h"
-#include "mram.h"
+#include "AppComm.h"
 
 int main(void)
 {
@@ -64,9 +64,10 @@ int main(void)
     //WDT_A_hold(WDT_A_BASE);     // Stop watchdog timer
     //PMM_unlockLPM5();           // Disable the GPIO power-on default high-impedance mode
 
-    initBsp()
+    initBsp();
+    InitAppComm();
 
     while(1){
-        run();
+        RunAppComm();
     }
 }

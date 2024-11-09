@@ -1,6 +1,7 @@
 
 #include "AppComm.h"
 #include "i2c.h"
+#include "utils.h"
 
 //***************************Private functions definitions***************************************************
 /**

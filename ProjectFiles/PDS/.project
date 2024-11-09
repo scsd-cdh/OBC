@@ -51,19 +51,29 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>MIDDLEWARE/MRAM</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
+			<name>APP/PDS_App/AppComm.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/AppComm.c</locationURI>
 		</link>
 		<link>
-			<name>APP/PDS_App/AppMulti.c</name>
+			<name>APP/PDS_App/AppComm.h</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/AppMulti.c</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/AppComm.h</locationURI>
 		</link>
 		<link>
-			<name>APP/PDS_App/AppMulti.h</name>
+			<name>APP/PDS_App/bsp.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/AppMulti.h</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/bsp.c</locationURI>
+		</link>
+		<link>
+			<name>APP/PDS_App/bsp.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/bsp.h</locationURI>
+		</link>
+		<link>
+			<name>APP/PDS_App/comm.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/comm.h</locationURI>
 		</link>
 		<link>
 			<name>APP/PDS_App/main.c</name>
@@ -76,24 +86,29 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>MIDDLEWARE/MRAM/mram.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/MRAM/mram.c</locationURI>
+			<name>DRIVERS/MSP430/UTILS</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>MIDDLEWARE/MRAM/mram.h</name>
+			<name>DRIVERS/MSP430/I2C/i2c.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/MRAM/mram.h</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/I2C/i2c.c</locationURI>
 		</link>
 		<link>
-			<name>DRIVERS/MSP430/I2C/MSP430_I2C.c</name>
+			<name>DRIVERS/MSP430/I2C/i2c.h</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/I2C/MSP430_I2C.c</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/I2C/i2c.h</locationURI>
 		</link>
 		<link>
-			<name>DRIVERS/MSP430/I2C/MSP430_I2C.h</name>
+			<name>DRIVERS/MSP430/UTILS/utils.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/I2C/MSP430_I2C.h</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/UTILS/utils.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/UTILS/utils.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/UTILS/utils.h</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
