@@ -76,7 +76,7 @@ int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size)
   switch (command) {
     // TODO
     default:
-            break;
+        break;
   }
   return ETINYPROTOCOL_SUCCESS;
 }
@@ -107,6 +107,7 @@ int16_t SendTelemetryResponse() {
     uint8_t bytes[TINYPROTOCOL_MAX_PACKET_SIZE];
     uint8_t count = 0;
     uint8_t* pbyte = bytes;
+
     while(TINYPROTOCOL_TelemetryBytesLeft() > 0) {
         int16_t result = TINYPROTOCOL_ReadNextTelemetryByte(pbyte);
         if (result == ETINYPROTOCOL_SUCCESS) {
@@ -116,6 +117,7 @@ int16_t SendTelemetryResponse() {
             return result;
         }
     }
+    
     transmitI2C(bytes, count);
     return ETINYPROTOCOL_SUCCESS;
 }
