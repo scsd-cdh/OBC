@@ -1,8 +1,16 @@
 eclipse.preferences.version=1
 encoding//Debug/APP/PDS_App/subdir_rules.mk=UTF-8
 encoding//Debug/APP/PDS_App/subdir_vars.mk=UTF-8
+encoding//Debug/DRIVERS/MSP430/GPIO/subdir_rules.mk=UTF-8
+encoding//Debug/DRIVERS/MSP430/GPIO/subdir_vars.mk=UTF-8
 encoding//Debug/DRIVERS/MSP430/I2C/subdir_rules.mk=UTF-8
 encoding//Debug/DRIVERS/MSP430/I2C/subdir_vars.mk=UTF-8
+encoding//Debug/DRIVERS/MSP430/UTILS/subdir_rules.mk=UTF-8
+encoding//Debug/DRIVERS/MSP430/UTILS/subdir_vars.mk=UTF-8
+encoding//Debug/MIDDLEWARE/MRAM/subdir_rules.mk=UTF-8
+encoding//Debug/MIDDLEWARE/MRAM/subdir_vars.mk=UTF-8
+encoding//Debug/MIDDLEWARE/tinyprotocol/subdir_rules.mk=UTF-8
+encoding//Debug/MIDDLEWARE/tinyprotocol/subdir_vars.mk=UTF-8
 encoding//Debug/makefile=UTF-8
 encoding//Debug/objects.mk=UTF-8
 encoding//Debug/sources.mk=UTF-8

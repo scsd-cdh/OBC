@@ -1,4 +1,8 @@
 
+
+#ifndef _GPIO_
+#define _GPIO_
+
 #include <stdint.h>
 #include <msp430.h> 
 
@@ -21,3 +25,5 @@ void initGPIO();
  * @param mode 1 to set high, 0 to set low
  */
 void ToggleGPIO(uint8_t port, uint8_t pin, uint8_t mode);
+
+#endif // _GPIO_

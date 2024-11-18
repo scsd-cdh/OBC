@@ -51,6 +51,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>MIDDLEWARE/tinyprotocol</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>APP/PDS_App/AppComm.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/AppComm.c</locationURI>
@@ -81,6 +86,11 @@
 			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/main.c</locationURI>
 		</link>
 		<link>
+			<name>DRIVERS/MSP430/GPIO</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>DRIVERS/MSP430/I2C</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -89,6 +99,31 @@
 			<name>DRIVERS/MSP430/UTILS</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/tinyprotocol/README.md</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/tinyprotocol/README.md</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/tinyprotocol/tinyprotocol.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/tinyprotocol/tinyprotocol.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/tinyprotocol/tinyprotocol.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/tinyprotocol/tinyprotocol.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/GPIO/gpio.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/GPIO/gpio.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/GPIO/gpio.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/GPIO/gpio.h</locationURI>
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/I2C/i2c.c</name>
