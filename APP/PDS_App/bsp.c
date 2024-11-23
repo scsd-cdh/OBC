@@ -28,3 +28,15 @@ void initClockTo16MHz()
 
     CSCTL0_H = 0;                             // Lock CS registerss
 }
+
+
+void initGPIO()
+{
+    // Configure GPIO
+    P1OUT &= ~BIT0;                           // Clear P1.0 output latch
+    P1DIR |= BIT0;                            // For LED
+    P1SEL1 |= BIT6 | BIT7;                    // I2C pins
+    // Disable the GPIO power-on default high-impedance mode to activate
+    // previously configured port settings
+    PM5CTL0 &= ~LOCKLPM5;
+}
