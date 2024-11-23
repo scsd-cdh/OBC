@@ -36,6 +36,7 @@ void initI2C(sI2cConfigCb_t* cb_config)
 
     UCB0IE |= UCSTPIE;                         // Enable STOP interrupt
     UCB0IE |= UCRXIE;                          // Enable RX interrupt
+    UCB0IE |= UCTXIE;                          // Enable TX interrupt
     
     i2cSlaveCtx.Rx_Proc_Data = cb_config->Rx_Proc_Data;
     i2cSlaveCtx.i2c_mode = I2C_IDLE_MODE;
@@ -47,7 +48,6 @@ int16_t transmitI2C(const uint8_t* data, uint8_t size)
     CopyArray((uint8_t*)data, TransmitBuffer, MIN(size, MAX_BUFFER_SIZE));
 
     i2cSlaveCtx.i2c_mode = I2C_TX_MODE;
-    UCB0IE |= UCTXIE;   // Enable TX interrupt
 
     return 0; // TODO switch to project defined error flags
 }
@@ -77,7 +77,6 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
             ReceiveIndex = 0;
         } else if (i2cSlaveCtx.i2c_mode == I2C_TX_MODE) {   // Transmit
             TransmitIndex = 0;
-            UCB0IFG &= ~(UCTXIFG0);  // Disable TX interrupt at the end of transmission (?)   
         } 
         // else {
             // TODO: throw an error. 

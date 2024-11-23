@@ -83,7 +83,7 @@ int16_t TINYPROTOCOL_ParseByte(const struct TINYPROTOCOL_Config *cfg, uint8_t by
             if (TINYPROTOCOL_CalculateCRC(&tlm_current_channel, 1) != byte) {
                 TlmAckPacket.result = TLM_ACK_PACKET_RESULT_EINVALID_CRC;
             } else {
-                cfg->TINYPROTOCOL_ProcessTelemetryRequest(TlmAckPacket.last_command);
+                cfg->TINYPROTOCOL_ProcessTelemetryRequest(TlmAckPacket.last_command & 0x7F);
                 TlmAckPacket.result = TLM_ACK_PACKET_RESULT_COMPLETED;
             }
 
