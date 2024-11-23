@@ -1,21 +1,21 @@
 # Repository  Structure 
 ```plaintext
 OBC/
-# board specific code (application layer)
-APP
+
+APP                 # board specific code (application layer)
 ├── ADCS
 ├── AI_PAYLOAD
 ├── BMS
 ├── PDS_App
 ├── TRANSCEIVERS
 └── YEAST_PAYLOAD
-# processor specific code for MSP and SAMV71
-DRIVERS/MSP430
+
+DRIVERS/MSP430      # processor specific code for MSP
 ├── GPIO
 ├── I2C
-├── SPI_CC_Studio_proj/msp430fr59...
-├── UART_CC_Studio_proj/msp430fr...
 └── UTILS
+
+DRIVERS/SAMv71      # processor specific code for  SAMV71
 
 MIDDLEWARE
 ├── MRAM
@@ -23,17 +23,20 @@ MIDDLEWARE
 ├── PWR_CTRL
 ├── WATCHDOG
 └── tinyprotocol     
-# CCS studio and ATmel studio files
-ProjectFiles
+
+ProjectFiles        # CCS studio and ATmel studio files
 ├── 
 └── 
-# all docs go here
-Docs
+
+Docs                # all docs go here
 ├── Scheamtics
 └── DataSheets
-# this is for any side tools
-Tools
-```
+
+Tools               # this is for any side tools
+├── Rown PDS
+├── TinyProtocol Example
+├── SPI_CC_Studio_proj/msp430fr59...
+├── UART_CC_Studio_proj/msp430fr...
 
 # Branch Naming 
 - feature/<task_name> : add a new feature or module to the code
