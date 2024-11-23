@@ -13,11 +13,11 @@
 //*******************************************************************************
 
 // Buffers for holding command arguments received from the master - TODO remove
-static uint8_t SystemStatusBuf[SYSTEM_STATUS_CMD_LEN] = {0};  /**< Buffer for system status command arguments */
-static uint8_t HealthCheckBuf[HEALTH_CHECK_CMD_LEN] = {0};    /**< Buffer for health check command arguments */
-static uint8_t RebootBuf[REBOOT_CMD_LEN] = {0};               /**< Buffer for reboot command arguments */
-static uint8_t ConverterMonitorBuf[CONVERTER_MONITOR_CMD_LEN] = {0}; /**< Buffer for converter monitor command arguments */
-static uint8_t TelecommandAckBuf[TELECOMMAND_ACK_CMD_LEN] = {0};     /**< Buffer for telecommand acknowledgement arguments */
+static uint8_t SystemStatusBuf[SYSTEM_STATUS_CMD_LEN] = {0xB, 0xC};  /**< Buffer for system status command arguments */
+static uint8_t HealthCheckBuf[HEALTH_CHECK_CMD_LEN] = {0xD, 0xE};    /**< Buffer for health check command arguments */
+static uint8_t RebootBuf[REBOOT_CMD_LEN] = {0x5, 0x6};               /**< Buffer for reboot command arguments */
+static uint8_t ConverterMonitorBuf[CONVERTER_MONITOR_CMD_LEN] = {0x7, 0x8}; /**< Buffer for converter monitor command arguments */
+static uint8_t TelecommandAckBuf[TELECOMMAND_ACK_CMD_LEN] = {0x9, 0xA};     /**< Buffer for telecommand acknowledgement arguments */
 
 // Buffers for holding response data to be sent back to the master
 static uint8_t SystemStatusRespBuf[SYSTEM_STATUS_RESP_LEN] = {0};    /**< Buffer for system status response data */
