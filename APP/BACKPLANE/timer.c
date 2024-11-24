@@ -50,7 +50,7 @@ void startCountdownAlarm() {
 
     //Initialize LFXT1
     CS_turnOnLFXT(
-        CS_LFXT_DRIVE_3
+//        CS_LFXT_DRIVE_3
         );
 
     //Setup for Calendar
@@ -307,7 +307,7 @@ void run(){
             break;
         /* Idle state */
         case idle:
-            responsePointer = responseBuffer;  // Reset the response buffer pointer
+//            responsePointer = responseBuffer;  // Reset the response buffer pointer
             resumeI2CInterrupts(); // Resume interrupts and enter LPM after executing command
             break;
         /* Single-use function to power on main board before changing to idle mode */
