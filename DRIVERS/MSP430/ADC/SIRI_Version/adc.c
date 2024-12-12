@@ -1,17 +1,17 @@
 #include "adc.h"
 
 void intializeADC(){
-    P1SEL |= 0x01; // Enable A0 on pin P1.0
-    REFCTL0 &= ~REFMSTR; // Reset REFMSTR to hand over control to ADC12_A ref control registers
+    P1SEL0 |= BIT0; // Enable A0 on pin P1.0
+    PM5CTL0 &= ~LOCKLPM5; // Disable high Impedance Mode
 
     /*
      Turn On ADC 12-bit Sample Time
      Reference generator set to 2.5V
     */
-    ADC12CTL0 = ADC12ON|ADC12SHT02|ADC12REFON|ADC12REF2_5V;
-
+    ADC12CTL0 = ADC12ON|ADC12SHT0_2;
     ADC12CTL1 = ADC12SHP;// Use sampling timer
-    ADC12MCTL0 = ADC12SREF_1;// Vr+=Vref+ and Vr-=AVss
+    ADC12CTL2 |= ADC12RES_2;
+    ADC12MCTL0 = ADC12VRSEL_4; // Vr+ = VeREF+ (ext) and Vr-=AVss
 
     // Enable ADC
     enableADC();
@@ -33,4 +33,6 @@ int readADC(){
     return ADC12MEM0; // Stored ADC value
 }
 
-
+int readVoltage(){
+    return readADC()/4096 * 3300; // Convert ADC to mV
+}

@@ -6,10 +6,7 @@
 #include "adc.h"
 
 
-// Task
-int readVoltage(){
-    return readADC()/4096 * 3300; // Convert ADC to mV
-}
+
 
 int main(void)
 {
@@ -25,6 +22,7 @@ int main(void)
 	// Read Voltages
 	while(true){
 	    startADC();
+	    while(!(ADC12IFGR0 & BIT0)); // Wait until Pin is read
 	    printf("A0 Value = %d\n", readADC());
 	    printf("A0 Voltage = %d\n mV", readVoltage());
 	}
