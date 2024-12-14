@@ -1,0 +1,19 @@
+on: [push]
+jobs:
+  build_and_static_analysis:
+    runs-on: ubuntu-latest
+    container:
+      image: kxrur/msp430-gcc-9.3.1.11:latest
+    env:
+      TOOLS_PATH: /home/ubuntu/dev/tools
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+        with:
+          submodules: "true"
+      - name: Run code formatting check
+        run: make format && git diff --quiet
+      - name: Run static code analysis
+        run: make ccheck
+      - name: Build the project
+        run: make all
