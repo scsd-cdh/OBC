@@ -15,7 +15,7 @@
 #include "adc12_b.c"
 #include <msp430.h>
 
-void ADC_init()
+void ADC_init_Standard()
 {
     ADC12_B_initParam adcParams = {
         .sampleHoldSignalSourceSelect = ADC12_B_SAMPLEHOLDSOURCE_SC,
