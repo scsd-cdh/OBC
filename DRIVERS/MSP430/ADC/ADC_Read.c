@@ -11,9 +11,8 @@
  *
  */
 
-#include "ADC_Read.h"
 #include "adc12_b.c"
-#include <msp430.h>
+#include "ADC_Read.h"
 
 void ADC_init_Standard()
 {
