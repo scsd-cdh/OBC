@@ -7,8 +7,9 @@
 #ifndef __MSP430WARE_ADC12_B_H__
 #define __MSP430WARE_ADC12_B_H__
 
-#include "hw_memmap.h"
+#include "inc/hw_memmap.h"
 
+#ifdef __MSP430_HAS_ADC12_B__
 
 //*****************************************************************************
 //
@@ -21,7 +22,7 @@ extern "C"
 {
 #endif
 
-#include "hw_memmap.h"
+#include "inc/hw_memmap.h"
 //*****************************************************************************
 //
 //! \brief Used in the ADC12_B_init() function as the param parameter.
@@ -1461,3 +1462,4 @@ extern uint8_t ADC12_B_isBusy(uint16_t baseAddress);
 #endif
 
 #endif
+#endif // __MSP430WARE_ADC12_B_H__
