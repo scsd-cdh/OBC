@@ -1,7 +1,7 @@
-#include "adc12_b.h"
-
 #ifndef ADC_READ_H_
 #define ADC_READ_H_
+
+#include "adc12_b.h"
 
 //*****************************************************************************
 //
@@ -38,7 +38,7 @@ typedef enum{
 //! \return None
 //
 //*****************************************************************************
-void ADC_init_Standard();
+extern void ADC_init_Standard();
 
 
 //*****************************************************************************
@@ -52,7 +52,7 @@ void ADC_init_Standard();
 //! \return None
 //
 //*****************************************************************************
-void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex);
+extern void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex);
 
 
 //*****************************************************************************
@@ -67,7 +67,7 @@ void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex);
 //! \return 16 bit unsigned integer
 //
 //*****************************************************************************
-uint16_t Read_ADC(uint8_t memoryBufferIndex);
+extern uint16_t Read_ADC(uint8_t memoryBufferIndex);
 
 
 #endif /* ADC_READ_H_ */

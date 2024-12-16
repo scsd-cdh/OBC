@@ -11,7 +11,7 @@
  *
  */
 
-#include "adc12_b.c"
+#include "adc12_b.h"
 #include "ADC_Read.h"
 
 void ADC_init_Standard()

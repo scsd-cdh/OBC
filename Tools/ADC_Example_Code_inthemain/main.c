@@ -1,4 +1,4 @@
-#include "ADC_Read.c"
+#include "ADC_Read.h"
 #include <msp430.h>
 
 
@@ -7,11 +7,11 @@
  */
 int main(void)
 {
-	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
+    WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
 
-	ADC_init_Standard();
-	ADC_PinSelect(P1_3,ADC12_B_MEMORY_0);
-	uint16_t Result = Read_ADC(ADC12_B_MEMORY_0);
+    ADC_init_Standard();
+    ADC_PinSelect(P1_3,ADC12_B_MEMORY_0);
+    uint16_t Result = Read_ADC(ADC12_B_MEMORY_0);
 
-	return 0;
+    return 0;
 }
