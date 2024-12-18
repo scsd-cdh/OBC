@@ -11,7 +11,6 @@
  *
  */
 
-#include "adc12_b.h"
 #include "ADC_Read.h"
 
 void ADC_init_Standard()
@@ -55,5 +54,10 @@ uint16_t Read_ADC(uint8_t memoryBufferIndex){
 
     volatile uint16_t result = ADC12_B_getResults(ADC12_B_BASE, memoryBufferIndex);
 
+    return result;
+}
+
+uint16_t Read_ADC_Voltage(uint8_t memoryBufferIndex){
+    volatile uint16_t result = Read_ADC(memoryBufferIndex) * (ADC12_B_VREFPOS_AVCC_VREFNEG_VSS * 1000) / 4096;
     return result;
 }

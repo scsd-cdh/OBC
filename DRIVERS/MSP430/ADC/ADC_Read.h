@@ -1,7 +1,11 @@
+#include "adc12_b.h"
+
 #ifndef ADC_READ_H_
 #define ADC_READ_H_
 
-#include "adc12_b.h"
+#define ADC_TO_VOLTAGE_FACTOR (ADC12_B_VREFPOS_AVCC_VREFNEG_VSS * 1000)/4096
+
+
 
 //*****************************************************************************
 //
@@ -38,7 +42,7 @@ typedef enum{
 //! \return None
 //
 //*****************************************************************************
-extern void ADC_init_Standard();
+void ADC_init_Standard();
 
 
 //*****************************************************************************
@@ -52,7 +56,7 @@ extern void ADC_init_Standard();
 //! \return None
 //
 //*****************************************************************************
-extern void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex);
+void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex);
 
 
 //*****************************************************************************
@@ -67,7 +71,21 @@ extern void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex);
 //! \return 16 bit unsigned integer
 //
 //*****************************************************************************
-extern uint16_t Read_ADC(uint8_t memoryBufferIndex);
+uint16_t Read_ADC(uint8_t memoryBufferIndex);
+
+//*****************************************************************************
+//
+//! \brief Read a ADC pin
+//!
+//! Converts the resut from READ_ADC() to mV
+//!
+//!
+//!
+//!
+//! \return 16 bit unsigned integer
+//
+//*****************************************************************************
+uint16_t Read_ADC_Voltage(uint8_t memoryBufferIndex);
 
 
 #endif /* ADC_READ_H_ */

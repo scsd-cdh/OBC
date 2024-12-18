@@ -9,7 +9,6 @@
 
 #include "inc/hw_memmap.h"
 
-#ifdef __MSP430_HAS_ADC12_B__
 
 //*****************************************************************************
 //
@@ -1462,4 +1461,3 @@ extern uint8_t ADC12_B_isBusy(uint16_t baseAddress);
 #endif
 
 #endif
-#endif // __MSP430WARE_ADC12_B_H__
