@@ -13,7 +13,6 @@
 
 #include "inc/hw_memmap.h"
 
-#ifdef __MSP430_HAS_ADC12_B__
 #include "adc12_b.h"
 
 #include <assert.h>
@@ -251,7 +250,6 @@ uint8_t ADC12_B_isBusy (uint16_t baseAddress)
 }
 
 
-#endif
 //*****************************************************************************
 //
 //! Close the doxygen group for adc12_b_api
