@@ -11,7 +11,7 @@ int main(void)
 
     ADC_init_Standard();
     ADC_PinSelect(P1_3,ADC12_B_MEMORY_0);
-    uint16_t Result = Read_ADC(ADC12_B_MEMORY_0);
+    volatile uint16_t Result = Read_ADC(ADC12_B_MEMORY_0);
 
     return 0;
 }
