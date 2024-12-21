@@ -1,0 +1,7 @@
+"./main.obj"
+"./DRIVERS/MSP430/ADC/ADC_Read.obj"
+"./DRIVERS/MSP430/ADC/include/adc12_b.obj"
+"../lnk_msp430fr5969.cmd"
+-llibmpu_init.a
+-llibmath.a
+-llibc.a

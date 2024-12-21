@@ -1,0 +1,10 @@
+"./main.obj"
+"./DRIVERS/MSP430/GPIO/gpio.obj"
+"./DRIVERS/MSP430/PWM/PWM.obj"
+"./DRIVERS/MSP430/PWM/include/pmm.obj"
+"./DRIVERS/MSP430/PWM/include/timer_a.obj"
+"./DRIVERS/MSP430/PWM/include/timer_b.obj"
+"../lnk_msp430fr5969.cmd"
+-llibmpu_init.a
+-llibmath.a
+-llibc.a

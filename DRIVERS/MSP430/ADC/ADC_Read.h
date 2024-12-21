@@ -1,13 +1,11 @@
 #ifndef ADC_READ_H_
 #define ADC_READ_H_
 
-#include "adc12_b.h"
+#include "include/adc12_b.h"
 
-//*****************************************************************************
-//
-//! \brief Used in the ADC_PinSelect() function as the pin parameter.
-//
-//*****************************************************************************
+/******************************************************************************
+ * @brief Used in the ADC_PinSelect() function as the pin parameter.
+ ******************************************************************************/
 typedef enum{
     P1_0 = ADC12_B_INPUT_A0,
     P1_1 = ADC12_B_INPUT_A1,
@@ -29,44 +27,52 @@ typedef enum{
 } ADC_Pin;
 
 
-//*****************************************************************************
-//
-//! \brief Initialises the ADC Driver
-//!
-//! Initialises the ADC with standard parameters
-//!
-//! \return None
-//
-//*****************************************************************************
+/******************************************************************************
+ * @brief Initializes the ADC driver with standard parameters.
+ *
+ * This function sets up the ADC driver, configuring it with default settings
+ * to prepare for operation.
+ *
+ * @return None.
+ ******************************************************************************/
 extern void ADC_init_Standard();
 
 
-//*****************************************************************************
-//
-//! \brief Select a pin to set as ADC pin and assign its values to a memory register
-//!
-//! \param pin is any pin defined in the ADC_Pin enum
-//! \param memoryBufferIndex expects "ADC12_B_MEMORY_x" where 0 <= x <= 31. It is recommended to start at 0.
-//!     It is highly recommended to start at 0 and assign incrementally when selecting more pins.
-//!
-//! \return None
-//
-//*****************************************************************************
+/******************************************************************************
+ * @brief Configures a pin as an ADC pin and assigns its values to a memory register.
+ *
+ * This function selects a specified pin to function as an ADC pin and maps
+ * its digital output values to a memory register for retrieval.
+ *
+ * @param pin
+ *        Any pin defined in the `ADC_Pin` enumeration.
+ *
+ * @param memoryBufferIndex
+ *        The memory index to assign to the pin, specified as "ADC12_B_MEMORY_x"
+ *        (where 0 <= x <= 31). It is strongly recommended to start at 0 and
+ *        assign indexes incrementally when configuring multiple pins.
+ *
+ * @return None.
+ ******************************************************************************/
 extern void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex);
 
 
-//*****************************************************************************
-//
-//! \brief Read a ADC pin
-//!
-//! Returns the digital value held at a memory index which was assigned to an ADC pin.
-//!     The digital value is a 12-bit integer (0 to 4095) where 0 is 0 volts and 4095 is Vref.
-//!
-//! \param memoryBufferIndex expects "ADC12_B_MEMORY_x" (where 0 <= x <= 31) which was set before in ADC_PinSelect(...).
-//!
-//! \return 16 bit unsigned integer
-//
-//*****************************************************************************
+/******************************************************************************
+ * @brief Reads the digital value from an ADC pin.
+ *
+ * This function retrieves the digital value from a specified memory index
+ * associated with an ADC pin. The returned value is a 12-bit integer
+ * (ranging from 0 to 4095), where:
+ *   - 0 represents 0 volts
+ *   - 4095 represents Vref.
+ *
+ * @param memoryBufferIndex
+ *        The memory index assigned to an ADC pin, specified as
+ *        "ADC12_B_MEMORY_x" (where 0 <= x <= 31), configured earlier
+ *        via ADC_PinSelect(...).
+ *
+ * @return A 16-bit unsigned integer representing the digital value.
+ ******************************************************************************/
 extern uint16_t Read_ADC(uint8_t memoryBufferIndex);
 
 
