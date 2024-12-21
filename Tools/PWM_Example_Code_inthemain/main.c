@@ -15,7 +15,8 @@ int main(void)
 
     PMM_unlockLPM5();
 
-    PWM_Generate(524,329, CompareRegister_1);
+    // 524*0.75 = 393
+    PWM_Generate(524,393, CompareRegister_1);
 
     //Enter LPM0
     __bis_SR_register(LPM0_bits);
