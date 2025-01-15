@@ -184,8 +184,8 @@ void main(void)
     __no_operation();                       // Remain in LPM0
 }
 
-uint8_t counter = 0;
-uint8_t device_id[4] = {0};
+volatile uint8_t counter = 0;
+volatile uint8_t device_id[4] = {0};
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector=USCI_B0_VECTOR
