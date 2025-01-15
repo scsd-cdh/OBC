@@ -85,34 +85,6 @@ void CS_HIGH()
     GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN3);
 }
 
-uint8_t spi_transfer(uint8_t data)
-{
-    // Wait for TX buffer to be ready
-    while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE, EUSCI_B_SPI_TRANSMIT_INTERRUPT));
-
-    EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, data);  // Send data or dummy byte
-
-    // Wait for RX buffer to be ready
-    while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE, EUSCI_B_SPI_RECEIVE_INTERRUPT));
-
-    return EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);  // Read received data
-}
-
-void read_device_id()
-{
-   uint8_t device_id[4];  // Array to store the 4-byte device ID
-
-   CS_LOW();              // Pull CS low to start communication
-
-   spi_transfer(0x9F);    // Send RDID command (0x9F)
-
-   int i;
-   for (i = 0; i < 4; i++) {
-       device_id[i] = spi_transfer(0x00);  // Send dummy byte, read response
-   }
-
-   CS_HIGH();             // Pull CS high to end communication
-}
 
 void main(void)
 {
@@ -167,10 +139,10 @@ void main(void)
     );
 
     GPIO_setAsPeripheralModuleFunctionInputPin(
-            GPIO_PORT_P1,
-            GPIO_PIN6,
-            GPIO_SECONDARY_MODULE_FUNCTION
-        );
+        GPIO_PORT_P1,
+        GPIO_PIN6,
+        GPIO_SECONDARY_MODULE_FUNCTION
+    );
 
 
     /*
@@ -200,13 +172,20 @@ void main(void)
         EUSCI_B_SPI_RECEIVE_INTERRUPT);
 
     //Wait for slave to initialize
-    __delay_cycles(1000000);
+    __delay_cycles(100000);
 
-    read_device_id();
+    CS_LOW();
+    // Wait for TX buffer to be ready
+    while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE, EUSCI_B_SPI_TRANSMIT_INTERRUPT));
+
+    EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, 0x9F);  // Send data or dummy byte
 
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
     __no_operation();                       // Remain in LPM0
 }
+
+uint8_t counter = 0;
+uint8_t device_id[4] = {0};
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector=USCI_B0_VECTOR
@@ -219,12 +198,17 @@ void USCI_B0_ISR (void)
     switch (__even_in_range(UCB0IV, USCI_SPI_UCTXIFG))
     {
         case USCI_SPI_UCRXIFG:      // UCRXIFG
+            if (counter >= 4) {
+                CS_HIGH();
+                break;
+            }
+
             //USCI_B0 TX buffer ready?
             while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE,
                         EUSCI_B_SPI_TRANSMIT_INTERRUPT));
 
-            uint8_t RXData = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
-
+            device_id[counter] = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
+            counter++;
 
             //Send next value
             EUSCI_B_SPI_transmitData(EUSCI_B0_BASE,
