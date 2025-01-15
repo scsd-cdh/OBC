@@ -88,8 +88,6 @@ void CS_HIGH()
 
 void main(void)
 {
-    volatile uint16_t i;
-
     //Stop watchdog timer
     WDT_A_hold(WDT_A_BASE);
 
