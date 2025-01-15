@@ -155,7 +155,7 @@ void main(void)
     EUSCI_B_SPI_initMasterParam param = {0};
     param.selectClockSource = EUSCI_B_SPI_CLOCKSOURCE_SMCLK;
     param.clockSourceFrequency = CS_getSMCLK();
-    param.desiredSpiClock = 1000000; //8Mhz
+    param.desiredSpiClock = 10000;
     param.msbFirst = EUSCI_B_SPI_MSB_FIRST;
     param.clockPhase = EUSCI_B_SPI_PHASE_DATA_CAPTURED_ONFIRST_CHANGED_ON_NEXT;
     param.clockPolarity = EUSCI_B_SPI_CLOCKPOLARITY_INACTIVITY_LOW;
