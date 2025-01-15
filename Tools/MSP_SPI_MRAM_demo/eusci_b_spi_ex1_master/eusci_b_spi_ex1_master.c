@@ -85,6 +85,8 @@ void CS_HIGH()
     GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN3);
 }
 
+volatile uint8_t counter = 0;
+volatile uint8_t device_id[4] = {0};
 
 void main(void)
 {
@@ -176,14 +178,13 @@ void main(void)
     // Wait for TX buffer to be ready
     while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE, EUSCI_B_SPI_TRANSMIT_INTERRUPT));
 
-    EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, 0x9F);  // Send data or dummy byte
+    EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, 0x9F);  // Send RDID command
 
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
     __no_operation();                       // Remain in LPM0
 }
 
-volatile uint8_t counter = 0;
-volatile uint8_t device_id[4] = {0};
+
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector=USCI_B0_VECTOR
