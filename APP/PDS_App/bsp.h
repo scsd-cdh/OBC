@@ -8,6 +8,11 @@
 
 #define SLAVE_ADDR                  0x08  /**< I2C Slave Address for the MSP430 device */
 
+#define CONV_RUN_A_PORT             ( GPIO_PORT_P1 )
+#define CONV_RUN_A_PIN              ( GPIO_PIN5 )
+#define CONV_RUN_B_PORT             ( GPIO_PORT_P2 )
+#define CONV_RUN_B_PIN              ( GPIO_PIN4 )
+
 void initBsp();
 
 /**
@@ -20,4 +25,8 @@ void initClockTo16MHz();
  */
 void initGPIO();
 
+/**
+ * @brief Configures RTC pins.
+ */
+void initRTCB();
 #endif // _BSP_

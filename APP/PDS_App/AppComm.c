@@ -8,13 +8,6 @@ static int16_t SendTelemetryResponse();
 static int16_t ProcessTelemetryRequest(uint8_t command);
 static int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size);
 
-static const struct TINYPROTOCOL_Config protocolConfig = 
-{
-    .TINYPROTOCOL_ProcessTelecommand = ProcessTelecommand,
-    .TINYPROTOCOL_ProcessTelemetryRequest = ProcessTelemetryRequest, 
-    .TINYPROTOCOL_WriteBuffer = transmitI2C
-};
-
 static void I2C_Proc_RX_Data(uint8_t data);
 
 /**
@@ -69,6 +62,14 @@ void InitAppComm(void) {
 
 //***************************Private Functions Implementations***************************************************
 void I2C_Proc_RX_Data(uint8_t data) {
+
+    const struct TINYPROTOCOL_Config protocolConfig =
+    {
+        .TINYPROTOCOL_ProcessTelecommand = ProcessTelecommand,
+        .TINYPROTOCOL_ProcessTelemetryRequest = ProcessTelemetryRequest,
+        .TINYPROTOCOL_WriteBuffer = transmitI2C
+    };
+
     TINYPROTOCOL_ParseByte(&protocolConfig, data);
 }
 
@@ -138,7 +139,7 @@ void setup_system_status_test(uint8_t *SystemStatusRespBuf, uint8_t *SystemStatu
 void setup_health_check_test(uint8_t *HealthCheckRespBuf, uint8_t *HealthCheckBuf) {
     // Fills HealthCheckRespBuf (len = 16)
     const char testMessage[] = "TestingHealth";
-    int i;
+    unsigned int i;
     for (i = 0; i < 12; i++) {
         HealthCheckRespBuf[i] = testMessage[i];
     }

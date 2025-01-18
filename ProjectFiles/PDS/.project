@@ -66,6 +66,16 @@
 			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/AppComm.h</locationURI>
 		</link>
 		<link>
+			<name>APP/PDS_App/RoutineCycle.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/RoutineCycle.c</locationURI>
+		</link>
+		<link>
+			<name>APP/PDS_App/RoutineCycle.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/RoutineCycle.h</locationURI>
+		</link>
+		<link>
 			<name>APP/PDS_App/bsp.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/bsp.c</locationURI>
@@ -92,6 +102,11 @@
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/I2C</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/RTC_B</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -134,6 +149,16 @@
 			<name>DRIVERS/MSP430/I2C/i2c.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/I2C/i2c.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/RTC_B/rtc_b.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_B/rtc_b.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/RTC_B/rtc_b.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_B/rtc_b.h</locationURI>
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/UTILS/utils.c</name>
