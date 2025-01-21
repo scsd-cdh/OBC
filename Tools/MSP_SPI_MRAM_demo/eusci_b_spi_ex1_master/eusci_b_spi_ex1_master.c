@@ -75,6 +75,10 @@
 
 #include "driverlib.h"
 
+volatile uint8_t counter = 0;
+volatile uint8_t device_id[4] = {0};
+
+
 void CS_LOW()
 {
     GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN3);
@@ -85,10 +89,7 @@ void CS_HIGH()
     GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN3);
 }
 
-volatile uint8_t counter = 0;
-volatile uint8_t device_id[4] = {0};
-
-void main(void)
+void initSPI()
 {
     //Stop watchdog timer
     WDT_A_hold(WDT_A_BASE);
@@ -170,20 +171,38 @@ void main(void)
     // Enable USCI_B0 RX interrupt
     EUSCI_B_SPI_enableInterrupt(EUSCI_B0_BASE,
         EUSCI_B_SPI_RECEIVE_INTERRUPT);
+}
+
+void spiTransfer(uint8_t byte)
+{
+    while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE, EUSCI_B_SPI_TRANSMIT_INTERRUPT));
+    EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, byte);
+}
+
+void readUniqueId(uint8_t id_buffer[4])
+{
+    counter = 0;
+    CS_LOW();
+    spiTransfer(0x9F);
+    __bis_SR_register(LPM0_bits + GIE); // enable interrupts put in low power mode
+
+    // Once we exit the interrupt we jump back here via __bic_SR_register_on_exit(LPM0_bits);
+    CS_HIGH();
+    memcpy(id_buffer, (void const*)device_id, 4);
+}
+
+void main(void)
+{
+    initSPI();
 
     //Wait for slave to initialize
     __delay_cycles(100000);
-
-    CS_LOW();
-    // Wait for TX buffer to be ready
-    while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE, EUSCI_B_SPI_TRANSMIT_INTERRUPT));
-
-    EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, 0x9F);  // Send RDID command
+    uint8_t buffer[4];
+    readUniqueId(buffer);
 
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
     __no_operation();                       // Remain in LPM0
 }
-
 
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -198,8 +217,7 @@ void USCI_B0_ISR (void)
     {
         case USCI_SPI_UCRXIFG:      // UCRXIFG
             if (counter >= 4) {
-                CS_HIGH();
-                break;
+                __bic_SR_register_on_exit(LPM0_bits);
             }
 
             //USCI_B0 TX buffer ready?
