@@ -1,8 +1,11 @@
 #include "driverlib.h"
 #include "MRAM_SPI_Middleware.h"
 
-static volatile uint8_t counter = 0;
+static volatile uint8_t numBytesExpected = 0;
 static volatile uint8_t device_id[4] = {0};
+// FIXME: disgusting 
+static volatile uint8_t haveSeenFirstByte = 0;
+static volatile uint8_t originalNumBytes = 0;
 
 void CS_LOW()
 {
@@ -107,7 +110,7 @@ void spiTransfer(uint8_t byte)
 
 void readUniqueId(uint8_t id_buffer[4])
 {
-    counter = 0;
+    numBytesExpected = 4;
     CS_LOW();
     spiTransfer(0x9F);
     __bis_SR_register(LPM0_bits + GIE); // enable interrupts put in low power mode
@@ -128,7 +131,7 @@ void USCI_B0_ISR (void)
     switch (__even_in_range(UCB0IV, USCI_SPI_UCTXIFG))
     {
         case USCI_SPI_UCRXIFG:      // UCRXIFG
-            if (counter >= 4) {
+            if (numBytesExpected <= 0) {
                 __bic_SR_register_on_exit(LPM0_bits);
             }
 
@@ -137,10 +140,13 @@ void USCI_B0_ISR (void)
                         EUSCI_B_SPI_TRANSMIT_INTERRUPT));
 
             // NOTE: we need to skip the first byte because it will always be zero
-            if (counter > 0) {
-                device_id[counter-1] = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
+            if (haveSeenFirstByte) {
+                device_id[originalNumBytes - numBytesExpected] = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
+                numBytesExpected--;
+            } else {
+                originalNumBytes = numBytesExpected;
             }
-            counter++;
+            haveSeenFirstByte = 1;
 
             //Send next value
             EUSCI_B_SPI_transmitData(EUSCI_B0_BASE,
