@@ -60,11 +60,11 @@ const uint64_t CONFIGURATION_REG4 = 0x000005;
 const uint64_t DEVICE_ID_REG = 0x000030;
 const uint64_t UNIQUE_ID_REG = 0x000040;
 const uint64_t SERIAL_NUM_REG = 0x000080;
-const uint64_t NON_AUGMENTED_REG = 0x0002000;
+const uint64_t NON_AUGMENTED_REG = 0x0000200;
 
 ///////LFS CONFIG
 
-/*
+
 lfs_t lfs;
 lfs_file_t file;
 
@@ -90,6 +90,8 @@ int lfs_sync(const struct lfs_config *c){
   return 0;
 }
 
+
+
 struct lfs_config cfg = { 
   NULL, //Optional
   lfs_read, //.read
@@ -114,7 +116,8 @@ struct lfs_config cfg = {
   NULL  //Optional
 };
 
-*/
+
+
 
 
 //Global Classes for SPI settings
@@ -127,13 +130,14 @@ void setup() {
   // put your setup code here, to run once:
 
   //Init LittleFS
-  /*
+  
   int err = lfs_mount(&lfs, &cfg);
   if(err){
     lfs_format(&lfs, &cfg);
     lfs_mount(&lfs, &cfg);
   }
-  */
+
+  
 
   Serial.begin(9600);
   Serial.println("Start");
@@ -145,15 +149,16 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
+
+  /*
   uint8_t readSerialNumber[8];
   uint8_t writeSerialNumber[8] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0};
 
-  MRAMwrite_cmd_data(0xC2, writeSerialNumber, sizeof(writeSerialNumber) / sizeof(uint8_t));
+  MRAMwrite_cmd_addr_data(0x02, NON_AUGMENTED_REG, writeSerialNumber, sizeof(writeSerialNumber) / sizeof(uint8_t));
 
   Serial.print("Device ID: ");
 
-  MRAMread_cmd(Read_Serial_Reg, readSerialNumber, sizeof(readSerialNumber)/sizeof(uint8_t));
+  MRAMread_cmd_addr(0x03, NON_AUGMENTED_REG, readSerialNumber, sizeof(readSerialNumber)/sizeof(uint8_t));
 
   for(int i = 0; i < 8; i++){
   Serial.print(readSerialNumber[i], HEX);
@@ -161,8 +166,9 @@ void loop() {
   Serial.println();
 
   delay(1000);
+  */
   
-  /*
+  
   uint32_t boot_count = 0;
   
   lfs_file_open(&lfs, &file, "boot_count", LFS_O_RDWR | LFS_O_CREAT);
@@ -179,7 +185,8 @@ void loop() {
   Serial.print("boot count: ");
   Serial.println(boot_count);
   delay(1000);
-  */
+  
+
   }
 
 
@@ -243,8 +250,6 @@ void MRAMwrite_cmd_data(uint8_t cmd, uint8_t* data, int arraySize){
 
   SPI0.transfer(cmd); //Give instruction, followed by data
   for(int i = 0; i < arraySize; i++){
-    //Serial.print("Sending: ");
-    //Serial.println(data[i], HEX);
     SPI0.transfer(data[i]);
   }
 
@@ -255,12 +260,12 @@ void MRAMwrite_cmd_data(uint8_t cmd, uint8_t* data, int arraySize){
 
 
 
-void MRAMwrite_cmd_addr_data(uint8_t cmd, uint32_t addr, const void* data, lfs_size_t size){
+void MRAMwrite_cmd_addr_data(uint8_t cmd, uint32_t addr, const void* data, int size){
   //Write to MRAM data housed at a specified Address
 
   //Retrieve 24 LSB
   // uint8_t addr_byte[] = {(addr & 0x000F0000) >> 16, (addr & 0x0000FF00) >> 8, (addr & 0x000000FF)};
-  uint8_t addr_byte[] = {(addr & 0xF00) >> 16, (addr & 0xF0) >> 8, (addr & 0xF)};
+  uint8_t addr_byte[] = {(addr & 0xF00) >> 8, (addr & 0xF0) >> 4, (addr & 0xF)};
   //uint8_t addr_byte2 = (address & 0x00FF0000) >> 16;
   //uint8_t addr_byte1 = (address & 0x0000FF00) >> 8;
   //uint8_t addr_byte0 = (address & 0x000000FF);  
@@ -270,15 +275,18 @@ void MRAMwrite_cmd_addr_data(uint8_t cmd, uint32_t addr, const void* data, lfs_s
   digitalWrite(CSn_PIN, LOW);
 
   SPI0.transfer(cmd); //Give instruction, then address, followed by data
-  delayMicroseconds(1); //Ensure chip received command
-  for(int i = 0; i < 2; i++){
+  //SPI0.transfer(0x00);
+  //SPI0.transfer(0x20);
+  //SPI0.transfer(0x00);
+  for(int i = 0; i < 3; i++){
     SPI0.transfer(addr_byte[i]);
   }
-  delayMicroseconds(1);
   for(int i = 0; i < size; i++){
-    SPI0.transfer(*((uint32_t*)data + i)); //*void -> *int type cast required || Needs to be translated for remaining functions, once littlefs is resolved
+    //Serial.println(*((uint8_t*)data + i));
+    SPI0.transfer(*((uint8_t*)data + i));
+    //SPI0.transfer(0x00); // DEBUG
+    //SPI0.transfer(data[i]); //*void -> *int type cast required || Needs to be translated for remaining functions, once littlefs is resolved
   }
-  delayMicroseconds(1);
 
   digitalWrite(CSn_PIN, HIGH);
   SPI0.endTransaction();
@@ -297,8 +305,6 @@ void MRAMread_cmd(uint8_t cmd, uint8_t* data, int arraySize){
   //data = SPI0.transfer(0x00); //Dummy value to retrieve data
   for(int i = 0; i < arraySize; i++){
     data[i] = SPI0.transfer(0x00); //Dummy value to retrieve data
-    //Serial.print("READING: ");
-    //Serial.println(data[i], HEX);
   }
 
   digitalWrite(CSn_PIN, HIGH);
@@ -306,11 +312,11 @@ void MRAMread_cmd(uint8_t cmd, uint8_t* data, int arraySize){
 
 }
 
-void MRAMread_cmd_addr(uint8_t cmd, uint32_t addr, void* data, lfs_size_t size){
+void MRAMread_cmd_addr(uint8_t cmd, uint32_t addr, void* data, int size){
   //Read MRAM data where command does require a specified address
   //Retrieve 24 LSB
   //uint8_t addr_byte[] = {(addr & 0x00FF0000) >> 16, (addr & 0x0000FF00) >> 8, (addr & 0x000000FF)};
-  uint8_t addr_byte[] = {(addr & 0xF00) >> 16, (addr & 0xF0) >> 8, (addr & 0xF)};
+  uint8_t addr_byte[] = {(addr & 0xF00 ) >> 8, (addr & 0xF0) >> 4, (addr & 0xF)};
 
   //uint8_t addr_byte2 = (address & 0x00FF0000) >> 16;
   //uint8_t addr_byte1 = (address & 0x0000FF00) >> 8;
@@ -320,14 +326,17 @@ void MRAMread_cmd_addr(uint8_t cmd, uint32_t addr, void* data, lfs_size_t size){
   digitalWrite(CSn_PIN, LOW);
 
   SPI0.transfer(cmd);
-  delayMicroseconds(1); //Ensure chip received command
+  //SPI0.transfer(0x00);
+  //SPI0.transfer(0x20);
+  //SPI0.transfer(0x00);
   for(int i = 0; i < 3; i++){
     SPI0.transfer(addr_byte[i]);
   }
-  delayMicroseconds(1);
   //data = SPI0.transfer(0x00); //Dummy value to retrieve data
   for(int i = 0; i < size; i++){
-    *((uint32_t*)data + i) = SPI0.transfer(0x00); //*void -> *int type cast required || Needs to be translated for remaining functions, once littlefs is resolved
+    //SPI0.transfer(0x00); // DEBUG
+    *((uint8_t*)data + i) = SPI0.transfer(0x00);
+    //data[i] = SPI0.transfer(0x00); //*void -> *int type cast required || Needs to be translated for remaining functions, once littlefs is resolved
   }
 
   digitalWrite(CSn_PIN, HIGH);
