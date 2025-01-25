@@ -75,7 +75,7 @@
 
 #include "driverlib.h"
 
-volatile uint8_t counter = 0;
+volatile int8_t counter = -1;
 volatile uint8_t device_id[4] = {0};
 
 
@@ -181,7 +181,7 @@ void spiTransfer(uint8_t byte)
 
 void readUniqueId(uint8_t id_buffer[4])
 {
-    counter = 0;
+    counter = -1;
     CS_LOW();
     spiTransfer(0x9F);
     __bis_SR_register(LPM0_bits + GIE); // enable interrupts put in low power mode
@@ -224,7 +224,10 @@ void USCI_B0_ISR (void)
             while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE,
                         EUSCI_B_SPI_TRANSMIT_INTERRUPT));
 
-            device_id[counter] = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
+            // NOTE: we need to skip the first byte because it will always be zero
+            if (counter >= 0) {
+                device_id[counter] = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
+            }
             counter++;
 
             //Send next value
