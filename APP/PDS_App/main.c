@@ -22,6 +22,7 @@
 
 #include "bsp.h"
 #include "AppComm.h"
+#include "RoutineCycle.h"
 
 int main(void)
 {
@@ -29,8 +30,11 @@ int main(void)
     //WDT_A_hold(WDT_A_BASE);     // Stop watchdog timer
     //PMM_unlockLPM5();           // Disable the GPIO power-on default high-impedance mode
 
-    initBsp();
+    initBSP();
     InitAppComm();
-
+    while (1) {
+        RoutineCycle_Process();     // TODO move to another timer ISR that calls this function.
+    }
+    
     __bis_SR_register(LPM0_bits + GIE);
 }

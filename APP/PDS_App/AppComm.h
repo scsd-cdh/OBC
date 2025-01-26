@@ -3,37 +3,45 @@
 #define _APP_COMM_
 
 #include <stdint.h>
-
-#include "comm.h"
 #include "i2c.h"
 #include "tinyprotocol.h"
+#include "version.h"
+
+//*******************************************************************************
+// Device Communication Defines *************************************************
+//*******************************************************************************
+#define SYSTEM_STATUS_RESP_LEN      5     // Response length for system status 
+#define REBOOT_CMD_LEN              1     
+
+// Telecommands
+enum CustomProtocolTelecommand {
+  REBOOT_ID = TINYPROTOCOL_TC_RESERVED,
+};
+
+// Telemetry Requests
+enum CustomProtocolTelemetryRequest {
+  SYSTEM_STATUS_ID = TINYPROTOCOL_TLM_RESERVED,
+  HEALTH_CHECK_ID,
+  CONVERTER_MONITOR_ID,  
+};
+
+typedef union SystemStatus {
+    struct {
+        uint32_t runtime : 32;
+        uint8_t firmware_version : 8;
+    };
+    uint8_t bytes[SYSTEM_STATUS_RESP_LEN];
+} SystemStatus_t;
 
 //*******************************************************************************
 // Buffers **********************************************************************
 //*******************************************************************************
 
-// Buffers for holding command arguments received from the master - TODO remove
-static uint8_t SystemStatusBuf[SYSTEM_STATUS_CMD_LEN] = {0xB, 0xC};  /**< Buffer for system status command arguments */
-static uint8_t HealthCheckBuf[HEALTH_CHECK_CMD_LEN] = {0xD, 0xE};    /**< Buffer for health check command arguments */
-static uint8_t RebootBuf[REBOOT_CMD_LEN] = {0x5, 0x6};               /**< Buffer for reboot command arguments */
-static uint8_t ConverterMonitorBuf[CONVERTER_MONITOR_CMD_LEN] = {0x7, 0x8}; /**< Buffer for converter monitor command arguments */
-static uint8_t TelecommandAckBuf[TELECOMMAND_ACK_CMD_LEN] = {0x9, 0xA};     /**< Buffer for telecommand acknowledgement arguments */
-
 // Buffers for holding response data to be sent back to the master
-static uint8_t SystemStatusRespBuf[SYSTEM_STATUS_RESP_LEN] = {0};    /**< Buffer for system status response data */
-static uint8_t HealthCheckRespBuf[HEALTH_CHECK_RESP_LEN] = {0};      /**< Buffer for health check response data */
-static uint8_t RebootRespBuf[REBOOT_RESP_LEN] = {0};                 /**< Buffer for reboot response data */
-static uint8_t ConverterMonitorRespBuf[CONVERTER_MONITOR_RESP_LEN] = {0}; /**< Buffer for converter monitor response data */
-static uint8_t TelecommandAckRespBuf[TELECOMMAND_ACK_RESP_LEN] = {0};     /**< Buffer for telecommand acknowledgement response */
-
-enum CustomProtocolTelecommand {
-  SYSTEM_STATUS_ID = TINYPROTOCOL_TC_RESERVED,
-  HEALTH_CHECK_ID,
-  REBOOT_ID,
-  CONVERTER_MONITOR_ID,
-  TELECOMMAND_ACK_ID,
-  BINGO_BONGO_ID
-};
+static SystemStatus_t SystemStatusRespBuf = {    /**< Buffer for system status response data */
+  .firmware_version = PDS_FW_VERSION,
+  .runtime = 0
+};   
 
 /**
  * @brief Initalize host communication

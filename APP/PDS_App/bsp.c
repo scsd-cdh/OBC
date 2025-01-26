@@ -3,21 +3,42 @@
 #include "gpio.h"
 #include "i2c.h"
 #include "rtc_b.h"
+#include "ADC_Read.h"
 
 #include <msp430.h> 
+
+/**
+ * @brief Initializes the system clock to 16MHz to support I2C and other peripherals.
+ */
+static void initClockTo16MHz();
+
+/**
+ * @brief Configures GPIO pins for I2C communication and debugging (LED indicators).
+ */
+static void initGPIO();
+
+/**
+ * @brief Configures RTC pins.
+ */
+static void initRTCB();
+
+/**
+ * @brief Configures ADC pins.
+ */
+static void initADCs();
 
 //******************************************************************************
 // Device Initialization *******************************************************
 //******************************************************************************
-
-void initBsp()
+void initBSP()
 {
     initClockTo16MHz();
     initGPIO();
     initRTCB();
+    initADCs();
 }
 
-void initClockTo16MHz()
+static void initClockTo16MHz()
 {
     // Configure one FRAM waitstate as required by the device datasheet for MCLK
     // operation beyond 8MHz _before_ configuring the clock system.
@@ -32,8 +53,7 @@ void initClockTo16MHz()
     CSCTL0_H = 0;                             // Lock CS registers
 }
 
-
-void initGPIO()
+static void initGPIO()
 {
     // Configure GPIO
     P1OUT &= ~BIT0;                           // Clear P1.0 output latch
@@ -47,12 +67,22 @@ void initGPIO()
     GPIO_setAsOutputPin(CONV_RUN_A_PORT, CONV_RUN_A_PIN);
     GPIO_setAsOutputPin(CONV_RUN_B_PORT, CONV_RUN_B_PIN);
 
+    // Flags pins
+    GPIO_setAsInputPin(CONV_FLAG1_X_PLUS_PORT, CONV_FLAG1_X_PLUS_PIN);
+    GPIO_setAsInputPin(CONV_FLAG2_X_PLUS_PORT, CONV_FLAG2_X_PLUS_PIN);
+    GPIO_setAsInputPin(CONV_FLAG1_X_MINUS_PORT, CONV_FLAG1_X_MINUS_PIN);
+    GPIO_setAsInputPin(CONV_FLAG2_X_MINUS_PORT, CONV_FLAG2_X_MINUS_PIN);
+    GPIO_setAsInputPin(CONV_FLAG1_Y_PLUS_PORT, CONV_FLAG1_Y_PLUS_PIN);
+    GPIO_setAsInputPin(CONV_FLAG2_Y_PLUS_PORT, CONV_FLAG2_Y_PLUS_PIN);
+    GPIO_setAsInputPin(CONV_FLAG1_Y_MINUS_PORT, CONV_FLAG1_Y_MINUS_PIN);
+    GPIO_setAsInputPin(CONV_FLAG2_Y_MINUS_PORT, CONV_FLAG2_Y_MINUS_PIN);
+
     // Init to High for power up
     GPIO_setOutputHighOnPin(CONV_RUN_A_PORT, CONV_RUN_A_PIN);
     GPIO_setOutputHighOnPin(CONV_RUN_B_PORT, CONV_RUN_B_PIN);
 }
 
-void initRTCB()
+static void initRTCB()
 {
     Calendar currentTime;
 
@@ -92,4 +122,15 @@ void initRTCB()
 
     //Start RTC Clock
     RTC_B_startClock(RTC_B_BASE);
+}
+
+static void initADCs() 
+{
+    ADC_init_Standard();
+
+    ADC_PinSelect(INT_5V_VS, ADC12_B_MEMORY_0);
+    ADC_PinSelect(REG_5V_VS, ADC12_B_MEMORY_1);
+    ADC_PinSelect(A_5V_VS, ADC12_B_MEMORY_2);
+    ADC_PinSelect(B_5V_VS, ADC12_B_MEMORY_3);
+    ADC_PinSelect(TEMP_SENSE, ADC12_B_MEMORY_4);
 }

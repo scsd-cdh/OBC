@@ -86,14 +86,19 @@
 			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/bsp.h</locationURI>
 		</link>
 		<link>
-			<name>APP/PDS_App/comm.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/comm.h</locationURI>
-		</link>
-		<link>
 			<name>APP/PDS_App/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/main.c</locationURI>
+		</link>
+		<link>
+			<name>APP/PDS_App/version.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/version.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/GPIO</name>
@@ -129,6 +134,21 @@
 			<name>MIDDLEWARE/tinyprotocol/tinyprotocol.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/tinyprotocol/tinyprotocol.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/ADC_Read.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/ADC_Read.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/ADC_Read.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/ADC_Read.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/GPIO/gpio.c</name>
@@ -169,6 +189,26 @@
 			<name>DRIVERS/MSP430/UTILS/utils.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/UTILS/utils.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include/adc12_b.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/adc12_b.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include/adc12_b.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/adc12_b.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include/inc</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
