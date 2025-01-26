@@ -75,6 +75,7 @@
 
 #include "driverlib.h"
 #include "MRAM_SPI_Middleware.h"
+#include <stdint.h>
 
 void main(void)
 {
@@ -82,9 +83,14 @@ void main(void)
 
     //Wait for slave to initialize
     __delay_cycles(100000);
-    uint8_t buffer[4];
-    readUniqueId(buffer);
+    uint32_t buffer;
+    readUniqueId((uint8_t*) &buffer);
 
+    writeMemoryEn();
+    writeMemoryArray();
+    uint8_t ret = 0;
+    ret = readMemoryArray();
+    
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
     __no_operation();                       // Remain in LPM0
 }

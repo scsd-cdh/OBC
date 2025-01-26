@@ -12,10 +12,9 @@
 
 static volatile int8_t numBytesExpected = 0;
 
-static volatile uint8_t* rx_buffer_ptr = NULL;
-
 static volatile uint8_t device_id[4] = {0};
 // FIXME: disgusting 
+static volatile uint8_t RX_Data = 0;
 static volatile uint8_t haveSeenFirstByte = 0;
 static volatile uint8_t originalNumBytes = 0;
 static volatile uint8_t ISR_index = 0;
@@ -117,28 +116,62 @@ void initSPI()
 
 void writeMemoryEn(){
     CS_LOW();
-    spiTransfer(Write_Memory_Enable, NULL, 0);
+    spiTransfer(Write_Memory_Enable);
     CS_HIGH();
 }
 
-void spiTransfer(uint8_t cmd, uint8_t* rx_data, uint8_t rx_size)
+uint8_t spiTransfer(uint8_t cmd)
 {
-    numBytesExpected = rx_size;
-    rx_buffer_ptr = rx_data;
-
     while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE, EUSCI_B_SPI_TRANSMIT_INTERRUPT));
     EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, cmd);
     __bis_SR_register(LPM0_bits + GIE); // enable interrupts put in low power mode
 
-    // memcpy(rx_data, RX_buffer, rx_size/* TODO MIN(RX_BUFFER_SIZE, rx_size)*/);
+    
+    return RX_Data;
+
 }
 
-void readUniqueId(uint8_t id_buffer[4])
+void readUniqueId(uint8_t* uniqueId)
 {
     CS_LOW();
-    spiTransfer(READ_DEVICE_ID_CMD, id_buffer, 4);
+    spiTransfer(READ_DEVICE_ID_CMD);
+  
+    // Read the 4-byte response (32-bit Device ID register)
+    int8_t i;
+    for (i = 3; i >= 0; i--) {
+        uniqueId[i] = spiTransfer(0x00); // Send dummy byte to read each byte of the ID
+    }
 
     // Once we exit the interrupt we jump back here via __bic_SR_register_on_exit(LPM0_bits);
+    CS_HIGH();
+}
+
+uint8_t readMemoryArray() 
+{
+    CS_LOW(); // Select MRAM device
+    spiTransfer(Read_Memory_Array); // Send the Device ID command (usually 0x9F)
+
+    //address
+    spiTransfer(0x80);
+    spiTransfer(0xFF);
+    spiTransfer(0xFF);
+
+    uint8_t MemoryArray = spiTransfer(0x00);
+    CS_HIGH();
+
+    return MemoryArray;
+}
+
+void writeMemoryArray() 
+{
+    CS_LOW(); // Select MRAM device
+  
+    spiTransfer(Write_Memory_Array);
+    spiTransfer(0x80);
+    spiTransfer(0xFF);
+    spiTransfer(0xFF);
+    spiTransfer(0x19);
+
     CS_HIGH();
 }
 
@@ -153,27 +186,8 @@ void USCI_B0_ISR (void)
     switch (__even_in_range(UCB0IV, USCI_SPI_UCTXIFG))
     {
         case USCI_SPI_UCRXIFG:      // UCRXIFG
-            if (numBytesExpected <= 0) {
-                ISR_index = 0;
-                __bic_SR_register_on_exit(LPM0_bits);
-                return;
-            }
-
-            // //USCI_B0 TX buffer ready?
-            // while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE,
-            //             EUSCI_B_SPI_TRANSMIT_INTERRUPT));
-
-            // NOTE: we need to skip the first byte because it will always be zero
-            if (haveSeenFirstByte) {
-                rx_buffer_ptr[ISR_index] = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
-                numBytesExpected--;
-                ISR_index++;
-            }else{
-                haveSeenFirstByte = 1;
-            }
-
-            //Send next value
-            EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, 0x00);
+            RX_Data = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
+            __bic_SR_register_on_exit(LPM0_bits);
 
             //Delay between transmissions for slave to process information
             __delay_cycles(40);
