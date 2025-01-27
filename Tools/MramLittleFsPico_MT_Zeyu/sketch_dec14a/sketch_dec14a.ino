@@ -69,7 +69,7 @@ lfs_t lfs;
 lfs_file_t file;
 
 
-//This breaks something. How? good question
+
 int lfs_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size){
   uint32_t addr = NON_AUGMENTED_REG + (block * c->block_size) + off;
   MRAMread_cmd_addr(Read_Any_Reg, addr, buffer, size);
@@ -91,13 +91,14 @@ int lfs_sync(const struct lfs_config *c){
 }
 
 
-
+//This breaks something. How? good question
+/*
 struct lfs_config cfg = { 
   NULL, //Optional
   lfs_read, //.read
   lfs_write,  //.prog
   lfs_erase,  //.erase
-  lfs_sync, //.synce
+  lfs_sync, //.sync
   1,  //.read_size
   1,  //.write_size
   512,  //.block_size
@@ -105,18 +106,17 @@ struct lfs_config cfg = {
   -1, //.block_cycle
   64, //.cache_size
   16, //.lookahead_size
-  NULL, //Optional
-  NULL, //Optional
-  NULL, //Optional
-  NULL, //Optional
-  NULL, //Optional
-  NULL, //Optional
-  NULL, //Optional
-  NULL, //Optional
-  NULL  //Optional
+  -1, //compact_thresh
+  NULL, //*read_buffer
+  NULL, //*prog_buffer
+  NULL, //*lookahead_buffer
+  0, //name_max
+  0, //file_max
+  0, //attr_max
+  0, //matadata_max
+  0  //inline_max
 };
-
-
+*/
 
 
 
@@ -128,29 +128,26 @@ arduino::MbedSPI SPI0(MISO_PIN, MOSI_PIN, SCK_PIN);
 
 void setup() {
   // put your setup code here, to run once:
-
-  //Init LittleFS
-  
-  int err = lfs_mount(&lfs, &cfg);
-  if(err){
-    lfs_format(&lfs, &cfg);
-    lfs_mount(&lfs, &cfg);
-  }
-
-  
-
   Serial.begin(9600);
   Serial.println("Start");
   delay(100);
 
   initMRAM();
 
+  //Init LittleFS. Broken code so far.
+  /*
+  int err = lfs_mount(&lfs, &cfg);
+  if(err){
+    lfs_format(&lfs, &cfg);
+    lfs_mount(&lfs, &cfg);
+  }
+  */
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
 
-  /*
+  
   uint8_t readSerialNumber[8];
   uint8_t writeSerialNumber[8] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0};
 
@@ -166,9 +163,9 @@ void loop() {
   Serial.println();
 
   delay(1000);
-  */
   
   
+  /*
   uint32_t boot_count = 0;
   
   lfs_file_open(&lfs, &file, "boot_count", LFS_O_RDWR | LFS_O_CREAT);
@@ -185,6 +182,7 @@ void loop() {
   Serial.print("boot count: ");
   Serial.println(boot_count);
   delay(1000);
+  */
   
 
   }
@@ -260,7 +258,7 @@ void MRAMwrite_cmd_data(uint8_t cmd, uint8_t* data, int arraySize){
 
 
 
-void MRAMwrite_cmd_addr_data(uint8_t cmd, uint32_t addr, const void* data, int size){
+void MRAMwrite_cmd_addr_data(uint8_t cmd, uint32_t addr, const void* data, lfs_size_t size){
   //Write to MRAM data housed at a specified Address
 
   //Retrieve 24 LSB
@@ -275,9 +273,6 @@ void MRAMwrite_cmd_addr_data(uint8_t cmd, uint32_t addr, const void* data, int s
   digitalWrite(CSn_PIN, LOW);
 
   SPI0.transfer(cmd); //Give instruction, then address, followed by data
-  //SPI0.transfer(0x00);
-  //SPI0.transfer(0x20);
-  //SPI0.transfer(0x00);
   for(int i = 0; i < 3; i++){
     SPI0.transfer(addr_byte[i]);
   }
@@ -301,7 +296,6 @@ void MRAMread_cmd(uint8_t cmd, uint8_t* data, int arraySize){
   digitalWrite(CSn_PIN, LOW);
 
   SPI0.transfer(cmd);
-  //delayMicroseconds(1);//Ensure chip received command
   //data = SPI0.transfer(0x00); //Dummy value to retrieve data
   for(int i = 0; i < arraySize; i++){
     data[i] = SPI0.transfer(0x00); //Dummy value to retrieve data
@@ -312,7 +306,7 @@ void MRAMread_cmd(uint8_t cmd, uint8_t* data, int arraySize){
 
 }
 
-void MRAMread_cmd_addr(uint8_t cmd, uint32_t addr, void* data, int size){
+void MRAMread_cmd_addr(uint8_t cmd, uint32_t addr, void* data, lfs_size_t size){
   //Read MRAM data where command does require a specified address
   //Retrieve 24 LSB
   //uint8_t addr_byte[] = {(addr & 0x00FF0000) >> 16, (addr & 0x0000FF00) >> 8, (addr & 0x000000FF)};
@@ -326,13 +320,9 @@ void MRAMread_cmd_addr(uint8_t cmd, uint32_t addr, void* data, int size){
   digitalWrite(CSn_PIN, LOW);
 
   SPI0.transfer(cmd);
-  //SPI0.transfer(0x00);
-  //SPI0.transfer(0x20);
-  //SPI0.transfer(0x00);
   for(int i = 0; i < 3; i++){
     SPI0.transfer(addr_byte[i]);
   }
-  //data = SPI0.transfer(0x00); //Dummy value to retrieve data
   for(int i = 0; i < size; i++){
     //SPI0.transfer(0x00); // DEBUG
     *((uint8_t*)data + i) = SPI0.transfer(0x00);
