@@ -79,7 +79,8 @@
 
 void main(void)
 {
-    initSPI();
+    uint32_t clockSpeed = 10000;
+    initSPI(clockSpeed, SPI_MODE_ZERO);
 
     //Wait for slave to initialize
     __delay_cycles(100000);

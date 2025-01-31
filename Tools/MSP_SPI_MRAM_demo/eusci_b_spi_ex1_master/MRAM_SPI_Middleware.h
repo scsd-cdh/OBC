@@ -3,9 +3,16 @@
 #ifndef _MRAM_SPI_
 #define _MRAM_SPI_
 
+typedef uint8_t SPI_Mode;
+enum {
+    SPI_MODE_ZERO = 0,
+    SPI_MODE_ONE = 1,
+    SPI_MODE_TWO = 2,
+};
+
 void CS_LOW();
 void CS_HIGH();
-void initSPI();
+void initSPI(uint32_t clockSpeed, SPI_Mode mode);
 uint8_t spiTransfer(uint8_t cmd);
 void readDeviceId(uint8_t deviceId[4]);
 uint8_t readMemoryArray(uint8_t addr[3]);

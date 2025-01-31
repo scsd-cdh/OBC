@@ -22,8 +22,9 @@ void CS_HIGH()
     GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN3);
 }
 
-// TODO: make flexible, allow different values to be set from function parameters 
-void initSPI()
+// TODO: Try to get the compiler to not compile when 'mode' out of bounds
+// Add pins as params as well
+void initSPI(uint32_t clockSpeed, SPI_Mode mode)
 {
     //Stop watchdog timer
     WDT_A_hold(WDT_A_BASE);
@@ -90,10 +91,17 @@ void initSPI()
     EUSCI_B_SPI_initMasterParam param = {0};
     param.selectClockSource = EUSCI_B_SPI_CLOCKSOURCE_SMCLK;
     param.clockSourceFrequency = CS_getSMCLK();
-    param.desiredSpiClock = 10000;
+    param.desiredSpiClock = clockSpeed;
     param.msbFirst = EUSCI_B_SPI_MSB_FIRST;
-    param.clockPhase = EUSCI_B_SPI_PHASE_DATA_CAPTURED_ONFIRST_CHANGED_ON_NEXT;
-    param.clockPolarity = EUSCI_B_SPI_CLOCKPOLARITY_INACTIVITY_LOW;
+    switch (mode) {
+    case SPI_MODE_ZERO:
+        param.clockPhase = EUSCI_B_SPI_PHASE_DATA_CAPTURED_ONFIRST_CHANGED_ON_NEXT;
+        param.clockPolarity = EUSCI_B_SPI_CLOCKPOLARITY_INACTIVITY_LOW;
+        break;
+        // TODO: Handle other cases. It's just a little confusing with how clockPhase works
+    default: break;
+    }
+
     param.spiMode = EUSCI_B_SPI_3PIN;
     EUSCI_B_SPI_initMaster(EUSCI_B0_BASE, &param);
 
