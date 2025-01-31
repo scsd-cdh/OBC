@@ -84,12 +84,14 @@ void main(void)
     //Wait for slave to initialize
     __delay_cycles(100000);
     uint8_t buffer[4];
-    readUniqueId(buffer);
+    readDeviceId(buffer);
 
     writeMemoryEn();
-    writeMemoryArray();
+    uint8_t addr[3] = {0xFF, 0xFF, 0x80};
+    uint8_t value = 0x19;
+    writeMemoryArray(addr, value);
     volatile uint8_t ret;
-    ret = readMemoryArray();
+    ret = readMemoryArray(addr);
     
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
     __no_operation();                       // Remain in LPM0

@@ -10,14 +10,9 @@
 #define Write_Memory_Disable 0x04  // Command to Write Memory Disable (typical for MRAM)
 #define RX_BUFFER_SIZE 128
 
-static volatile int8_t numBytesExpected = 0;
-
-static volatile uint8_t device_id[4] = {0};
 // FIXME: disgusting 
 static volatile uint8_t RX_Data = 0;
-static volatile uint8_t haveSeenFirstByte = 0;
-static volatile uint8_t originalNumBytes = 0;
-static volatile uint8_t ISR_index = 0;
+
 
 void CS_LOW()
 {
@@ -114,7 +109,8 @@ void initSPI()
         EUSCI_B_SPI_RECEIVE_INTERRUPT);
 }
 
-void writeMemoryEn(){
+void writeMemoryEn()
+{
     CS_LOW();
     spiTransfer(Write_Memory_Enable);
     CS_HIGH();
@@ -130,7 +126,7 @@ uint8_t spiTransfer(uint8_t cmd)
 
 }
 
-void readUniqueId(uint8_t uniqueId[4])
+void readDeviceId(uint8_t deviceId[4])
 {
     CS_LOW();
     spiTransfer(READ_DEVICE_ID_CMD);
@@ -138,22 +134,22 @@ void readUniqueId(uint8_t uniqueId[4])
     // Read the 4-byte response (32-bit Device ID register)
     int8_t i;
     for (i = 0; i < 4; ++i) {
-        uniqueId[i] = spiTransfer(0x00); // Send dummy byte to read each byte of the ID
+        deviceId[i] = spiTransfer(0x00); // Send dummy byte to read each byte of the ID
     }
 
     // Once we exit the interrupt we jump back here via __bic_SR_register_on_exit(LPM0_bits);
     CS_HIGH();
 }
 
-uint8_t readMemoryArray() 
+uint8_t readMemoryArray(uint8_t addr[3])
 {
     CS_LOW(); // Select MRAM device
     spiTransfer(Read_Memory_Array); // Send the Device ID command (usually 0x9F)
 
     //address
-    spiTransfer(0x80);
-    spiTransfer(0xFF);
-    spiTransfer(0xFF);
+    spiTransfer(addr[0]);
+    spiTransfer(addr[1]);
+    spiTransfer(addr[2]);
 
     uint8_t MemoryArray = spiTransfer(0x00);
     CS_HIGH();
@@ -161,15 +157,15 @@ uint8_t readMemoryArray()
     return MemoryArray;
 }
 
-void writeMemoryArray() 
+void writeMemoryArray(uint8_t addr[3], uint8_t value)
 {
     CS_LOW(); // Select MRAM device
   
     spiTransfer(Write_Memory_Array);
-    spiTransfer(0x80);
-    spiTransfer(0xFF);
-    spiTransfer(0xFF);
-    spiTransfer(0x19);
+    spiTransfer(addr[0]);
+    spiTransfer(addr[1]);
+    spiTransfer(addr[2]);
+    spiTransfer(value);
 
     CS_HIGH();
 }
