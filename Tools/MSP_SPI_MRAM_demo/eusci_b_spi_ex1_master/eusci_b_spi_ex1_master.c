@@ -83,8 +83,8 @@ void main(void)
 
     //Wait for slave to initialize
     __delay_cycles(100000);
-    uint32_t buffer;
-    readUniqueId((uint8_t*) &buffer);
+    uint8_t buffer[4];
+    readUniqueId(buffer);
 
     writeMemoryEn();
     writeMemoryArray();

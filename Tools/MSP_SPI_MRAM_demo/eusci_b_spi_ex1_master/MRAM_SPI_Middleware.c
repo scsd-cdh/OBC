@@ -126,19 +126,18 @@ uint8_t spiTransfer(uint8_t cmd)
     EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, cmd);
     __bis_SR_register(LPM0_bits + GIE); // enable interrupts put in low power mode
 
-    
     return RX_Data;
 
 }
 
-void readUniqueId(uint8_t* uniqueId)
+void readUniqueId(uint8_t uniqueId[4])
 {
     CS_LOW();
     spiTransfer(READ_DEVICE_ID_CMD);
   
     // Read the 4-byte response (32-bit Device ID register)
     int8_t i;
-    for (i = 3; i >= 0; i--) {
+    for (i = 0; i < 4; ++i) {
         uniqueId[i] = spiTransfer(0x00); // Send dummy byte to read each byte of the ID
     }
 
