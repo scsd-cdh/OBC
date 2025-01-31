@@ -88,7 +88,7 @@ void main(void)
 
     writeMemoryEn();
     writeMemoryArray();
-    uint8_t ret = 0;
+    volatile uint8_t ret;
     ret = readMemoryArray();
     
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
