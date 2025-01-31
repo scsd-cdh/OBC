@@ -4,15 +4,13 @@
 
 #define READ_DEVICE_ID_CMD 0x9F  // Command to read device ID (typical for MRAM)
 #define READ_UNIQUE_ID_CMD 0x4C  // Command to read unique ID (typical for MRAM)
-#define Read_Memory_Array 0x03  // Command to Read Memory Array (typical for MRAM)
-#define Write_Memory_Array 0x02  // Command to Write Memory Array (typical for MRAM)
-#define Write_Memory_Enable 0x06  // Command to Write Memory Enable (typical for MRAM)
-#define Write_Memory_Disable 0x04  // Command to Write Memory Disable (typical for MRAM)
+#define READ_MEMORY_ARRAY 0x03  // Command to Read Memory Array (typical for MRAM)
+#define WRITE_MEMORY_ARRAY 0x02  // Command to Write Memory Array (typical for MRAM)
+#define WRITE_MEMORY_ENABLE 0x06  // Command to Write Memory Enable (typical for MRAM)
+#define WRITE_MEMORY_DISABLE 0x04  // Command to Write Memory Disable (typical for MRAM)
 #define RX_BUFFER_SIZE 128
 
-// FIXME: disgusting 
 static volatile uint8_t RX_Data = 0;
-
 
 void CS_LOW()
 {
@@ -112,7 +110,7 @@ void initSPI()
 void writeMemoryEn()
 {
     CS_LOW();
-    spiTransfer(Write_Memory_Enable);
+    spiTransfer(WRITE_MEMORY_ENABLE);
     CS_HIGH();
 }
 
@@ -126,6 +124,8 @@ uint8_t spiTransfer(uint8_t cmd)
 
 }
 
+// NOTE: deviceId might be able to be a uint32_t, but I'm finding it confusing at the moment how the MSP handles uint32_t.
+// Potential refactor in the future...
 void readDeviceId(uint8_t deviceId[4])
 {
     CS_LOW();
@@ -144,7 +144,7 @@ void readDeviceId(uint8_t deviceId[4])
 uint8_t readMemoryArray(uint8_t addr[3])
 {
     CS_LOW(); // Select MRAM device
-    spiTransfer(Read_Memory_Array); // Send the Device ID command (usually 0x9F)
+    spiTransfer(READ_MEMORY_ARRAY); // Send the Device ID command (usually 0x9F)
 
     //address
     spiTransfer(addr[0]);
@@ -157,11 +157,13 @@ uint8_t readMemoryArray(uint8_t addr[3])
     return MemoryArray;
 }
 
+// NOTE: Same idea here, we might want to condence addr and value into one uint32_t if allowed
+// Just don't totally trust it atm
 void writeMemoryArray(uint8_t addr[3], uint8_t value)
 {
     CS_LOW(); // Select MRAM device
   
-    spiTransfer(Write_Memory_Array);
+    spiTransfer(WRITE_MEMORY_ARRAY);
     spiTransfer(addr[0]);
     spiTransfer(addr[1]);
     spiTransfer(addr[2]);
