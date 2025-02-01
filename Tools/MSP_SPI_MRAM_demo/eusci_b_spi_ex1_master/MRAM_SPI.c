@@ -1,5 +1,7 @@
 #include "driverlib.h"
+
 #include <stddef.h>
+#include <stdio.h>
 #include "MRAM_SPI.h"
 
 #define READ_DEVICE_ID_CMD      0x9F  // Command to read device ID (typical for MRAM)
@@ -138,15 +140,15 @@ void MRAM_readDeviceId(uint8_t deviceId[4])
     CS_HIGH();
 }
 
-uint8_t MRAM_readMemoryArray(uint8_t addr[3])
+uint8_t MRAM_readMemoryArray(uint32_t addr)
 {
     CS_LOW(); // Select MRAM device
     SPI_transfer(READ_MEMORY_ARRAY); // Send the Memory Array read command
 
     // Address
-    SPI_transfer(addr[0]);
-    SPI_transfer(addr[1]);
-    SPI_transfer(addr[2]);
+    SPI_transfer((addr >> 16) & 0xFF);
+    SPI_transfer((addr >> 8) & 0xFF);
+    SPI_transfer(addr & 0xFF);
 
     uint8_t memoryArray = SPI_transfer(0x00);
     CS_HIGH();
@@ -156,17 +158,19 @@ uint8_t MRAM_readMemoryArray(uint8_t addr[3])
 
 // NOTE: Same idea here, we might want to condense addr and value into one uint32_t if allowed
 // Just don't totally trust it atm
-void MRAM_writeMemoryArray(uint8_t addr[3], uint8_t value)
+MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t value)
 {
     CS_LOW(); // Select MRAM device
 
     SPI_transfer(WRITE_MEMORY_ARRAY);
-    SPI_transfer(addr[0]);
-    SPI_transfer(addr[1]);
-    SPI_transfer(addr[2]);
+    SPI_transfer((addr >> 16) & 0xFF);
+    SPI_transfer((addr >> 8) & 0xFF);
+    SPI_transfer(addr & 0xFF);
     SPI_transfer(value);
 
     CS_HIGH();
+
+    return MRAM_ERR_OK;
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)

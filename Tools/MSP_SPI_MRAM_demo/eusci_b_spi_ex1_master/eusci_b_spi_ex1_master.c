@@ -76,6 +76,7 @@
 #include "driverlib.h"
 #include "MRAM_SPI.h"
 #include <stdint.h>
+#include <stddef.h>
 
 void main(void)
 {
@@ -88,12 +89,13 @@ void main(void)
     MRAM_readDeviceId(buffer);
 
     MRAM_writeMemoryEn();
-    uint8_t addr[3] = {0xFF, 0xFF, 0x80};
+    uint32_t addr = 0x0000000F;
     uint8_t value = 0x19;
-    MRAM_writeMemoryArray(addr, value);
+    MRAM_writeMemoryEn();
+    volatile MRAM_ErrorCode err = MRAM_writeMemoryArray(addr, value);
     volatile uint8_t ret;
     ret = MRAM_readMemoryArray(addr);
-    
+
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
     __no_operation();                       // Remain in LPM0
 }

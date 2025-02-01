@@ -14,11 +14,18 @@
 #define GPIO_PIN_17 ((GPIO_PORT_P1 << 8) | GPIO_PIN7)
 #define GPIO_PIN_22 ((GPIO_PORT_P2 << 8) | GPIO_PIN2)
 
-
 #define DEFAULT_CS_PIN GPIO_PIN_13
 #define DEFAULT_MOSI_PIN GPIO_PIN_16
 #define DEFAULT_MISO_PIN GPIO_PIN_17 
 #define DEFAULT_SCLK_PIN GPIO_PIN_22
+
+typedef uint8_t MRAM_ErrorCode;
+enum {
+    MRAM_ERR_OK = 0,
+    MRAM_ERR_BAD_PARAM,
+    MRAM_ERR_WRITE_BLOCK_PROTECTION_ENABLED,
+    MRAM_ERR_WRITE_PROTECTION_ENABLED,
+};
 
 
 typedef uint8_t SPI_Mode;
@@ -37,8 +44,8 @@ uint8_t SPI_transfer(uint8_t byte);
 
 // MRAM-specific functions:
 void MRAM_readDeviceId(uint8_t deviceId[4]);
-uint8_t MRAM_readMemoryArray(uint8_t addr[3]);
-void MRAM_writeMemoryArray(uint8_t addr[3], uint8_t value);
+uint8_t MRAM_readMemoryArray(uint32_t addr);
+MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t value);
 void MRAM_writeMemoryEn();
 
 #endif  // _MRAM_SPI_
