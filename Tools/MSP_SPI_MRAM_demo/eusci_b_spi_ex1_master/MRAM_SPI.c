@@ -181,10 +181,9 @@ void USCI_B0_ISR(void)
     {
         case USCI_SPI_UCRXIFG:      // UCRXIFG
             rxData = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
-            __bic_SR_register_on_exit(LPM0_bits);
-
             // Delay between transmissions for slave to process information
             __delay_cycles(40);
+            __bic_SR_register_on_exit(LPM0_bits);
             break;
         default:
             break;
