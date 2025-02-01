@@ -10,6 +10,8 @@
 #define WRITE_MEMORY_ARRAY      0x02  // Command to Write Memory Array (typical for MRAM)
 #define WRITE_MEMORY_ENABLE     0x06  // Command to Write Memory Enable (typical for MRAM)
 #define WRITE_MEMORY_DISABLE    0x04  // Command to Write Memory Disable (typical for MRAM)
+#define READ_STATUS_REGISTER    0x05  // Command to Read Status Register
+#define WRITE_STATUS_REGISTER   0x01  // Command to Read Status Register
 #define RX_BUFFER_SIZE          128
 
 static volatile uint8_t rxData = 0;
@@ -117,10 +119,39 @@ void SPI_init(uint32_t clockSpeed, SPI_Mode mode, uint16_t CS_pin, uint16_t SCLK
     EUSCI_B_SPI_enableInterrupt(EUSCI_B0_BASE, EUSCI_B_SPI_RECEIVE_INTERRUPT);
 }
 
+void MRAM_writeStatusRegister(uint8_t status)
+{
+    CS_LOW();
+    SPI_transfer(WRITE_STATUS_REGISTER);
+    SPI_transfer(status);
+    CS_HIGH();
+}
+
+
+MRAM_ErrorCode MRAM_readStatusRegister(uint8_t* status)
+{
+    if (status == NULL) {
+        return MRAM_ERR_BAD_PARAM;
+    }
+    CS_LOW();
+    SPI_transfer(READ_STATUS_REGISTER);
+    *status = SPI_transfer(0x00);
+    CS_HIGH();
+
+    return MRAM_ERR_OK;
+}
+
 void MRAM_writeMemoryEn()
 {
     CS_LOW();
     SPI_transfer(WRITE_MEMORY_ENABLE);
+    CS_HIGH();
+}
+
+void MRAM_writeMemoryDisable()
+{
+    CS_LOW();
+    SPI_transfer(WRITE_MEMORY_DISABLE);
     CS_HIGH();
 }
 
@@ -156,10 +187,78 @@ uint8_t MRAM_readMemoryArray(uint32_t addr)
     return memoryArray;
 }
 
+typedef struct {
+    bool allProtected;
+    bool noneProtected;
+    uint32_t lowerBound;
+    uint32_t upperBound;
+} MRAM_StatusInfo;
+
+static void initStatusInfo(MRAM_StatusInfo* info) 
+{
+    info->allProtected = 0;
+    info->noneProtected = 0;
+    info->lowerBound = 0;
+    info->upperBound = 0;
+}
+
+static MRAM_StatusInfo MRAM_parseProtectedBlock(uint8_t statusRegister)
+{
+    MRAM_StatusInfo info;
+    initStatusInfo(&info);
+    // Top/Bottom
+    volatile uint8_t TB = (statusRegister & 0b00100000) >> 5;
+    // Block Protected Bits
+    volatile uint8_t BP = (statusRegister & 0b00011100) >> 2;
+    volatile uint8_t fraction = 1 << (7 - BP);
+
+    if (BP == 0) {
+        info.noneProtected = 1;
+        return info;
+    } 
+    
+    if (BP == 0x07) {
+        info.allProtected = 1;
+        return info;
+    }
+
+    uint32_t numAddresses = MRAM_MAX_ADDRESS / fraction;
+    // We're in the upper half 
+    if (TB == 0) {
+        info.upperBound = MRAM_MAX_ADDRESS;
+        info.lowerBound = MRAM_MAX_ADDRESS - numAddresses;
+    } else {
+        info.lowerBound = 0x00000;
+        info.upperBound = numAddresses;
+    }
+    
+    return info;
+}
+
 // NOTE: Same idea here, we might want to condense addr and value into one uint32_t if allowed
 // Just don't totally trust it atm
 MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t value)
 {
+    uint8_t statusRegister = 0;
+    MRAM_ErrorCode statusErr = MRAM_readStatusRegister(&statusRegister);
+    if (statusErr != MRAM_ERR_OK) {
+        return statusErr;
+    }
+
+    // Write protection enabled 
+    if (!(statusRegister & 0x02)) {
+        return MRAM_ERR_WRITE_PROTECTION_ENABLED;
+    }
+
+    MRAM_StatusInfo info = MRAM_parseProtectedBlock(statusRegister);
+    if (info.allProtected) {
+        return MRAM_ERR_WRITE_BLOCK_PROTECTION_ENABLED;
+    }
+
+    if (!info.noneProtected && addr >= info.lowerBound && addr <= info.upperBound) {
+        return MRAM_ERR_WRITE_BLOCK_PROTECTION_ENABLED;
+    }
+    
     CS_LOW(); // Select MRAM device
 
     SPI_transfer(WRITE_MEMORY_ARRAY);

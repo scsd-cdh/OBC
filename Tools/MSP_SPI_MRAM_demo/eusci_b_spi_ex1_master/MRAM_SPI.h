@@ -3,6 +3,9 @@
 #ifndef _MRAM_SPI_
 #define _MRAM_SPI_
 
+
+#define MRAM_MAX_ADDRESS 0x3FFFFF 
+
 // Store port in the first byte and pin in the second. 
 // This is fine for now, however there are 3 byte+ pins defined in driverlib. 
 // I don't personally see them on the launchboard 
@@ -43,9 +46,13 @@ void SPI_init(uint32_t clockSpeed, SPI_Mode mode, uint16_t CS_pin, uint16_t SCLK
 uint8_t SPI_transfer(uint8_t byte);
 
 // MRAM-specific functions:
+MRAM_ErrorCode MRAM_readStatusRegister(uint8_t* status);
+void MRAM_writeStatusRegister(uint8_t status);
 void MRAM_readDeviceId(uint8_t deviceId[4]);
 uint8_t MRAM_readMemoryArray(uint32_t addr);
 MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t value);
 void MRAM_writeMemoryEn();
+void MRAM_writeMemoryDisable();
+MRAM_ErrorCode MRAM_parseStatusRegister();
 
 #endif  // _MRAM_SPI_

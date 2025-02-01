@@ -89,6 +89,16 @@ void main(void)
     MRAM_readDeviceId(buffer);
 
     MRAM_writeMemoryEn();
+
+    MRAM_writeStatusRegister(0b11000110);
+
+    // NOT sure why but if you don't enable write memory immediately before calling readStatusRegister
+    // The WREN bit is 0 in the status register. If for example you write in between and don't call
+    // write enable again then the bit goes back to zero. Look into this later
+    MRAM_writeMemoryEn();
+    uint8_t statusRegister = 0;
+    volatile MRAM_ErrorCode statusRegisterErr = MRAM_readStatusRegister(&statusRegister);
+
     uint32_t addr = 0x0000000F;
     uint8_t value = 0x19;
     MRAM_writeMemoryEn();
