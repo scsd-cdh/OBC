@@ -80,7 +80,7 @@
 void main(void)
 {
     uint32_t clockSpeed = 10000;
-    SPI_init(clockSpeed, SPI_MODE_ZERO);
+    SPI_init(clockSpeed, SPI_MODE_ZERO, DEFAULT_CS_PIN, DEFAULT_SCLK_PIN, DEFAULT_MOSI_PIN, DEFAULT_MISO_PIN);
 
     //Wait for slave to initialize
     __delay_cycles(100000);

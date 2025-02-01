@@ -3,6 +3,24 @@
 #ifndef _MRAM_SPI_
 #define _MRAM_SPI_
 
+// Store port in the first byte and pin in the second. 
+// This is fine for now, however there are 3 byte+ pins defined in driverlib. 
+// I don't personally see them on the launchboard 
+// TODO: Support all GPIO pins
+#define GPIO_PIN_13 ((GPIO_PORT_P1 << 8) | GPIO_PIN3)
+#define GPIO_PIN_14 ((GPIO_PORT_P1 << 8) | GPIO_PIN4)
+#define GPIO_PIN_15 ((GPIO_PORT_P1 << 8) | GPIO_PIN5)
+#define GPIO_PIN_16 ((GPIO_PORT_P1 << 8) | GPIO_PIN6)
+#define GPIO_PIN_17 ((GPIO_PORT_P1 << 8) | GPIO_PIN7)
+#define GPIO_PIN_22 ((GPIO_PORT_P2 << 8) | GPIO_PIN2)
+
+
+#define DEFAULT_CS_PIN GPIO_PIN_13
+#define DEFAULT_MOSI_PIN GPIO_PIN_16
+#define DEFAULT_MISO_PIN GPIO_PIN_17 
+#define DEFAULT_SCLK_PIN GPIO_PIN_22
+
+
 typedef uint8_t SPI_Mode;
 enum {
     SPI_MODE_ZERO = 0,
@@ -14,7 +32,7 @@ void CS_LOW();
 void CS_HIGH();
 
 // SPI-specific functions:
-void SPI_init(uint32_t clockSpeed, SPI_Mode mode);
+void SPI_init(uint32_t clockSpeed, SPI_Mode mode, uint16_t CS_pin, uint16_t SCLK_pin, uint16_t MOSI_pin, uint16_t MISO_pin);
 uint8_t SPI_transfer(uint8_t cmd);
 
 // MRAM-specific functions:

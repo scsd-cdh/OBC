@@ -33,7 +33,7 @@ uint8_t SPI_transfer(uint8_t cmd)
 
 // TODO: Try to get the compiler to not compile when 'mode' out of bounds
 // Add pins as params as well
-void SPI_init(uint32_t clockSpeed, SPI_Mode mode)
+void SPI_init(uint32_t clockSpeed, SPI_Mode mode, uint16_t CS_pin, uint16_t SCLK_pin, uint16_t MOSI_pin, uint16_t MISO_pin)
 {
     //Stop watchdog timer
     WDT_A_hold(WDT_A_BASE);
@@ -42,20 +42,16 @@ void SPI_init(uint32_t clockSpeed, SPI_Mode mode)
      * Select Port 1
      * Set Pin 0 as output
      */
-    GPIO_setAsOutputPin(
-        GPIO_PORT_P1,
-        GPIO_PIN0
-    );
+   GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
     /*
      * Select Port 1
      * Set Pin 0 to output Low.
      */
-    GPIO_setOutputLowOnPin(
-        GPIO_PORT_P1,
-        GPIO_PIN0
-    );
+    GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
 
-    GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN3);  // CS pin
+    uint16_t CS_port = CS_pin >> 8;
+    uint16_t CS_pinNumber = CS_pin & 0xFF;
+    GPIO_setAsOutputPin(CS_port, CS_pinNumber);  // CS pin
     CS_HIGH();  // Initialize CS pin high
 
     //Set DCO frequency to max DCO setting
@@ -64,30 +60,25 @@ void SPI_init(uint32_t clockSpeed, SPI_Mode mode)
     CS_initClockSignal(CS_SMCLK, CS_DCOCLK_SELECT, CS_CLOCK_DIVIDER_1);
 
     /*
-     * Select Port 2
-     * Set Pin 2 to input Secondary Module Function, (UCB0CLK).
+     * Select Port 
+     * Set Pin to input Secondary Module Function, (UCB0CLK).
      */
-    GPIO_setAsPeripheralModuleFunctionInputPin(
-        GPIO_PORT_P2,
-        GPIO_PIN2,
-        GPIO_SECONDARY_MODULE_FUNCTION
-    );
+    uint16_t SCLK_port = SCLK_pin >> 8;
+    uint16_t SCLK_pinNumber = SCLK_pin & 0xFF;
+    GPIO_setAsPeripheralModuleFunctionInputPin(SCLK_port, SCLK_pinNumber, GPIO_SECONDARY_MODULE_FUNCTION);
 
     /*
-     * Select Port 1
-     * Set Pin 6, 7 to input Secondary Module Function, (UCB0TXD/UCB0SIMO, UCB0RXD/UCB0SOMI).
+     * Select Ports 
+     * Set Pins to input Secondary Module Function, (UCB0TXD/UCB0SIMO, UCB0RXD/UCB0SOMI).
      */
-    GPIO_setAsPeripheralModuleFunctionInputPin(
-        GPIO_PORT_P1,
-        GPIO_PIN7,
-        GPIO_SECONDARY_MODULE_FUNCTION
-    );
+    uint16_t MOSI_port = MOSI_pin >> 8;
+    uint16_t MOSI_pinNumber = MOSI_pin & 0xFF;
+    GPIO_setAsPeripheralModuleFunctionInputPin(MOSI_port, MOSI_pinNumber, GPIO_SECONDARY_MODULE_FUNCTION);
 
-    GPIO_setAsPeripheralModuleFunctionInputPin(
-        GPIO_PORT_P1,
-        GPIO_PIN6,
-        GPIO_SECONDARY_MODULE_FUNCTION
-    );
+    uint16_t MISO_port = MISO_pin >> 8;
+    uint16_t MISO_pinNumber = MISO_pin & 0xFF;
+    GPIO_setAsPeripheralModuleFunctionInputPin(MISO_port, MISO_pinNumber, GPIO_SECONDARY_MODULE_FUNCTION);
+
 
     /*
      * Disable the GPIO power-on default high-impedance mode to activate
