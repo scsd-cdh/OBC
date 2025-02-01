@@ -11,21 +11,23 @@
 #define RX_BUFFER_SIZE          128
 
 static volatile uint8_t rxData = 0;
+// File constrained global for now. We may want a context struct in the future for encapsulation
+static uint16_t SPI_CS_pin = 0;
 
 void CS_LOW()
 {
-    GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN3);
+    GPIO_setOutputLowOnPin((SPI_CS_pin >> 8), (SPI_CS_pin & 0xFF));
 }
 
 void CS_HIGH()
 {
-    GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN3);
+    GPIO_setOutputHighOnPin((SPI_CS_pin >> 8), (SPI_CS_pin & 0xFF));
 }
 
-uint8_t SPI_transfer(uint8_t cmd)
+uint8_t SPI_transfer(uint8_t byte)
 {
     while (!EUSCI_B_SPI_getInterruptStatus(EUSCI_B0_BASE, EUSCI_B_SPI_TRANSMIT_INTERRUPT));
-    EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, cmd);
+    EUSCI_B_SPI_transmitData(EUSCI_B0_BASE, byte);
     __bis_SR_register(LPM0_bits + GIE); // enable interrupts and put in low power mode
 
     return rxData;
@@ -35,6 +37,7 @@ uint8_t SPI_transfer(uint8_t cmd)
 // Add pins as params as well
 void SPI_init(uint32_t clockSpeed, SPI_Mode mode, uint16_t CS_pin, uint16_t SCLK_pin, uint16_t MOSI_pin, uint16_t MISO_pin)
 {
+    SPI_CS_pin = CS_pin;
     //Stop watchdog timer
     WDT_A_hold(WDT_A_BASE);
 
@@ -132,7 +135,6 @@ void MRAM_readDeviceId(uint8_t deviceId[4])
         deviceId[i] = SPI_transfer(0x00); // Send dummy byte to read each byte of the ID
     }
 
-    // Once we exit the interrupt we jump back here via __bic_SR_register_on_exit(LPM0_bits);
     CS_HIGH();
 }
 

@@ -33,7 +33,7 @@ void CS_HIGH();
 
 // SPI-specific functions:
 void SPI_init(uint32_t clockSpeed, SPI_Mode mode, uint16_t CS_pin, uint16_t SCLK_pin, uint16_t MOSI_pin, uint16_t MISO_pin);
-uint8_t SPI_transfer(uint8_t cmd);
+uint8_t SPI_transfer(uint8_t byte);
 
 // MRAM-specific functions:
 void MRAM_readDeviceId(uint8_t deviceId[4]);
