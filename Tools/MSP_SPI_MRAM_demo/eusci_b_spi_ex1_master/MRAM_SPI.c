@@ -171,8 +171,22 @@ void MRAM_readDeviceId(uint8_t deviceId[4])
     CS_HIGH();
 }
 
-uint8_t MRAM_readMemoryArray(uint32_t addr)
+/*
+ * The entire memory array can be read from or written to using a single read or write instruction.  
+ * After the starting address is entered, subsequent address are internally incremented as long as CS ̅̅̅̅ is Low and CLK 
+ * continues toggling. 
+ */
+
+MRAM_ErrorCode MRAM_readMemoryArray(uint32_t addr, uint8_t* buffer, size_t length)
 {
+    if (addr + length > MRAM_MAX_ADDRESS) {
+        return MRAM_ERR_OUT_OF_BOUNDS;
+    }
+
+    if (buffer == NULL) {
+        return MRAM_ERR_BAD_PARAM;
+    }
+
     CS_LOW(); // Select MRAM device
     SPI_transfer(READ_MEMORY_ARRAY); // Send the Memory Array read command
 
@@ -181,10 +195,14 @@ uint8_t MRAM_readMemoryArray(uint32_t addr)
     SPI_transfer((addr >> 8) & 0xFF);
     SPI_transfer(addr & 0xFF);
 
-    uint8_t memoryArray = SPI_transfer(0x00);
+    size_t i;
+    for (i = 0; i < length; ++i) {
+        buffer[i] = SPI_transfer(0x00);
+    }
+
     CS_HIGH();
 
-    return memoryArray;
+    return MRAM_ERR_OK;
 }
 
 typedef struct {
@@ -207,10 +225,9 @@ static MRAM_StatusInfo MRAM_parseProtectedBlock(uint8_t statusRegister)
     MRAM_StatusInfo info;
     initStatusInfo(&info);
     // Top/Bottom
-    volatile uint8_t TB = (statusRegister & 0b00100000) >> 5;
+    uint8_t TB = (statusRegister & 0b00100000) >> 5;
     // Block Protected Bits
-    volatile uint8_t BP = (statusRegister & 0b00011100) >> 2;
-    volatile uint8_t fraction = 1 << (7 - BP);
+    uint8_t BP = (statusRegister & 0b00011100) >> 2;
 
     if (BP == 0) {
         info.noneProtected = 1;
@@ -222,6 +239,7 @@ static MRAM_StatusInfo MRAM_parseProtectedBlock(uint8_t statusRegister)
         return info;
     }
 
+    uint8_t fraction = 1 << (7 - BP);
     uint32_t numAddresses = MRAM_MAX_ADDRESS / fraction;
     // We're in the upper half 
     if (TB == 0) {
@@ -235,28 +253,37 @@ static MRAM_StatusInfo MRAM_parseProtectedBlock(uint8_t statusRegister)
     return info;
 }
 
-// NOTE: Same idea here, we might want to condense addr and value into one uint32_t if allowed
-// Just don't totally trust it atm
-MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t value)
+MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t* buffer, size_t length)
 {
+    if (addr + length > MRAM_MAX_ADDRESS) {
+        return MRAM_ERR_OUT_OF_BOUNDS;
+    }
+
+    if (buffer == NULL) {
+        return MRAM_ERR_BAD_PARAM;
+    }
+
+    // Handle write protection
     uint8_t statusRegister = 0;
     MRAM_ErrorCode statusErr = MRAM_readStatusRegister(&statusRegister);
     if (statusErr != MRAM_ERR_OK) {
         return statusErr;
     }
 
-    // Write protection enabled 
+    // User forgot to enable write before calling
     if (!(statusRegister & 0x02)) {
         return MRAM_ERR_WRITE_PROTECTION_ENABLED;
     }
 
     MRAM_StatusInfo info = MRAM_parseProtectedBlock(statusRegister);
-    if (info.allProtected) {
-        return MRAM_ERR_WRITE_BLOCK_PROTECTION_ENABLED;
-    }
-
-    if (!info.noneProtected && addr >= info.lowerBound && addr <= info.upperBound) {
-        return MRAM_ERR_WRITE_BLOCK_PROTECTION_ENABLED;
+    if (!info.noneProtected) {
+        // Attempting to write some portion of the data to protected memory
+        bool lowerProtected = info.lowerBound == 0x00000000;
+        bool writingToLowerProtectedBlock = lowerProtected && addr <= info.upperBound;
+        bool writingToHigherProtectedBlock = !lowerProtected && addr + length >= info.lowerBound;
+        if (info.allProtected || writingToLowerProtectedBlock || writingToHigherProtectedBlock) {
+            return MRAM_ERR_WRITE_BLOCK_PROTECTION_ENABLED;
+        }
     }
     
     CS_LOW(); // Select MRAM device
@@ -265,7 +292,11 @@ MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t value)
     SPI_transfer((addr >> 16) & 0xFF);
     SPI_transfer((addr >> 8) & 0xFF);
     SPI_transfer(addr & 0xFF);
-    SPI_transfer(value);
+
+    size_t i;
+    for (i = 0; i < length; ++i) {
+        SPI_transfer(buffer[i]);
+    }
 
     CS_HIGH();
 

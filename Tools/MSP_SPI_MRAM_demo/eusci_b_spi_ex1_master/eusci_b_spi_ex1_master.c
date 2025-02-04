@@ -77,6 +77,9 @@
 #include "MRAM_SPI.h"
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
+
+#define LENGTH 255
 
 void main(void)
 {
@@ -85,26 +88,35 @@ void main(void)
 
     //Wait for slave to initialize
     __delay_cycles(100000);
+   
     uint8_t buffer[4];
     MRAM_readDeviceId(buffer);
 
+   /* P28 Datasheet: 
+    * In normal operational mode, Write instructions must be preceded by the WREN command.  
+    * WREN command sets the WREN bit in the Status register. WREN bit is reset at the end of every Write instruction.  
+    * WREN bit can also be reset by executing the WRDI command. 
+    */  
     MRAM_writeMemoryEn();
-
     MRAM_writeStatusRegister(0b11000110);
 
-    // NOT sure why but if you don't enable write memory immediately before calling readStatusRegister
-    // The WREN bit is 0 in the status register. If for example you write in between and don't call
-    // write enable again then the bit goes back to zero. Look into this later
-    MRAM_writeMemoryEn();
+   
     uint8_t statusRegister = 0;
     volatile MRAM_ErrorCode statusRegisterErr = MRAM_readStatusRegister(&statusRegister);
 
-    uint32_t addr = 0x0000000F;
-    uint8_t value = 0x19;
+    uint32_t addr = 0x003F0000 - 0x0000000F;
+    uint8_t inBuffer[LENGTH];
+
+    size_t i;
+    for (i = 0; i < LENGTH; ++i) {
+        inBuffer[i] = i;
+    }
+
     MRAM_writeMemoryEn();
-    volatile MRAM_ErrorCode err = MRAM_writeMemoryArray(addr, value);
-    volatile uint8_t ret;
-    ret = MRAM_readMemoryArray(addr);
+    // MSP430 does not support VLAs so we have to do this
+    uint8_t outBuffer[LENGTH];
+    volatile MRAM_ErrorCode writeRet = MRAM_writeMemoryArray(addr, inBuffer, LENGTH);
+    volatile MRAM_ErrorCode readRet = MRAM_readMemoryArray(addr, outBuffer, LENGTH);
 
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
     __no_operation();                       // Remain in LPM0
