@@ -73,13 +73,16 @@
 //!
 //*****************************************************************************
 
+#include "crc.h"
 #include "driverlib.h"
 #include "MRAM_SPI.h"
+#include "msp430fr5969.h"
+#include "string.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
 
-#define LENGTH 255
+#define LENGTH 4
 
 void main(void)
 {
@@ -104,19 +107,22 @@ void main(void)
     uint8_t statusRegister = 0;
     volatile MRAM_ErrorCode statusRegisterErr = MRAM_readStatusRegister(&statusRegister);
 
-    uint32_t addr = 0x003F0000 - 0x0000000F;
-    uint8_t inBuffer[LENGTH];
+    uint32_t addr = 0xF;
 
+    const char* test = "123456789";
+    volatile uint16_t CRC_result = CRC_getResult(CRC_BASE);
+    
+    uint8_t inBuffer[9];
     size_t i;
-    for (i = 0; i < LENGTH; ++i) {
-        inBuffer[i] = i;
+    for (i = 0; i < 9; ++i) {
+        inBuffer[i] = test[i];
     }
 
     MRAM_writeMemoryEn();
     // MSP430 does not support VLAs so we have to do this
-    uint8_t outBuffer[LENGTH];
-    volatile MRAM_ErrorCode writeRet = MRAM_writeMemoryArray(addr, inBuffer, LENGTH);
-    volatile MRAM_ErrorCode readRet = MRAM_readMemoryArray(addr, outBuffer, LENGTH);
+    volatile MRAM_ErrorCode writeRet = MRAM_writeMemoryArray(addr, inBuffer, 9);
+    uint8_t outBuffer[9];
+    volatile MRAM_ErrorCode readRet = MRAM_readMemoryArray(addr, outBuffer, 9);
 
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
     __no_operation();                       // Remain in LPM0

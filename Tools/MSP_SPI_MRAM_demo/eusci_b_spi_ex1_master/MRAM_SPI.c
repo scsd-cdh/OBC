@@ -1,4 +1,6 @@
+#include "crc.h"
 #include "driverlib.h"
+#include "msp430fr5969.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -195,12 +197,23 @@ MRAM_ErrorCode MRAM_readMemoryArray(uint32_t addr, uint8_t* buffer, size_t lengt
     SPI_transfer((addr >> 8) & 0xFF);
     SPI_transfer(addr & 0xFF);
 
+    uint16_t seed = 0xFFFF;
+    CRC_setSeed(CRC_BASE, seed);
     size_t i;
     for (i = 0; i < length; ++i) {
         buffer[i] = SPI_transfer(0x00);
+        CRC_set8BitData(CRC_BASE, buffer[i]);
     }
+    uint16_t storedCRC = 0;
+    storedCRC |= (SPI_transfer(0x00) << 8);
+    storedCRC |= SPI_transfer(0x00);
 
     CS_HIGH();
+
+    uint16_t result = CRC_getResult(CRC_BASE);
+    if (storedCRC != result) {
+        return MRAM_ERR_BAD_CRC;
+    }
 
     return MRAM_ERR_OK;
 }
@@ -293,10 +306,17 @@ MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t* buffer, size_t leng
     SPI_transfer((addr >> 8) & 0xFF);
     SPI_transfer(addr & 0xFF);
 
+    uint16_t seed = 0xFFFF;
+    CRC_setSeed(CRC_BASE, seed);
     size_t i;
     for (i = 0; i < length; ++i) {
         SPI_transfer(buffer[i]);
+        CRC_set8BitData(CRC_BASE, buffer[i]);
     }
+    uint16_t CRC = CRC_getResult(CRC_BASE);
+
+    SPI_transfer((CRC >> 8) & 0xFF);
+    SPI_transfer(CRC & 0xFF);
 
     CS_HIGH();
 
