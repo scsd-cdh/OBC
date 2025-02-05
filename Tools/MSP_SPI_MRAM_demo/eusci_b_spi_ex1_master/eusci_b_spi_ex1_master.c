@@ -82,7 +82,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#define LENGTH 4
+#define LENGTH 9
 
 void main(void)
 {
@@ -103,26 +103,18 @@ void main(void)
     MRAM_writeMemoryEn();
     MRAM_writeStatusRegister(0b11000110);
 
-   
     uint8_t statusRegister = 0;
     volatile MRAM_ErrorCode statusRegisterErr = MRAM_readStatusRegister(&statusRegister);
 
     uint32_t addr = 0xF;
 
-    const char* test = "123456789";
-    volatile uint16_t CRC_result = CRC_getResult(CRC_BASE);
-    
-    uint8_t inBuffer[9];
-    size_t i;
-    for (i = 0; i < 9; ++i) {
-        inBuffer[i] = test[i];
-    }
+    const uint8_t* inBuffer = "123456789";
 
     MRAM_writeMemoryEn();
     // MSP430 does not support VLAs so we have to do this
-    volatile MRAM_ErrorCode writeRet = MRAM_writeMemoryArray(addr, inBuffer, 9);
-    uint8_t outBuffer[9];
-    volatile MRAM_ErrorCode readRet = MRAM_readMemoryArray(addr, outBuffer, 9);
+    volatile MRAM_ErrorCode writeRet = MRAM_writeMemoryArray(addr, inBuffer, LENGTH);
+    uint8_t outBuffer[LENGTH];
+    volatile MRAM_ErrorCode readRet = MRAM_readMemoryArray(addr, outBuffer, LENGTH);
 
     __bis_SR_register(LPM0_bits + GIE);      // CPU off, enable interrupts
     __no_operation();                       // Remain in LPM0

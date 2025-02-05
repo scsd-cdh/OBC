@@ -173,6 +173,43 @@ void MRAM_readDeviceId(uint8_t deviceId[4])
     CS_HIGH();
 }
 
+
+/* 
+ * Yes the validateBlockCRC and MRAM_readMemoryArray functions are almost identical  
+ */
+static MRAM_ErrorCode validateBlockCRC(uint32_t addr, size_t length)
+{
+    CS_LOW(); // Select MRAM device
+    SPI_transfer(READ_MEMORY_ARRAY); // Send the Memory Array read command
+
+    // Address
+    SPI_transfer((addr >> 16) & 0xFF);
+    SPI_transfer((addr >> 8) & 0xFF);
+    SPI_transfer(addr & 0xFF);
+
+    uint16_t seed = 0xFFFF;
+    CRC_setSeed(CRC_BASE, seed);
+    uint8_t byte = 0;
+    size_t i;
+    for (i = 0; i < length; ++i) {
+        byte = SPI_transfer(0x00);
+        CRC_set8BitData(CRC_BASE, byte);
+    }
+
+    uint16_t storedCRC = 0;
+    storedCRC |= (SPI_transfer(0x00) << 8);
+    storedCRC |= SPI_transfer(0x00);
+
+    CS_HIGH();
+
+    uint16_t result = CRC_getResult(CRC_BASE);
+    if (storedCRC != result) {
+        return MRAM_ERR_BAD_CRC;
+    }
+
+    return MRAM_ERR_OK;
+}
+
 /*
  * The entire memory array can be read from or written to using a single read or write instruction.  
  * After the starting address is entered, subsequent address are internally incremented as long as CS ̅̅̅̅ is Low and CLK 
@@ -266,7 +303,7 @@ static MRAM_StatusInfo MRAM_parseProtectedBlock(uint8_t statusRegister)
     return info;
 }
 
-MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t* buffer, size_t length)
+MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, const uint8_t* buffer, size_t length)
 {
     if (addr + length > MRAM_MAX_ADDRESS) {
         return MRAM_ERR_OUT_OF_BOUNDS;
@@ -278,9 +315,9 @@ MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t* buffer, size_t leng
 
     // Handle write protection
     uint8_t statusRegister = 0;
-    MRAM_ErrorCode statusErr = MRAM_readStatusRegister(&statusRegister);
-    if (statusErr != MRAM_ERR_OK) {
-        return statusErr;
+    MRAM_ErrorCode err = MRAM_readStatusRegister(&statusRegister);
+    if (err != MRAM_ERR_OK) {
+        return err;
     }
 
     // User forgot to enable write before calling
@@ -320,7 +357,9 @@ MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t* buffer, size_t leng
 
     CS_HIGH();
 
-    return MRAM_ERR_OK;
+    err = validateBlockCRC(addr, length);
+    
+    return err;
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)

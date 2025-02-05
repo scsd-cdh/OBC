@@ -52,7 +52,7 @@ MRAM_ErrorCode MRAM_readStatusRegister(uint8_t* status);
 void MRAM_writeStatusRegister(uint8_t status);
 void MRAM_readDeviceId(uint8_t deviceId[4]);
 MRAM_ErrorCode MRAM_readMemoryArray(uint32_t addr, uint8_t* buffer, size_t length);
-MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, uint8_t* buffer, size_t length);
+MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, const uint8_t* buffer, size_t length);
 void MRAM_writeMemoryEn();
 void MRAM_writeMemoryDisable();
 
