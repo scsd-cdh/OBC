@@ -86,6 +86,21 @@
 			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/main.c</locationURI>
 		</link>
 		<link>
+			<name>DRIVERS/MSP430/ADC</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/CRC_HW</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/CS</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>DRIVERS/MSP430/GPIO</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -96,7 +111,32 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>DRIVERS/MSP430/MRAM</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/RTC_B</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/SPI</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>DRIVERS/MSP430/UTILS</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/WDT</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -114,6 +154,41 @@
 			<name>MIDDLEWARE/tinyprotocol/tinyprotocol.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/tinyprotocol/tinyprotocol.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/ADC_Read.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/ADC_Read.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/ADC_Read.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/ADC_Read.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/CRC_HW/crc.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/CRC_HW/crc.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/CRC_HW/crc.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/CRC_HW/crc.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/CS/cs.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/CS/cs.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/CS/cs.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/CS/cs.h</locationURI>
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/GPIO/gpio.c</name>
@@ -136,6 +211,56 @@
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/I2C/i2c.h</locationURI>
 		</link>
 		<link>
+			<name>DRIVERS/MSP430/MRAM/MRAM_SPI.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/MRAM/MRAM_SPI.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/MRAM/MRAM_SPI.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/MRAM/MRAM_SPI.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/PWM.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/PWM.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/PWM.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/PWM.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/include</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/RTC_B/rtc_b.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_B/rtc_b.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/RTC_B/rtc_b.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_B/rtc_b.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/SPI/spi.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/SPI/spi.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/SPI/spi.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/SPI/spi.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/UTILS/hw_memmap.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/UTILS/hw_memmap.h</locationURI>
+		</link>
+		<link>
 			<name>DRIVERS/MSP430/UTILS/utils.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/UTILS/utils.c</locationURI>
@@ -144,6 +269,76 @@
 			<name>DRIVERS/MSP430/UTILS/utils.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/UTILS/utils.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/WDT/wdt_a.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/WDT/wdt_a.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/WDT/wdt_a.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/WDT/wdt_a.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include/adc12_b.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/adc12_b.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include/adc12_b.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/adc12_b.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include/inc</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/include/inc</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/include/pmm.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/pmm.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/include/pmm.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/pmm.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/include/timer_a.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/timer_a.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/include/timer_a.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/timer_a.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/include/timer_b.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/timer_b.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/include/timer_b.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/timer_b.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/PWM/include/inc/hw_memmap.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/inc/hw_memmap.h</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
