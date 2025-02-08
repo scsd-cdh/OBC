@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 #define CONVERTER_MONITOR_DATA_LEN  ( 10 )
 typedef union sVoltageConvData{
@@ -11,6 +12,8 @@ typedef union sVoltageConvData{
     };
     uint8_t bytes[CONVERTER_MONITOR_DATA_LEN];
 } sVoltageConvData_t;
+
+static bool heartbeat_msgs_recieved = true;
 
 void RoutineCycle_Process(void);
 

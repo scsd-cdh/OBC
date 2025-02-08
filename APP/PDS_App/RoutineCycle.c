@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+static bool secondsIrq = false;
+
 static sVoltageConvData_t vConvData = {
     .Int_5v_vs_data = 0,
     .Reg_5v_vs_data = 0,
@@ -74,7 +76,8 @@ void RoutineCycle_Reboot(void) {
 }
 
 void RoutineCycle_Fault(void) {
-    // TODO 
+    // TODO add more fault handling
+    RoutineCycle_Reboot();
     return;
 }
 
@@ -91,16 +94,21 @@ __attribute__((interrupt(RTC_VECTOR)))
 #endif
 void RTC_B_ISR (void)
 {
-    switch (__even_in_range(RTCIV,16)){
+    switch (__even_in_range(RTCIV,16))
+    {
         case 2:     //RTCRDYIFG, triggered every second
+            secondsIrq = true;
             break;
         case 4:     //RTCEVIFG, triggered every minute
+            if (heartbeat_msgs_recieved == true) {
+                heartbeat_msgs_recieved = false;
+            } else {
+                RoutineCycle_Reboot();
+            }
             break;
-
         case 6:     //RTCAIFG, triggers at set alarm
             RoutineCycle_Reboot();
             break;
-
         default: 
             break;
     }

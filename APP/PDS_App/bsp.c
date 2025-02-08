@@ -100,7 +100,7 @@ static void initRTCB()
 
     //Setup Calendar Alarm for 30 minutes after start.
     RTC_B_configureCalendarAlarmParam param = {0};
-    param.minutesAlarm      = 0x1;  // Currently set to 1 minute for testing - TODO change to 24 hours
+    param.minutesAlarm      = 0x2;  // Currently set to 2 minute for testing - TODO change to 24 hours
     param.hoursAlarm        = 0x0;
     param.dayOfWeekAlarm    = 0x0;
     param.dayOfMonthAlarm   = 0x0;
@@ -115,10 +115,10 @@ static void initRTCB()
     //Calendar registers are ready to read.
     //Also, enable interrupts for the Calendar alarm and Calendar event.
     RTC_B_enableInterrupt(RTC_B_BASE,
-//        RTC_B_CLOCK_READ_READY_INTERRUPT +
-//        RTC_B_TIME_EVENT_INTERRUPT +
+        RTC_B_CLOCK_READ_READY_INTERRUPT +
+        RTC_B_TIME_EVENT_INTERRUPT +
         RTC_B_CLOCK_ALARM_INTERRUPT
-        );
+    );
 
     //Start RTC Clock
     RTC_B_startClock(RTC_B_BASE);

@@ -3,9 +3,10 @@
 #define _APP_COMM_
 
 #include <stdint.h>
-#include "i2c.h"
+
 #include "tinyprotocol.h"
 #include "version.h"
+#include "i2c.h"
 
 //*******************************************************************************
 // Device Communication Defines *************************************************

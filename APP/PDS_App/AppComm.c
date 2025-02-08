@@ -4,9 +4,9 @@
 #include "bsp.h"
 
 //***************************Private functions definitions***************************************************
-static int16_t SendTelemetryResponse();
-static int16_t ProcessTelemetryRequest(uint8_t command);
 static int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size);
+static int16_t ProcessTelemetryRequest(uint8_t request);
+static int16_t SendTelemetryResponse();
 
 static void I2C_Proc_RX_Data(uint8_t data);
 
@@ -50,10 +50,14 @@ int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size)
     return ETINYPROTOCOL_SUCCESS;
 }
 
-int16_t ProcessTelemetryRequest(uint8_t command) {
-    switch(command) {
+int16_t ProcessTelemetryRequest(uint8_t request) {
+    switch(request) {
         case SYSTEM_STATUS_ID:
             SystemStatusRespBuf.runtime++;      // TODO get actual system runtime
+            break;
+        
+        case HEALTH_CHECK_ID:
+            heartbeat_msgs_recieved = false;
             break;
 
         default:
