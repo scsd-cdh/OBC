@@ -40,20 +40,20 @@ enum {
     SPI_MODE_TWO = 2,
 };
 
-void CS_LOW();
-void CS_HIGH();
+extern void CS_LOW();
+extern void CS_HIGH();
 
 // SPI-specific functions:
-void SPI_init(uint32_t clockSpeed, SPI_Mode mode, uint16_t CS_pin, uint16_t SCLK_pin, uint16_t MOSI_pin, uint16_t MISO_pin);
-uint8_t SPI_transfer(uint8_t byte);
+extern void SPI_init(uint32_t clockSpeed, SPI_Mode mode, uint16_t CS_pin, uint16_t SCLK_pin, uint16_t MOSI_pin, uint16_t MISO_pin);
+extern uint8_t SPI_transfer(uint8_t byte);
 
 // MRAM-specific functions:
-MRAM_ErrorCode MRAM_readStatusRegister(uint8_t* status);
-void MRAM_writeStatusRegister(uint8_t status);
-void MRAM_readDeviceId(uint8_t deviceId[4]);
-MRAM_ErrorCode MRAM_readMemoryArray(uint32_t addr, uint8_t* buffer, size_t length);
-MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, const uint8_t* buffer, size_t length);
-void MRAM_writeMemoryEn();
-void MRAM_writeMemoryDisable();
+extern MRAM_ErrorCode MRAM_readStatusRegister(uint8_t* status);
+extern void MRAM_writeStatusRegister(uint8_t status);
+extern void MRAM_readDeviceId(uint8_t deviceId[4]);
+extern MRAM_ErrorCode MRAM_readMemoryArray(uint32_t addr, uint8_t* buffer, size_t length);
+extern MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, const uint8_t* buffer, size_t length);
+extern void MRAM_writeMemoryEn();
+extern void MRAM_writeMemoryDisable();
 
 #endif  // _MRAM_SPI_

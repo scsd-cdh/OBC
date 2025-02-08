@@ -106,7 +106,7 @@ void main(void)
     uint8_t statusRegister = 0;
     volatile MRAM_ErrorCode statusRegisterErr = MRAM_readStatusRegister(&statusRegister);
 
-    uint32_t addr = 0xF;
+    uint32_t addr = 0xEF;
 
     const uint8_t* inBuffer = "123456789";
 

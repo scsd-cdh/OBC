@@ -3,7 +3,6 @@
 #include "msp430fr5969.h"
 
 #include <stddef.h>
-#include <stdio.h>
 #include "MRAM_SPI.h"
 
 #define READ_DEVICE_ID_CMD      0x9F  // Command to read device ID (typical for MRAM)
@@ -174,18 +173,21 @@ void MRAM_readDeviceId(uint8_t deviceId[4])
 }
 
 
-/* 
- * Yes the validateBlockCRC and MRAM_readMemoryArray functions are almost identical  
- */
-static MRAM_ErrorCode validateBlockCRC(uint32_t addr, size_t length)
+static void transferCmdAddr(uint8_t cmd, uint32_t addr)
 {
-    CS_LOW(); // Select MRAM device
-    SPI_transfer(READ_MEMORY_ARRAY); // Send the Memory Array read command
-
+    SPI_transfer(cmd);
     // Address
     SPI_transfer((addr >> 16) & 0xFF);
     SPI_transfer((addr >> 8) & 0xFF);
     SPI_transfer(addr & 0xFF);
+}
+
+static MRAM_ErrorCode validateBlockCRC(uint32_t addr, size_t length, uint16_t crc)
+{
+    CS_LOW(); // Select MRAM device
+    
+    // Send command and address
+    transferCmdAddr(READ_MEMORY_ARRAY, addr);   
 
     uint16_t seed = 0xFFFF;
     CRC_setSeed(CRC_BASE, seed);
@@ -196,14 +198,10 @@ static MRAM_ErrorCode validateBlockCRC(uint32_t addr, size_t length)
         CRC_set8BitData(CRC_BASE, byte);
     }
 
-    uint16_t storedCRC = 0;
-    storedCRC |= (SPI_transfer(0x00) << 8);
-    storedCRC |= SPI_transfer(0x00);
-
     CS_HIGH();
 
     uint16_t result = CRC_getResult(CRC_BASE);
-    if (storedCRC != result) {
+    if (crc != result) {
         return MRAM_ERR_BAD_CRC;
     }
 
@@ -226,31 +224,16 @@ MRAM_ErrorCode MRAM_readMemoryArray(uint32_t addr, uint8_t* buffer, size_t lengt
         return MRAM_ERR_BAD_PARAM;
     }
 
-    CS_LOW(); // Select MRAM device
-    SPI_transfer(READ_MEMORY_ARRAY); // Send the Memory Array read command
+    CS_LOW(); 
+    
+    transferCmdAddr(READ_MEMORY_ARRAY, addr);
 
-    // Address
-    SPI_transfer((addr >> 16) & 0xFF);
-    SPI_transfer((addr >> 8) & 0xFF);
-    SPI_transfer(addr & 0xFF);
-
-    uint16_t seed = 0xFFFF;
-    CRC_setSeed(CRC_BASE, seed);
     size_t i;
     for (i = 0; i < length; ++i) {
         buffer[i] = SPI_transfer(0x00);
-        CRC_set8BitData(CRC_BASE, buffer[i]);
     }
-    uint16_t storedCRC = 0;
-    storedCRC |= (SPI_transfer(0x00) << 8);
-    storedCRC |= SPI_transfer(0x00);
 
     CS_HIGH();
-
-    uint16_t result = CRC_getResult(CRC_BASE);
-    if (storedCRC != result) {
-        return MRAM_ERR_BAD_CRC;
-    }
 
     return MRAM_ERR_OK;
 }
@@ -270,7 +253,7 @@ static void initStatusInfo(MRAM_StatusInfo* info)
     info->upperBound = 0;
 }
 
-static MRAM_StatusInfo MRAM_parseProtectedBlock(uint8_t statusRegister)
+static MRAM_StatusInfo parseProtectedBlock(uint8_t statusRegister)
 {
     MRAM_StatusInfo info;
     initStatusInfo(&info);
@@ -325,7 +308,7 @@ MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, const uint8_t* buffer, size_
         return MRAM_ERR_WRITE_PROTECTION_ENABLED;
     }
 
-    MRAM_StatusInfo info = MRAM_parseProtectedBlock(statusRegister);
+    MRAM_StatusInfo info = parseProtectedBlock(statusRegister);
     if (!info.noneProtected) {
         // Attempting to write some portion of the data to protected memory
         bool lowerProtected = info.lowerBound == 0x00000000;
@@ -338,10 +321,7 @@ MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, const uint8_t* buffer, size_
     
     CS_LOW(); // Select MRAM device
 
-    SPI_transfer(WRITE_MEMORY_ARRAY);
-    SPI_transfer((addr >> 16) & 0xFF);
-    SPI_transfer((addr >> 8) & 0xFF);
-    SPI_transfer(addr & 0xFF);
+    transferCmdAddr(WRITE_MEMORY_ARRAY, addr);
 
     uint16_t seed = 0xFFFF;
     CRC_setSeed(CRC_BASE, seed);
@@ -350,14 +330,11 @@ MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, const uint8_t* buffer, size_
         SPI_transfer(buffer[i]);
         CRC_set8BitData(CRC_BASE, buffer[i]);
     }
-    uint16_t CRC = CRC_getResult(CRC_BASE);
-
-    SPI_transfer((CRC >> 8) & 0xFF);
-    SPI_transfer(CRC & 0xFF);
 
     CS_HIGH();
 
-    err = validateBlockCRC(addr, length);
+    uint16_t crc = CRC_getResult(CRC_BASE);
+    err = validateBlockCRC(addr, length, crc);
     
     return err;
 }
