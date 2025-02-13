@@ -13,7 +13,7 @@ typedef union sVoltageConvData{
     uint8_t bytes[CONVERTER_MONITOR_DATA_LEN];
 } sVoltageConvData_t;
 
-static bool heartbeat_msgs_recieved = true;
+extern bool heartbeat_msgs_recieved;
 
 void RoutineCycle_Process(void);
 

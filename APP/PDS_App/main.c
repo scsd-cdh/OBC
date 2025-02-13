@@ -32,9 +32,6 @@ int main(void)
 
     initBSP();
     InitAppComm();
-    while (1) {
-        RoutineCycle_Process();     // TODO move to another timer ISR that calls this function.
-    }
     
     __bis_SR_register(LPM0_bits + GIE);
 }

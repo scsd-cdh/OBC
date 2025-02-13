@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-static bool secondsIrq = false;
+bool heartbeat_msgs_recieved = false;
 
 static sVoltageConvData_t vConvData = {
     .Int_5v_vs_data = 0,
@@ -97,7 +97,8 @@ void RTC_B_ISR (void)
     switch (__even_in_range(RTCIV,16))
     {
         case 2:     //RTCRDYIFG, triggered every second
-            secondsIrq = true;
+            // TODO - move to another timer if it needs to be called more than once a second
+            RoutineCycle_Process();
             break;
         case 4:     //RTCEVIFG, triggered every minute
             if (heartbeat_msgs_recieved == true) {

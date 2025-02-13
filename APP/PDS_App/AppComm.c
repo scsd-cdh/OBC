@@ -57,7 +57,7 @@ int16_t ProcessTelemetryRequest(uint8_t request) {
             break;
         
         case HEALTH_CHECK_ID:
-            heartbeat_msgs_recieved = false;
+            heartbeat_msgs_recieved = true;
             break;
 
         default:
