@@ -1,8 +1,11 @@
 #ifndef _MRAM_SPI_
 #define _MRAM_SPI_
 
+#include "gpio.h"
 #include <stdint.h>
 #include <stddef.h>
+
+extern volatile uint8_t rxData;
 
 #define MRAM_MAX_ADDRESS 0x3FFFFF
 

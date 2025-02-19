@@ -19,7 +19,8 @@
 #define WRITE_STATUS_REGISTER   0x01  // Command to Read Status Register
 #define RX_BUFFER_SIZE          128
 
-static volatile uint8_t rxData = 0;
+
+volatile uint8_t rxData = 0;
 // File constrained global for now. We may want a context struct in the future for encapsulation
 static uint16_t SPI_CS_pin = 0;
 
@@ -341,25 +342,4 @@ MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, const uint8_t* buffer, size_
     err = validateBlockCRC(addr, length, crc);
 
     return err;
-}
-
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector=USCI_B0_VECTOR
-__interrupt
-#elif defined(__GNUC__)
-__attribute__((interrupt(USCI_B0_VECTOR)))
-#endif
-void USCI_B0_ISR_HANDLE_SPI_RX(void)
-{
-    switch (__even_in_range(UCB0IV, USCI_SPI_UCTXIFG))
-    {
-        case USCI_SPI_UCRXIFG:      // UCRXIFG
-            rxData = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
-            // Delay between transmissions for slave to process information
-            __delay_cycles(40);
-            __bic_SR_register_on_exit(LPM0_bits);
-            break;
-        default:
-            break;
-    }
 }
