@@ -76,7 +76,9 @@ _Todo: Add "State Resolver" to middleware._
 
 The tasks are decomposed into three distinct stack. The lowest level of the stack will implement the `driver` code. The `middleware` will then use this to implement its own functionality. The `App` layer will implement the top level functions using the middleware.
 
-  
+### Software Guidelines
+
+NASA's rule of ten: https://web.eecs.umich.edu/~imarkov/10rules.pdf
 
 # APPENDIX
 
