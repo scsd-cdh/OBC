@@ -1,15 +1,30 @@
-![EPS](https://github.com/user-attachments/assets/3487323d-b1ab-42d3-95d7-171848ec610e)
+<!-- Top Images: Three identical images -->
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/3487323d-b1ab-42d3-95d7-171848ec610e" alt="EPS" width="200" style="margin: 0 10px;">
+  <img src="https://github.com/user-attachments/assets/e5974ec4-5c03-4e11-9943-247dc1a2335c" alt="EPS" width="200" style="margin: 0 10px;">
+  <img src="https://github.com/user-attachments/assets/1a330da9-d749-4397-97ef-e2ad4217c84d" alt="EPS" width="200" style="margin: 0 10px;">
+</div>
 
----
+<!-- Two-Column Header with Icon and Title -->
+<table>
+  <tr>
+    <td style="vertical-align: middle; padding-right: 10px;">
+      <img src="https://github.com/user-attachments/assets/c4271b34-01f1-4f24-80ce-8c2c151b5e25" alt="Icon" width="300">
+    </td>
+    <td style="vertical-align: middle;">
+      <h1 style="margin: 0;">CDH Software System</h1>
+      <p style="margin: 5px 0 0 0;">
+        CDH Software System is the core of our spacecraft’s command and data handling architecture. It is organized into three primary layers that handle embedded hardware operations, system-level APIs, and user-facing debugging interfaces.
+      </p>
+    </td>
+  </tr>
+</table>
 
-# CDH Software System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/your_username/your_repo/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Issues](https://img.shields.io/github/issues/your_username/your_repo.svg)](https://github.com/your_username/your_repo/issues)
 [![Conventional Commits](https://img.shields.io/badge/commit-conventional-green.svg)](https://www.conventionalcommits.org/en/v1.0.0/)
-
-CDH Software System is the core of our spacecraft’s command and data handling architecture. It is organized into three primary layers that handle embedded hardware operations, system-level APIs, and user-facing debugging interfaces.
 
 ---
 
