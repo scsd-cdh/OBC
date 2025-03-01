@@ -58,37 +58,66 @@ Our branching strategy follows the principles outlined in the [Successful Git Br
 
 ## Components Involved
 
-### Embedded Systems
-
-This layer includes the hardware components that execute the core processing tasks:
-
-- **SAMV71 Microcontroller:**  
-  Acts as the primary processor, sending commands to the MSP430 devices.
-- **MSP430 Microcontrollers:**  
-  These space-grade microcontrollers interface with various peripherals to collect sensor data before passing it back to the SAMV71.
-
-> **Note:** MSP430 microcontrollers are less powerful compared to the SAMV71s. Their specifications are detailed in the appendix.
-
-The overall system block diagram is shown below:
+Currently working on:
+![CDH Software Stack](https://github.com/user-attachments/assets/63521e22-d05b-4150-9548-007b64960eca)
 
 
-![CDH SW Block Diagram](https://t9014385614.p.clickup-attachments.com/t9014385614/7b63fd11-c62e-4876-bb3f-77da2c721079/CDH_SW_Block_Diag.png)
 
-A detailed view of the embedded system is available here:
 
-![Main OBC](https://github.com/user-attachments/assets/e677aaba-2f24-4457-b89e-081dfd59ca01)
+**The various software components are listed below:**
 
-> **Attention:** Please discuss with Nabil/Callum regarding the placement of IRQs. Also, verify that the label currently marked as SRAM on the bottom right is corrected to S-BAND.
+```mermaid
+graph TD
+    A[Space Concordia <br> SC-FREYR] --> B[Debugging Interfaces]
+    A --> C[OS Level]
+    A --> D[Embedded]
+    A --> E[Other ICs]
+    A --> F[Sensors & Actuators <br> Communication]
+    A --> G[Inter-Processor <br> Communication]
 
-### OS Level
+    %% Debugging Interfaces
+    B --> B1[In-house Logger]
+    B --> B2[Battery Testing WSP]
+    B --> B3[LSP]
 
-This layer abstracts hardware details via a collection of APIs built on the low-level driver code. It simplifies development by offering modular, high-level system functionalities.
+    %% OS Level
+    C --> C1[Power Control API]
+    C --> C2[Message Processor API]
+    C --> C3[Watch Dog API]
+    C --> C4[RTC API]
+    C --> C5[Sensors API]
+    C --> C6[Actuators API]
 
-### Debugging Interfaces
+    %% Embedded
+    D --> D1[MSP430 FR5999]
+    D --> D2[SAMV71]
+    D --> D3[Watchdog?]
 
-This layer includes:
-- **Web-based UIs:** For real-time system monitoring and control.
-- **Logging and Test Reporting:** Tools that generate detailed logs and diagnostic reports to aid in troubleshooting.
+    %% Other ICs
+    E --> E1[MRAM]
+
+    %% Sensors & Actuators Communication
+    F --> F1[Actuators]
+    F --> F2[Sensors]
+
+    F1 --> F1a[Reaction Wheels]
+    F1 --> F1b[Magnetorquer]
+
+    F2 --> F2a[Thermocouples]
+    F2 --> F2b[IMU]
+    F2 --> F2c[Sun Sensor]
+
+    %% Inter-Processor Communication
+    G --> G1[AX100]
+    G --> G2[S-Band]
+
+```
+**IRQs are raised to request fetching updates from each board. Here is an interface diagram.**
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/e677aaba-2f24-4457-b89e-081dfd59ca01" alt="Main OBC" width="300" />
+</p>
+
 
 ---
 
