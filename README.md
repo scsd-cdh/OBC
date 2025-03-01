@@ -71,11 +71,12 @@ This layer includes the hardware components that execute the core processing tas
 
 The overall system block diagram is shown below:
 
+
 ![CDH SW Block Diagram](https://t9014385614.p.clickup-attachments.com/t9014385614/7b63fd11-c62e-4876-bb3f-77da2c721079/CDH_SW_Block_Diag.png)
 
 A detailed view of the embedded system is available here:
 
-![Detailed Embedded Diagram](https://t9014385614.p.clickup-attachments.com/t9014385614/48e73c75-fce2-479e-96bd-495d54704f3b/CDH_SW_Block_Diag.drawio%20(2).png)
+![Main OBC](https://github.com/user-attachments/assets/e677aaba-2f24-4457-b89e-081dfd59ca01)
 
 > **Attention:** Please discuss with Nabil/Callum regarding the placement of IRQs. Also, verify that the label currently marked as SRAM on the bottom right is corrected to S-BAND.
 
