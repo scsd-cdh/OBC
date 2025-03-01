@@ -1,6 +1,6 @@
 <!-- Top Images: Three identical images -->
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/3487323d-b1ab-42d3-95d7-171848ec610e" alt="EPS" width="200" style="margin: 0 10px;">
+  <img src="https://github.com/user-attachments/assets/3487323d-b1ab-42d3-95d7-171848ec610e" alt="EPS" width="400" style="margin: 0 10px;">
   <img src="https://github.com/user-attachments/assets/e5974ec4-5c03-4e11-9943-247dc1a2335c" alt="EPS" width="200" style="margin: 0 10px;">
   <img src="https://github.com/user-attachments/assets/1a330da9-d749-4397-97ef-e2ad4217c84d" alt="EPS" width="200" style="margin: 0 10px;">
 </div>
