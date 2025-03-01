@@ -121,32 +121,9 @@ graph TD
 
 ---
 
-## Communication Protocols
-
-The system leverages multiple communication protocols to interface between components:
-
-1. **I2C:** Used for communication between MSP430s and the SAMV71.
-2. **QSPI:** Interfaces with MRAM chips.
-3. **UART:** Facilitates communication between the MSP430 and the transceiver chip (AX100) in the communications sub-module.
-4. **GPIO:** Typically used for simple on/off signals (e.g., an IRQ for power cycling).
-5. **LVDS:** Ensures reliable routing of images from the imager payload (Zetane) to the communications submodule.
-
----
-
 ## Task Decomposition and Assignment
 
-The tasks are split into three layers:
 
-- **Driver Layer:** Implements the core hardware interfacing code.
-- **Middleware Layer:** Builds on the drivers to provide higher-level functionalities.  
-  *Todo: Add "State Resolver" to middleware.*
-- **Application Layer:** Implements top-level functions utilizing the middleware services.
-
-The following diagram outlines the task breakdown:
-
-![Task Decomposition Diagram](https://t9014385614.p.clickup-attachments.com/t9014385614/505a3bf6-cc8f-4bcb-b4a1-8affedb17321/CDH_SW_Block_Diag.drawio.png)
-
----
 
 ## Software Guidelines
 
