@@ -71,8 +71,7 @@ In summary, your stable branches (main, pds_branch_protected, bms_branch_protect
 
 ```mermaid
 gitGraph
-   branch main
-
+   checkout main
    commit id:"INIT" tag:"v1.0.0" msg:"Initial commit"
    branch main
    commit id:"A012" tag:"v3.0.0" msg:"Release v3.0.0"
