@@ -149,4 +149,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-Feel free to update the badges, URLs, and content as your project evolves.
+
