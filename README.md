@@ -121,6 +121,10 @@ This is how you're development flow should look like:
 
 The following document lists all the protocols required inter-MCU communication: [Protocols](https://docs.google.com/document/d/1QJ-23KT9wzDGa4bX3uof-pEGOELUUwvdz8o87ZT44fY/edit?tab=t.0)  -> Feel free to add required protocols whenever you want. Leave a comment for every change made. 
 
+**MSP430 Project Setup and Structure**
+[MSP Structure](https://github.com/scsd-cdh/OBC/blob/045e9a8daf7846750b0903a72c4fdc19a29c6233/DEV_GUIDE.md)
+**SAMV71 Project Setup and Structure**
+[Coming Soon](https://www.youtube.com/shorts/20POeajDZiw)
 ## Software Guidelines
 
 Our development adheres to NASA's Rule of Ten. For more details, please refer to the 
@@ -130,6 +134,8 @@ Our development adheres to NASA's Rule of Ten. For more details, please refer to
 
 Branching strategy: 
 [Successful Git Branching Model](https://nvie.com/posts/a-successful-git-branching-model/).
+
+
 
 ---
 
