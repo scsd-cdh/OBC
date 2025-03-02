@@ -1,6 +1,6 @@
 Let’s have a chat about Git branching in a way that feels like you’re just working with your code, rather than memorizing a list of commands. Imagine you have your repository history looking something like this:
 
-```
+```bash
 * 82b7a92 (HEAD -> feature/my-feature) Add new code for feature
 * 7ecf119 (origin/develop) Merge branch 'hotfix/typo-fix'
 |\
