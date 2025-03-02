@@ -33,6 +33,7 @@
 - [Overview](#overview)
 - [Components Involved](#components-involved)
 - [Software Guidelines](#software-guidelines)
+- [Contribution Guide](#Contribution-Guide)
 - [Appendix](#appendix)
 - [License](#license)
 
