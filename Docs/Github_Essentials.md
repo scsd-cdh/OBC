@@ -67,3 +67,54 @@ git push --force-with-lease
 This option protects you by refusing to overwrite changes on the remote if someone else has pushed updates, whereas a plain `--force` could inadvertently erase work.
 
 In summary, your stable branches (main, pds_branch_protected, bms_branch_protected, cdh_branch_protected, backplane_branch_protected) are like the safe vaults that only get updated through thorough review and testing via pull requests. Meanwhile, your feature branches let you experiment and commit your work in small, frequent steps—your “save points.” Once your work is polished and merged, the history might look like the diagram above, showing a clear record of merges, fixes, and incremental improvements. Happy coding!
+
+
+```mermaid
+gitGraph
+   branch main
+
+   commit id:"INIT" tag:"v1.0.0" msg:"Initial commit"
+   branch main
+   commit id:"A012" tag:"v3.0.0" msg:"Release v3.0.0"
+
+   branch pds_branch_protected
+   commit id:"PDS1" msg:"PDS stable commit"
+   checkout main
+
+   branch bms_branch_protected
+   commit id:"BMS1" msg:"BMS stable commit"
+   checkout main
+
+   branch cdh_branch_protected
+   commit id:"CDH1" msg:"CDH stable commit"
+   checkout main
+
+   branch backplane_branch_protected
+   commit id:"BP1" msg:"Backplane stable commit"
+   checkout main
+
+   merge pds_branch_protected tag:"Merge PDS"
+   merge bms_branch_protected tag:"Merge BMS"
+   merge cdh_branch_protected tag:"Merge CDH"
+   merge backplane_branch_protected tag:"Merge BP"
+
+   branch feature/api-improvements
+   commit id:"API1" msg:"API improvements"
+   branch feature/data-sync
+   commit id:"DS1" msg:"Data sync feature"
+   branch feature/ui-enhancements
+   commit id:"UI1" msg:"UI enhancements"
+   branch feature/experimental
+   commit id:"EXP1" msg:"Experimental features"
+   branch feature/security
+   commit id:"SEC1" msg:"Security updates"
+   branch feature/performance
+   commit id:"PERF1" msg:"Performance tweaks"
+   checkout main
+
+   merge feature/api-improvements tag:"Merge API"
+   merge feature/data-sync tag:"Merge DS"
+   merge feature/ui-enhancements tag:"Merge UI"
+   merge feature/experimental tag:"Merge EXP"
+   merge feature/security tag:"Merge SEC"
+   merge feature/performance tag:"Merge PERF"
