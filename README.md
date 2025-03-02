@@ -106,11 +106,6 @@ graph TD
     G --> G2[S-Band]
 
 ```
-**IRQs are raised to request fetching updates from each board. Here is an interface diagram.**
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/e677aaba-2f24-4457-b89e-081dfd59ca01" alt="Main OBC" width="300" />
-</p>
 
 ## Contribution Guide
 
