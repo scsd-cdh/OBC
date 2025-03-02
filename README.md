@@ -124,6 +124,7 @@ Then once you merge it into the stable branch we have an idea of what you did.
 This is how you're development flow should look like:
 [#Docs/branching_rules.md](https://github.com/scsd-cdh/OBC/blob/7fbe7e40980c13327b7881f3bf36f775a66de1ec/Docs/branching_rules.md)
 
+The following document lists all the protocols required inter-MCU communication: [Protocols](https://docs.google.com/document/d/1QJ-23KT9wzDGa4bX3uof-pEGOELUUwvdz8o87ZT44fY/edit?tab=t.0)  -> Feel free to add required protocols whenever you want. Leave a comment for every change made. 
 
 ## Software Guidelines
 
