@@ -32,14 +32,8 @@
 
 - [Overview](#overview)
 - [Components Involved](#components-involved)
-  - [Embedded Systems](#embedded-systems)
-  - [OS Level](#os-level)
-  - [Debugging Interfaces](#debugging-interfaces)
-- [Communication Protocols](#communication-protocols)
-- [Task Decomposition and Assignment](#task-decomposition-and-assignment)
 - [Software Guidelines](#software-guidelines)
 - [Appendix](#appendix)
-- [Component List](#component-list)
 - [License](#license)
 
 ---
@@ -52,7 +46,7 @@ The CDH Software System manages all aspects of our spacecraft’s command and da
 2. **OS Level:** Provides a set of APIs that build on the lower-level drivers to deliver system-level services.
 3. **Debugging Interfaces:** Comprises web-based UIs and logging tools to generate test reports and facilitate diagnostics.
 
-Our branching strategy follows the principles outlined in the [Successful Git Branching Model](https://nvie.com/posts/a-successful-git-branching-model/).
+
 
 ---
 
@@ -118,16 +112,28 @@ graph TD
   <img src="https://github.com/user-attachments/assets/e677aaba-2f24-4457-b89e-081dfd59ca01" alt="Main OBC" width="300" />
 </p>
 
+## Contribution Guide
 
----
+Before you begin: 
+Check out the Github essentials: [#Docs/Github_Essentials.md](https://github.com/scsd-cdh/OBC/blob/d00afaf845758b6a269e30d44f57f17d18876272/Docs/Github_Essentials.md)
 
-## Task Decomposition and Assignment
+Your should be assigned an issue, 
+You can go check it's requirements listed and start implementing it. Make sure you write good commit's with good descriptions.
+Then once you merge it into the stable branch we have an idea of what you did. 
 
+This is how you're development flow should look like:
+[#Docs/branching_rules.md](https://github.com/scsd-cdh/OBC/blob/7fbe7e40980c13327b7881f3bf36f775a66de1ec/Docs/branching_rules.md)
 
 
 ## Software Guidelines
 
-Our development adheres to NASA's Rule of Ten. For more details, please refer to the [NASA Rule of Ten](https://web.eecs.umich.edu/~imarkov/10rules.pdf).
+Our development adheres to NASA's Rule of Ten. For more details, please refer to the 
+- For C, [NASA Rule of Ten](https://web.eecs.umich.edu/~imarkov/10rules.pdf).
+- Branching, [Successful Git Branching Model](https://nvie.com/posts/a-successful-git-branching-model/)
+- Commit Naming, [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0/)
+
+Branching strategy: 
+[Successful Git Branching Model](https://nvie.com/posts/a-successful-git-branching-model/).
 
 ---
 
@@ -136,23 +142,8 @@ Our development adheres to NASA's Rule of Ten. For more details, please refer to
 ### Helpful Resources
 
 - [How to Create Software Design Documents (Lucidchart)](https://www.lucidchart.com/blog/how-to-create-software-design-documents)
-- [Successful Git Branching Model](https://nvie.com/posts/a-successful-git-branching-model/)
-- [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0/)
 - [Digital Jhelms' GitHub Gist](https://gist.github.com/digitaljhelms/4287848)
 
----
-
-## Component List
-
-*Note: Ensure that each component is assigned a unique ID and the list is maintained as the project evolves.*
-
-| Component                | ID           | Description                                          |
-| ------------------------ | ------------ | ---------------------------------------------------- |
-| SAMV71 Microcontroller   | `SAMV71-001` | Primary processor for command distribution           |
-| MSP430 Microcontroller   | `MSP430-001` | Secondary processor interfacing with peripherals     |
-| MRAM Chip                | `MRAM-001`   | Non-volatile memory for data storage                 |
-| Transceiver (AX100)      | `AX100-001`  | Facilitates communications in the Comms sub-module   |
-| Imager Payload (Zetane)  | `ZETANE-001` | Captures and routes image data to the Comms sub-module |
 
 ---
 
