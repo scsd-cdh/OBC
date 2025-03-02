@@ -1,3 +1,78 @@
+
+```mermaid
+gitGraph
+    %% --- Commits on the default branch (implicitly "main") ---
+    commit id:"Init" msg:"Initial commit [Alice]"
+    commit id:"C1" msg:"Base code setup [Bob]"
+    
+    %% --- Create a stable branch for PDS, then nest a feature off it ---
+    branch pds_branch_protected
+    commit id:"PDS1" msg:"Initial PDS commit [Charlie]"
+
+    branch feature/pds-sub
+    commit id:"PDSsub1" msg:"Sub-feature on PDS [Dave]"
+    commit id:"PDSsub2" msg:"More sub-feature code [Eve]"
+    merge pds_branch_protected tag:"Merge sub-feature into PDS [Frank]"
+    
+    %% Go back to main
+    checkout main
+    commit id:"C2" msg:"Main fix after PDS merges [Grace]"
+    
+    %% --- Create a stable branch for BMS, then a hotfix off it ---
+    branch bms_branch_protected
+    commit id:"BMS1" msg:"BMS stable commit [Heidi]"
+    
+    branch hotfix/bms-critical
+    commit id:"BMSfix1" msg:"Critical BMS fix [Ivan]"
+    commit id:"BMSfix2" msg:"Additional fix for BMS [Judy]"
+    merge bms_branch_protected tag:"Merge critical fix into BMS [Kevin]"
+    
+    checkout main
+    commit id:"C3" msg:"Another main commit [Laura]"
+    
+    %% --- Create a stable branch for CDH, then nest deeper feature branches ---
+    branch cdh_branch_protected
+    commit id:"CDH1" msg:"CDH stable commit [Mallory]"
+    
+    branch feature/cdh-improvements
+    commit id:"CDHI1" msg:"CDH improvements part 1 [Nancy]"
+    
+    branch feature/cdh-sub-improv
+    commit id:"CDHsub1" msg:"Nested improvements for CDH [Oliver]"
+    commit id:"CDHsub2" msg:"More nested improvements [Peggy]"
+    merge feature/cdh-improvements tag:"Merge nested into cdh-improvements [Quentin]"
+    
+    commit id:"CDHI2" msg:"CDH improvements part 2 [Rachel]"
+    merge cdh_branch_protected tag:"Merge cdh-improvements into cdh [Sybil]"
+    
+    checkout main
+    
+    %% --- Create a stable branch for backplane, then nest a sub-branch ---
+    branch backplane_branch_protected
+    commit id:"BP1" msg:"Backplane stable commit [Trent]"
+    
+    branch feature/backplane-diagnostics
+    commit id:"BPdiag1" msg:"Add diagnostics to backplane [Uma]"
+    commit id:"BPdiag2" msg:"Refine diagnostic logging [Victor]"
+    
+    branch feature/backplane-diagnostics-extra
+    commit id:"BPdiagX1" msg:"Extra logging improvements [Wendy]"
+    merge feature/backplane-diagnostics tag:"Merge diag into diag-extra [Xavier]"
+    
+    commit id:"BPdiagX2" msg:"Combine changes from diag and diag-extra [Yvonne]"
+    merge backplane_branch_protected tag:"Merge backplane-diagnostics into backplane [Zack]"
+    
+    %% --- Return to main and merge everything in a chaotic flurry ---
+    checkout main
+    commit id:"C4" msg:"Main pre-merge housekeeping [Alice]"
+    merge pds_branch_protected tag:"Merge PDS into main [Bob]"
+    merge bms_branch_protected tag:"Merge BMS into main [Charlie]"
+    merge cdh_branch_protected tag:"Merge CDH into main [Dave]"
+    merge backplane_branch_protected tag:"Merge Backplane into main [Eve]"
+
+```
+
+
 Let’s have a chat about Git branching in a way that feels like you’re just working with your code, rather than memorizing a list of commands. Imagine you have your repository history looking something like this:
 
 ```bash
@@ -69,51 +144,3 @@ This option protects you by refusing to overwrite changes on the remote if someo
 In summary, your stable branches (main, pds_branch_protected, bms_branch_protected, cdh_branch_protected, backplane_branch_protected) are like the safe vaults that only get updated through thorough review and testing via pull requests. Meanwhile, your feature branches let you experiment and commit your work in small, frequent steps—your “save points.” Once your work is polished and merged, the history might look like the diagram above, showing a clear record of merges, fixes, and incremental improvements. Happy coding!
 
 
-```mermaid
-gitGraph
-   checkout main
-   commit id:"INIT" tag:"v1.0.0" msg:"Initial commit"
-   branch main
-   commit id:"A012" tag:"v3.0.0" msg:"Release v3.0.0"
-
-   branch pds_branch_protected
-   commit id:"PDS1" msg:"PDS stable commit"
-   checkout main
-
-   branch bms_branch_protected
-   commit id:"BMS1" msg:"BMS stable commit"
-   checkout main
-
-   branch cdh_branch_protected
-   commit id:"CDH1" msg:"CDH stable commit"
-   checkout main
-
-   branch backplane_branch_protected
-   commit id:"BP1" msg:"Backplane stable commit"
-   checkout main
-
-   merge pds_branch_protected tag:"Merge PDS"
-   merge bms_branch_protected tag:"Merge BMS"
-   merge cdh_branch_protected tag:"Merge CDH"
-   merge backplane_branch_protected tag:"Merge BP"
-
-   branch feature/api-improvements
-   commit id:"API1" msg:"API improvements"
-   branch feature/data-sync
-   commit id:"DS1" msg:"Data sync feature"
-   branch feature/ui-enhancements
-   commit id:"UI1" msg:"UI enhancements"
-   branch feature/experimental
-   commit id:"EXP1" msg:"Experimental features"
-   branch feature/security
-   commit id:"SEC1" msg:"Security updates"
-   branch feature/performance
-   commit id:"PERF1" msg:"Performance tweaks"
-   checkout main
-
-   merge feature/api-improvements tag:"Merge API"
-   merge feature/data-sync tag:"Merge DS"
-   merge feature/ui-enhancements tag:"Merge UI"
-   merge feature/experimental tag:"Merge EXP"
-   merge feature/security tag:"Merge SEC"
-   merge feature/performance tag:"Merge PERF"
