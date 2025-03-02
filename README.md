@@ -123,8 +123,9 @@ The following document lists all the protocols required inter-MCU communication:
 
 **MSP430 Project Setup and Structure**
 [MSP Structure](https://github.com/scsd-cdh/OBC/blob/045e9a8daf7846750b0903a72c4fdc19a29c6233/DEV_GUIDE.md)
+
 **SAMV71 Project Setup and Structure**
-[Coming Soon](https://www.youtube.com/shorts/20POeajDZiw)
+[Coming Soon](https://www.youtube.com/shorts/4neZwq696J4)
 ## Software Guidelines
 
 Our development adheres to NASA's Rule of Ten. For more details, please refer to the 
