@@ -145,6 +145,7 @@ Branching strategy:
 
 ### Helpful Resources
 **Simplified Schematics from EPS:** [schematics](https://github.com/scsd-cdh/OBC/tree/4f78fb7ef3817c7a7aa3b54e0cb5d2de58017581/Docs/Schematics)
+- Learning Resources: [link](https://github.com/scsd-cdh/OBC/blob/d4c28b9f10d4c328e8bc8e315ff671d0299aac05/Docs/Learning%20Resources.md) 
 - [How to Create Software Design Documents (Lucidchart)](https://www.lucidchart.com/blog/how-to-create-software-design-documents)
 - [Digital Jhelms' GitHub Gist](https://gist.github.com/digitaljhelms/4287848)
 
