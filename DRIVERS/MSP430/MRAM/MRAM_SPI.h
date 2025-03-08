@@ -1,3 +1,22 @@
+/*  
+
+NOTE: This driver is configured to be used with the MSP430FR5969 and was written using interrupts without taking into 
+  account also using I2C on the MSP. If you want to use I2C and SPI at the same time, you will either need to modify the I2C ISR
+  or (reccomened) use the USCI_B0_ISR for I2C and a different ISR and vector for SPI. Note that changing the ISR and vector will require
+  you to use different pins for the SPI interface. Defined below are some of the pins that can be used for the SPI interface for the MSP430FR5969.
+
+  Note that if you try to use two seperate B0 or A0 ISRs, the program will not compile and give you some confusing errors (__TI_<something> already defined or something).
+  
+  Look up the datasheet for your specific SPI device to find what vectors correspond to what pins and so on. From there, you can modify this driver
+  to work with those pins. For example EUSCI_B0_BASE -> EUSCI_<vector>_BASE. Be sure to double check what API you are using to make sure the transition
+  is this simple. 
+
+  Also to make sure we don't run into any build issues the ISR in MRAM_SPI.c will be commented out to avoid any build issues. Use this driver as reference.
+
+  Had to leave in a rush because this project was abandoned and we have bigger priorities right now.
+*/
+
+
 #ifndef _MRAM_SPI_
 #define _MRAM_SPI_
 
@@ -27,11 +46,14 @@ extern volatile uint8_t rxData;
 #define GPIO_PIN_17 ((GPIO_PORT_P1 << 8) | GPIO_PIN7)
 #define GPIO_PIN_22 ((GPIO_PORT_P2 << 8) | GPIO_PIN2)
 
+
+// B0 vector pins 
 #define DEFAULT_B0_CS_PIN GPIO_PIN_13
 #define DEFAULT_B0_MOSI_PIN GPIO_PIN_16
 #define DEFAULT_B0_MISO_PIN GPIO_PIN_17
 #define DEFAULT_B0_SCLK_PIN GPIO_PIN_22
 
+// A1 vector pins
 #define DEFAULT_A1_CS_PIN GPIO_PIN_23
 #define DEFAULT_A1_SCLK_PIN GPIO_PIN_24
 #define DEFAULT_A1_MOSI_PIN GPIO_PIN_25

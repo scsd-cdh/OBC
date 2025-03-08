@@ -343,3 +343,26 @@ MRAM_ErrorCode MRAM_writeMemoryArray(uint32_t addr, const uint8_t* buffer, size_
 
     return err;
 }
+
+/*
+#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
+#pragma vector=USCI_B0_VECTOR
+__interrupt
+#elif defined(__GNUC__)
+__attribute__((interrupt(USCI_B0_VECTOR)))
+#endif
+void USCI_B0_ISR(void)
+{
+    switch (__even_in_range(UCB0IV, USCI_SPI_UCTXIFG))
+    {
+        case USCI_SPI_UCRXIFG:      // UCRXIFG
+            rxData = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
+            // Delay between transmissions for slave to process information
+            __delay_cycles(40);
+            __bic_SR_register_on_exit(LPM0_bits);
+            break;
+        default:
+            break;
+    }
+}
+*/
