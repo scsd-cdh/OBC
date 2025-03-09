@@ -1,103 +1,161 @@
+<!-- Top Images: Three identical images -->
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/3487323d-b1ab-42d3-95d7-171848ec610e" alt="EPS" width="400" style="margin: 0 10px;">
+  <img src="https://github.com/user-attachments/assets/e5974ec4-5c03-4e11-9943-247dc1a2335c" alt="EPS" width="200" style="margin: 0 10px;">
+  <img src="https://github.com/user-attachments/assets/1a330da9-d749-4397-97ef-e2ad4217c84d" alt="EPS" width="200" style="margin: 0 10px;">
+</div>
 
-[![](https://t9014385614.p.clickup-attachments.com/t9014385614/ef91f96b-fe1c-4da7-ae60-9722250d628f/image.png)](https://nvie.com/posts/a-successful-git-branching-model/)
+<!-- Two-Column Header with Icon and Title -->
+<table>
+  <tr>
+    <td style="vertical-align: middle; padding-right: 10px;">
+      <img src="https://github.com/user-attachments/assets/c4271b34-01f1-4f24-80ce-8c2c151b5e25" alt="Icon" width="300">
+    </td>
+    <td style="vertical-align: middle;">
+      <h1 style="margin: 0;">CDH Software System</h1>
+      <p style="margin: 5px 0 0 0;">
+        CDH Software System is the core of our spacecraft’s command and data handling architecture. It is organized into three primary layers that handle embedded hardware operations, system-level APIs, and user-facing debugging interfaces.
+      </p>
+    </td>
+  </tr>
+</table>
 
-### Components involved
 
-* * *
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/your_username/your_repo/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Issues](https://img.shields.io/github/issues/your_username/your_repo.svg)](https://github.com/your_username/your_repo/issues)
+[![Conventional Commits](https://img.shields.io/badge/commit-conventional-green.svg)](https://www.conventionalcommits.org/en/v1.0.0/)
 
-  
+---
 
-![](https://t9014385614.p.clickup-attachments.com/t9014385614/7b63fd11-c62e-4876-bb3f-77da2c721079/CDH_SW_Block_Diag.png)
+## Table of Contents
 
-_Remove this later:_ [_https://app.diagrams.net/?state=%7B%22ids%22:%5B%221Lrvki\_HJC8g2YscnLJUFlnQhUQTD1xV3%22%5D,%22action%22:%22open%22,%22userId%22:%22111935358387644137052%22,%22resourceKeys%22:%7B%7D%7D_](https://app.diagrams.net/?state=%7B%22ids%22:%5B%221Lrvki_HJC8g2YscnLJUFlnQhUQTD1xV3%22%5D,%22action%22:%22open%22,%22userId%22:%22111935358387644137052%22,%22resourceKeys%22:%7B%7D%7D)
+- [Overview](#overview)
+- [Components Involved](#components-involved)
+- [Software Guidelines](#software-guidelines)
+- [Contribution Guide](#Contribution-Guide)
+- [Appendix](#appendix)
+- [License](#license)
 
-  
+---
 
-  
+## Overview
 
-There are three different sections which the various components are divided into,
+The CDH Software System manages all aspects of our spacecraft’s command and data handling. The project is structured into three distinct layers:
 
-  
+1. **Embedded:** Directly manages hardware components such as microcontrollers and peripheral interfaces.
+2. **OS Level:** Provides a set of APIs that build on the lower-level drivers to deliver system-level services.
+3. **Debugging Interfaces:** Comprises web-based UIs and logging tools to generate test reports and facilitate diagnostics.
 
-1. **Embedded:** This level consists of all the hardware components involved. There are two main _programmable_ components_\-_ The SAMV71 and the MSP430, both of these are _space-grade_ microcontrollers. These were the components used in SC-ODIN, our clubs last spacecraft endeavor.
 
-> The programs we write mainly run on these processors. Their specs are listed in the appendix. But in general, MSP430 sare much less powerful athan the SAMV71s.
 
-The SAMV71's sole purpose is to send the MSP430s commands. The MSP430s are connected to other peripherals and collect information, which is then retreived by the SAMV71 and processed accordingly.
+---
 
-> ![](https://t9014385614.p.clickup-attachments.com/t9014385614/48e73c75-fce2-479e-96bd-495d54704f3b/CDH_SW_Block_Diag.drawio%20(2).png)
+## Components Involved
 
-  
+Currently working on:
+![CDH Software Stack](https://github.com/user-attachments/assets/63521e22-d05b-4150-9548-007b64960eca)
 
-  
 
-  
 
-  
 
-  
+**The various software components are listed below:**
 
-  
+```mermaid
+graph TD
+    A[Space Concordia <br> SC-FREYR] --> B[Debugging Interfaces]
+    A --> C[OS Level]
+    A --> D[Embedded]
+    A --> E[Other ICs]
+    A --> F[Sensors & Actuators <br> Communication]
+    A --> G[Inter-Processor <br> Communication]
 
-  
+    %% Debugging Interfaces
+    B --> B1[In-house Logger]
+    B --> B2[Battery Testing WSP]
+    B --> B3[LSP]
 
-  
+    %% OS Level
+    C --> C1[Power Control API]
+    C --> C2[Message Processor API]
+    C --> C3[Watch Dog API]
+    C --> C4[RTC API]
+    C --> C5[Sensors API]
+    C --> C6[Actuators API]
 
-> This is subject to change - Discuss with Nabil/Callum as to where the IRQs are supposed to be located. Also its not SRAM(on the bottom right), its S-BAND. Also update this.
+    %% Embedded
+    D --> D1[MSP430 FR5999]
+    D --> D2[SAMV71]
+    D --> D3[Watchdog?]
 
-  
+    %% Other ICs
+    E --> E1[MRAM]
 
-The following communication protocols will be used:
+    %% Sensors & Actuators Communication
+    F --> F1[Actuators]
+    F --> F2[Sensors]
 
-1.     1.     1. _I2C -_ Mainly used to communicate between the MSP430s and SAMV71.
-        2. _QSPI_ - Used to interface with the MRAM chips.
-        3. _UART_ - Used to communicate between the MSP430 and Transciever Chip(_AX100)_ in the communications sub-module.
-        4. _GPIO_ - Usually just one wire(_IRQ_) directly connected to the microcontroller, used for setting/reading flags or sending an on/off signal for power cycling.
-        5. _LVDS_ - Used to reliable routing images to the Comms Submodule from the Imager payload(_Zetane_).
+    F1 --> F1a[Reaction Wheels]
+    F1 --> F1b[Magnetorquer]
 
-  
+    F2 --> F2a[Thermocouples]
+    F2 --> F2b[IMU]
+    F2 --> F2c[Sun Sensor]
 
-1. **OS Level:** The OS level components will likely include several APIs which will use the drivers implemented in the previous section.
-2. **Debugging Interfaces:** This level of the stack will be a software suite comprising of several web-app **UIs** and which will also provide functionality for generating **logs** and **test reports**.
+    %% Inter-Processor Communication
+    G --> G1[AX100]
+    G --> G2[S-Band]
 
-  
+```
 
-### Task Decomposition and Assignment
+## Contribution Guide
 
-* * *
+Before you begin: 
+Check out the Github essentials: [#Docs/Github_Essentials.md](https://github.com/scsd-cdh/OBC/blob/d00afaf845758b6a269e30d44f57f17d18876272/Docs/Github_Essentials.md)
 
-  
+Your should be assigned an issue, 
+You can go check it's requirements listed and start implementing it. Make sure you write good commit's with good descriptions.
+Then once you merge it into the stable branch we have an idea of what you did. 
 
-![](https://t9014385614.p.clickup-attachments.com/t9014385614/505a3bf6-cc8f-4bcb-b4a1-8affedb17321/CDH_SW_Block_Diag.drawio.png)
+This is how you're development flow should look like:
+[#Docs/branching_rules.md](https://github.com/scsd-cdh/OBC/blob/7fbe7e40980c13327b7881f3bf36f775a66de1ec/Docs/branching_rules.md)
 
-_Todo: Add "State Resolver" to middleware._
+The following document lists all the protocols required inter-MCU communication: [Protocols](https://docs.google.com/document/d/1QJ-23KT9wzDGa4bX3uof-pEGOELUUwvdz8o87ZT44fY/edit?tab=t.0)  -> Feel free to add required protocols whenever you want. Leave a comment for every change made. 
 
-  
+**MSP430 Project Setup and Structure**
+[MSP Structure](https://github.com/scsd-cdh/OBC/blob/045e9a8daf7846750b0903a72c4fdc19a29c6233/DEV_GUIDE.md)
 
-The tasks are decomposed into three distinct stack. The lowest level of the stack will implement the `driver` code. The `middleware` will then use this to implement its own functionality. The `App` layer will implement the top level functions using the middleware.
+**SAMV71 Project Setup and Structure**
+[Coming Soon](https://www.youtube.com/shorts/4neZwq696J4)
+## Software Guidelines
 
-  
+Our development adheres to NASA's Rule of Ten. For more details, please refer to the 
+- For C, [NASA Rule of Ten](https://web.eecs.umich.edu/~imarkov/10rules.pdf).
+- Branching, [Successful Git Branching Model](https://nvie.com/posts/a-successful-git-branching-model/)
+- Commit Naming, [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0/)
 
-# APPENDIX
+Branching strategy: 
+[Successful Git Branching Model](https://nvie.com/posts/a-successful-git-branching-model/).
 
-  
 
-_Stuff that may be helpful_
 
-[https://www.lucidchart.com/blog/how-to-create-software-design-documents](https://www.lucidchart.com/blog/how-to-create-software-design-documents)
+---
 
-[https://nvie.com/posts/a-successful-git-branching-model/](https://nvie.com/posts/a-successful-git-branching-model/)
+## Appendix
 
-Commit Convention: [https://www.conventionalcommits.org/en/v1.0.0/]
+### Helpful Resources
+**Simplified Schematics from EPS:** [schematics](https://github.com/scsd-cdh/OBC/tree/4f78fb7ef3817c7a7aa3b54e0cb5d2de58017581/Docs/Schematics)
+- Learning Resources: [link](https://github.com/scsd-cdh/OBC/blob/d4c28b9f10d4c328e8bc8e315ff671d0299aac05/Docs/Learning%20Resources.md) 
+- [How to Create Software Design Documents (Lucidchart)](https://www.lucidchart.com/blog/how-to-create-software-design-documents)
+- [Digital Jhelms' GitHub Gist](https://gist.github.com/digitaljhelms/4287848)
 
-[
 
-gist.github.com
+---
 
-https://gist.github.com/digitaljhelms/4287848
+## License
 
-](https://gist.github.com/digitaljhelms/4287848)
+This project is licensed under the [MIT License](LICENSE).
 
-  
+---
 
-_Also Make sure to include/create a component list with ID for Each component._
+

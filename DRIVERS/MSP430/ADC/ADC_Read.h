@@ -6,6 +6,7 @@
 /******************************************************************************
  * @brief Used in the ADC_PinSelect() function as the pin parameter.
  ******************************************************************************/
+// TODO pinout to match production MSP version
 typedef enum{
     P1_0 = ADC12_B_INPUT_A0,
     P1_1 = ADC12_B_INPUT_A1,
