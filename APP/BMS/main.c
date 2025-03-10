@@ -22,27 +22,66 @@
 
 #include "BMS.h"
 #include "i2c.h"
+#include <sys/types.h>
 
 
 #define SLAVE_ADDR 0x08
 
 volatile uint8_t buffer[8];
-volatile uint8_t outBuffer[8];
+const uint8_t outBuffer[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-void I2C_Proc_RX_Data(uint8_t data) 
+void I2C_Proc_RX_Data(uint8_t data);
+
+uint16_t SendTelemetryResponse()
 {
-    transmitI2C((const uint8_t*)outBuffer, 1);
+    uint8_t bytes[TINYPROTOCOL_MAX_PACKET_SIZE];
+    uint8_t count = 0;
+    uint8_t* pbyte = bytes;
+
+    while(TINYPROTOCOL_TelemetryBytesLeft() > 0) {
+        int16_t result = TINYPROTOCOL_ReadNextTelemetryByte(pbyte);
+        if (result == ETINYPROTOCOL_SUCCESS) {
+            pbyte++;
+            count++;
+        } else {
+            return result;
+        }
+    }
+    
+    transmitI2C(bytes, count);
+    return ETINYPROTOCOL_SUCCESS;
+} 
+
+static int16_t ProcessTelemetryRequest(uint8_t request)
+{
+    return SendTelemetryResponse();
 }
 
-sI2cConfigCb_t i2cConfig = {
-    .Rx_Proc_Data = I2C_Proc_RX_Data,
-    .slave_addr = SLAVE_ADDR
+static int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size)
+{
+    return 0;
+}
+
+const struct TINYPROTOCOL_Config protocolConfig =
+{
+    .TINYPROTOCOL_ProcessTelecommand = ProcessTelecommand,
+    .TINYPROTOCOL_ProcessTelemetryRequest = ProcessTelemetryRequest,
+    .TINYPROTOCOL_WriteBuffer = transmitI2C
 };
+
+void I2C_Proc_RX_Data(uint8_t data)
+{
+    TINYPROTOCOL_ParseByte(&protocolConfig, data);
+}
 
 int main(void)
 {
+    sI2cConfigCb_t i2cConfig = {
+        .Rx_Proc_Data = I2C_Proc_RX_Data,
+        .slave_addr = SLAVE_ADDR
+    };
+
     WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
-    PM5CTL0 &= ~LOCKLPM5;       // Unlock GPIO for FRAM devices
 
     // Configure GPIO
     P1OUT &= ~BIT0;                           // Clear P1.0 output latch
@@ -52,10 +91,10 @@ int main(void)
     // previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
 
-
-    outBuffer[0] = 0x42;
-
     initI2C(&i2cConfig);
+
+    TINYPROTOCOL_Initialize();
+    TINYPROTOCOL_RegisterTelemetryChannel(TINYPROTOCOL_TLM_RESERVED, outBuffer, sizeof(outBuffer));
     
     __bis_SR_register(LPM0_bits + GIE);
 }
