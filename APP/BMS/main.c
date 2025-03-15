@@ -30,6 +30,11 @@
 volatile uint8_t buffer[8];
 const uint8_t outBuffer[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
+static const SystemStatusResp_t SystemStatusOut = {
+    .runtime = 0x12,
+    .fw_version = 0xA, 
+};
+
 void I2C_Proc_RX_Data(uint8_t data);
 
 uint16_t SendTelemetryResponse()
@@ -81,20 +86,12 @@ int main(void)
         .slave_addr = SLAVE_ADDR
     };
 
-    WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
-
-    // Configure GPIO
-    P1OUT &= ~BIT0;                           // Clear P1.0 output latch
-    P1DIR |= BIT0;                            // For LED
-    P1SEL1 |= BIT6 | BIT7;                    // I2C pins
-    // Disable the GPIO power-on default high-impedance mode to activate
-    // previously configured port settings
-    PM5CTL0 &= ~LOCKLPM5;
-
+    initBSP();
     initI2C(&i2cConfig);
 
     TINYPROTOCOL_Initialize();
-    TINYPROTOCOL_RegisterTelemetryChannel(TINYPROTOCOL_TLM_RESERVED, outBuffer, sizeof(outBuffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, SystemStatusOut.buffer , sizeof(SystemStatusOut.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_POWER_STATUS_ID, sPowerStatusBattery1Out.buffer, sizeof(sPowerStatusBattery1Out.buffer));
     
     __bis_SR_register(LPM0_bits + GIE);
 }

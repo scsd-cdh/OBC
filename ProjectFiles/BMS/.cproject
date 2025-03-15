@@ -52,6 +52,8 @@
 								<option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DIAG_WRAP.1010194455" name="Wrap diagnostic messages (--diag_wrap) [deprecated]" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DIAG_WRAP" useByScannerDiscovery="false" value="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DIAG_WRAP.off" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH.254198484" name="Add dir to #include search path (--include_path, -I)" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH" valueType="includePath">
 									<listOptionValue builtIn="false" value="${CCS_BASE_ROOT}"/>
+									<listOptionValue builtIn="false" value="C:\Users\space\CDH\OBC\DRIVERS\MSP430\RTC_B"/>
+									<listOptionValue builtIn="false" value="${workspace_loc:/${ProjName}/DRIVERS/MSP430/ADC}"/>
 									<listOptionValue builtIn="false" value="${workspace_loc:/${ProjName}/DRIVERS/MSP430/I2C}"/>
 									<listOptionValue builtIn="false" value="${workspace_loc:/${ProjName}/DRIVERS/MSP430/UTILS}"/>
 									<listOptionValue builtIn="false" value="${CCS_BASE_ROOT}/msp430/include"/>
