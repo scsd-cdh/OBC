@@ -141,7 +141,6 @@ Branching strategy:
 
 ---
 
-## Appendix
 
 ### Helpful Resources
 **Simplified Schematics from EPS:** [schematics](https://github.com/scsd-cdh/OBC/tree/4f78fb7ef3817c7a7aa3b54e0cb5d2de58017581/Docs/Schematics)
