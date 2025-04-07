@@ -1,21 +1,43 @@
 #include "BMS.h"
 #include "ADC_Read.h"
+#if defined (__MSP430FR5989__)
 #include "rtc_c.h"
+#elif defined (__MSP430FR5969__)
+#include "rtc_b.h"
+#endif
 
+// ADC pins
+#define I_SENSE_VUR_1_CP_PIN      ADC12_B_INPUT_A10 // PIN 42 5989
+#define I_SENSE_VUR_2_CP_PIN      ADC12_B_INPUT_A0  // PIN 39 5989
+#define I_SENSE_CHR_1_CP_PIN      ADC12_B_INPUT_A9  // PIN 41 5989
+#define I_SENSE_CHR_2_CP_PIN      ADC12_B_INPUT_A8  // PIN 40 5989
+#define V_CELL_1A_CP_PIN          ADC12_B_INPUT_A13 // PIN 45 5989
+#define V_CELL_1B_CP_PIN          ADC12_B_INPUT_A12 // PIN 44 5989
+#define V_CELL_2A_CP_PIN          ADC12_B_INPUT_A2  // PIN 37 5989
+#define V_BATTPACK_1_CP_PIN       ADC12_B_INPUT_A11 // PIN 43 5989
+#define V_BATTPACK_2_CP_PIN       ADC12_B_INPUT_A1  // PIN 38 5989
 
-// ADC pin mappings
-// I_SENSE_CHR_CP: Current sensing for battery charging current
-// This is supposed to be for pin 40. We need to map pin to memory where ADC does it's thing 
-// ADC pin numbers
-#define I_SENSE_CHR_CP_ADC_IN_PIN ADC12_B_INPUT_A8 // PIN 40
+// ADC memory buffers
+#define I_SENSE_VUR_1_CP_MEM      ADC12_B_MEMORY_0
+#define I_SENSE_VUR_2_CP_MEM      ADC12_B_MEMORY_1
+#define I_SENSE_CHR_1_CP_MEM      ADC12_B_MEMORY_2
+#define I_SENSE_CHR_2_CP_MEM      ADC12_B_MEMORY_3
+#define V_CELL_1A_CP_MEM          ADC12_B_MEMORY_4
+#define V_CELL_1B_CP_MEM          ADC12_B_MEMORY_5
+#define V_CELL_2A_CP_MEM          ADC12_B_MEMORY_6
+#define V_BATTPACK_1_CP_MEM       ADC12_B_MEMORY_7  
+#define V_BATTPACK_2_CP_MEM       ADC12_B_MEMORY_8
 
-// ADC MEM buffer
-#define I_SENSE_CHR_CP_ADC_MEM ADC12_B_MEMORY_0
-
-PowerStatusResp_t sPowerStatusBattery1Out = {
+PowerStatusResp_t PowerStatusBattery1Out = {
     .current = 0,
     .voltage = 0,
     .battery_number = 1,
+};
+
+PowerStatusResp_t PowerStatusBattery2Out = {
+    .current = 0,
+    .voltage = 0,
+    .battery_number = 2,
 };
 
 static void initADCs() 
@@ -23,7 +45,15 @@ static void initADCs()
     ADC_init_Standard();
 
     // Selects what pin to get mapped to what ADC memory thing
-    ADC_PinSelect(I_SENSE_CHR_CP_ADC_IN_PIN, I_SENSE_CHR_CP_ADC_MEM);
+    ADC_PinSelect(I_SENSE_VUR_1_CP_PIN,     I_SENSE_VUR_1_CP_MEM);
+    ADC_PinSelect(I_SENSE_VUR_2_CP_PIN,     I_SENSE_VUR_2_CP_MEM);
+    ADC_PinSelect(I_SENSE_CHR_1_CP_PIN,     I_SENSE_CHR_1_CP_MEM);
+    ADC_PinSelect(I_SENSE_CHR_2_CP_PIN,     I_SENSE_CHR_2_CP_MEM);
+    ADC_PinSelect(V_CELL_1A_CP_PIN,         V_CELL_1A_CP_MEM);
+    ADC_PinSelect(V_CELL_1B_CP_PIN,         V_CELL_1B_CP_MEM);
+    ADC_PinSelect(V_CELL_2A_CP_PIN,         V_CELL_2A_CP_MEM);
+    ADC_PinSelect(V_BATTPACK_1_CP_PIN,      V_BATTPACK_1_CP_MEM);
+    ADC_PinSelect(V_BATTPACK_2_CP_PIN,      V_BATTPACK_2_CP_MEM);
 }
 
 static void initGPIO()
@@ -55,6 +85,8 @@ static void initClockTo16MHz()
     CSCTL0_H = 0;                             // Lock CS registers
 }
 
+
+#if defined (__MSP430FR5989__)
 static void initRTCC()
 {
     Calendar currentTime;
@@ -97,11 +129,59 @@ static void initRTCC()
     RTC_C_startClock(RTC_C_BASE);
 }
 
+#elif defined (__MSP430FR5969__)
+static void initRTCB()
+{
+    Calendar currentTime;
+
+    //Setup for Calendar
+    currentTime.Seconds    = 0x00;
+    currentTime.Minutes    = 0x00;
+    currentTime.Hours      = 0x00;
+    currentTime.DayOfWeek  = 0x00;
+    currentTime.DayOfMonth = 0x00;
+    currentTime.Month      = 0x00;
+    currentTime.Year       = 0x7E9;  // 2025
+
+    //Initialize Calendar Mode of RTC
+    RTC_B_initCalendar(RTC_B_BASE, &currentTime, RTC_B_FORMAT_BCD);
+
+    //Setup Calendar Alarm for 30 minutes after start.
+    RTC_B_configureCalendarAlarmParam param = {0};
+    param.minutesAlarm      = 0x2;  // Currently set to 2 minute for testing - TODO change to 24 hours
+    param.hoursAlarm        = 0x0;
+    param.dayOfWeekAlarm    = 0x0;
+    param.dayOfMonthAlarm   = 0x0;
+    RTC_B_configureCalendarAlarm(RTC_B_BASE, &param);
+
+    RTC_B_clearInterrupt(RTC_B_BASE,
+        RTC_B_CLOCK_READ_READY_INTERRUPT +
+        RTC_B_TIME_EVENT_INTERRUPT +
+        RTC_B_CLOCK_ALARM_INTERRUPT
+        );
+    //Enable interrupt for RTC Ready Status, which asserts when the RTC
+    //Calendar registers are ready to read.
+    //Also, enable interrupts for the Calendar alarm and Calendar event.
+    RTC_B_enableInterrupt(RTC_B_BASE,
+        RTC_B_CLOCK_READ_READY_INTERRUPT +
+        RTC_B_TIME_EVENT_INTERRUPT +
+        RTC_B_CLOCK_ALARM_INTERRUPT
+    );
+
+    //Start RTC Clock
+    RTC_B_startClock(RTC_B_BASE);
+}
+#endif
+
 void initBSP()
 {
     initClockTo16MHz();
     initGPIO();
+    #if defined (__MSP430FR5989__)
     initRTCC();
+    #elif defined (MSP430FR6989)
+    initRTCB();
+    #endif
     initADCs();
 }
 
@@ -113,7 +193,6 @@ static PowerStatusResp_t sPowerStatusBattery2Out = {
 
 void RoutineCycle_Process()
 {
-    sPowerStatusBattery1Out.current = Read_ADC(I_SENSE_CHR_CP_ADC_MEM);
 }
 
 
@@ -124,7 +203,7 @@ __interrupt
 #elif defined(__GNUC__)
 __attribute__((interrupt(RTC_VECTOR)))
 #endif
-void RTC_C_ISR (void)
+void RTC_ISR (void)
 {
     switch (__even_in_range(RTCIV,16))
     {
