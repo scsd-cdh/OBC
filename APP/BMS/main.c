@@ -93,7 +93,7 @@ int main(void)
 
     TINYPROTOCOL_Initialize();
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, SystemStatusOut.buffer , sizeof(SystemStatusOut.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_POWER_STATUS_ID, sPowerStatusBattery1Out.buffer, sizeof(sPowerStatusBattery1Out.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_POWER_STATUS_ID, PowerStatusBattery1Out.buffer, sizeof(PowerStatusBattery1Out.buffer));
     
     __bis_SR_register(LPM0_bits + GIE);
 }

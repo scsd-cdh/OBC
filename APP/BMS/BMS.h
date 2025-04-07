@@ -7,16 +7,14 @@
 #define SYSTEM_STATUS_RESP_LEN 5     // Response length for system status 
 #define POWER_STATUS_RESP_LEN 16  
 
-
-
-inline uint8_t* getPowerStatusBattery1();
-
 void initBSP();
 
 enum BMS_TelemetryRequestCmdId {
   BMS_SYSTEM_STATUS_ID = TINYPROTOCOL_TLM_RESERVED,
   BMS_HEALTH_CHECK_ID,
+  BMS_FLAG_ID,
   BMS_POWER_STATUS_ID,
+  BMS_HEATERS_CONTROLLER_ID
 };
 
 typedef union SystemStatusResp {
@@ -37,6 +35,7 @@ typedef union PowerStatusResp {
 } PowerStatusResp_t;
 
 
-extern PowerStatusResp_t sPowerStatusBattery1Out;
+extern PowerStatusResp_t PowerStatusBattery1Out;
+extern PowerStatusResp_t PowerStatusBattery2Out;
 
 #endif
