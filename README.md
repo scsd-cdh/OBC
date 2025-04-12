@@ -62,50 +62,14 @@ Currently working on:
 **The various software components are listed below:**
 
 ```mermaid
-graph TD
-    A[Space Concordia <br> SC-FREYR] --> B[Debugging Interfaces]
-    A --> C[OS Level]
-    A --> D[Embedded]
-    A --> E[Other ICs]
-    A --> F[Sensors & Actuators <br> Communication]
-    A --> G[Inter-Processor <br> Communication]
-
-    %% Debugging Interfaces
-    B --> B1[In-house Logger]
-    B --> B2[Battery Testing WSP]
-    B --> B3[LSP]
-
-    %% OS Level
-    C --> C1[Power Control API]
-    C --> C2[Message Processor API]
-    C --> C3[Watch Dog API]
-    C --> C4[RTC API]
-    C --> C5[Sensors API]
-    C --> C6[Actuators API]
-
-    %% Embedded
-    D --> D1[MSP430 FR5999]
-    D --> D2[SAMV71]
-    D --> D3[Watchdog?]
-
-    %% Other ICs
-    E --> E1[MRAM]
-
-    %% Sensors & Actuators Communication
-    F --> F1[Actuators]
-    F --> F2[Sensors]
-
-    F1 --> F1a[Reaction Wheels]
-    F1 --> F1b[Magnetorquer]
-
-    F2 --> F2a[Thermocouples]
-    F2 --> F2b[IMU]
-    F2 --> F2c[Sun Sensor]
-
-    %% Inter-Processor Communication
-    G --> G1[AX100]
-    G --> G2[S-Band]
-
+flowchart LR
+    A["Space Concordia <br> SC-FREYR"] --> B["Debugging Interfaces"] & C["OS Level"]  & F["Sensors &amp; Actuators <br> Communication"] & H["Drivers"]
+    B --> B1["In-house Logger"] & B2["Battery Testing WSP"] 
+    C --> C1["Power Control API"]  & C2["Message Processor API"] & C3["Watch Dog API"] & C4["RTC API"] & C5["Sensors API"] & C6["Actuators API"] & C7["MRAM"]
+    F --> F1["Actuators"] & F2["Sensors"]
+    F1 --> F1a["Reaction Wheels"] & F1b["Magnetorquer"] & F1c["Heaters"]
+    F2 --> F2a["Magnetometer"] & F2b["Sun Sensor"] & F2c["Thermister"]
+    H --> H1["SPI"] & H2["I2C"] & H3["GPIO"] & H4["ADC"] & H5["LVDS"] & H6["UART"]
 ```
 
 ## Contribution Guide
