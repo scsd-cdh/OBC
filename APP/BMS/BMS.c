@@ -33,13 +33,16 @@
 PowerStatusResp_t PowerStatusBattery1Out = {
     .current = 0,
     .voltage = 0,
-    .battery_number = 1,
 };
 
 PowerStatusResp_t PowerStatusBattery2Out = {
     .current = 0,
     .voltage = 0,
-    .battery_number = 2,
+};
+
+const SystemStatusResp_t SystemStatusOut = {
+    .runtime = 0x12,
+    .fw_version = 0xA, 
 };
 
 static void initADCs() 
@@ -182,18 +185,78 @@ void initBSP()
     initGPIO();
     #if defined (__MSP430FR5989__)
     initRTCC();
-    #elif defined (MSP430FR6989)
+    #elif defined (__MSP430FR6989__)
     initRTCB();
     #endif
     initADCs();
 }
 
-static PowerStatusResp_t sPowerStatusBattery2Out = {
-    .current = 0,
-    .voltage = 0,
-    .battery_number = 2,
+// App communications
+#define SLAVE_ADDR 0x08
+
+volatile uint8_t buffer[8];
+const uint8_t outBuffer[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+void I2C_Proc_RX_Data(uint8_t data);
+
+static uint16_t SendTelemetryResponse()
+{
+    uint8_t bytes[TINYPROTOCOL_MAX_PACKET_SIZE];
+    uint8_t count = 0;
+    uint8_t* pbyte = bytes;
+
+    while(TINYPROTOCOL_TelemetryBytesLeft() > 0) {
+        int16_t result = TINYPROTOCOL_ReadNextTelemetryByte(pbyte);
+        if (result == ETINYPROTOCOL_SUCCESS) {
+            pbyte++;
+            count++;
+        } else {
+            return result;
+        }
+    }
+    
+    transmitI2C(bytes, count);
+
+    return ETINYPROTOCOL_SUCCESS;
+} 
+
+static int16_t ProcessTelemetryRequest(uint8_t request)
+{
+    return SendTelemetryResponse();
+}
+
+static int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size)
+{
+    return 0;
+}
+
+const struct TINYPROTOCOL_Config protocolConfig =
+{
+    .TINYPROTOCOL_ProcessTelecommand = ProcessTelecommand,
+    .TINYPROTOCOL_ProcessTelemetryRequest = ProcessTelemetryRequest,
+    .TINYPROTOCOL_WriteBuffer = transmitI2C
 };
 
+static void I2C_Proc_RX_Data(uint8_t data)
+{
+    TINYPROTOCOL_ParseByte(&protocolConfig, data);
+}
+
+
+void InitAppComm()
+{
+    sI2cConfigCb_t i2cConfig = {
+      .Rx_Proc_Data = I2C_Proc_RX_Data,
+        .slave_addr = SLAVE_ADDR
+    };
+    initI2C(&i2cConfig);
+
+    TINYPROTOCOL_Initialize();
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, SystemStatusOut.buffer , sizeof(SystemStatusOut.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_POWER_STATUS_ID, PowerStatusBattery1Out.buffer, sizeof(PowerStatusBattery1Out.buffer));
+}
+
+// ISR
 void RoutineCycle_Process()
 {
 }

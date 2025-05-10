@@ -38,4 +38,6 @@ typedef union PowerStatusResp {
 extern PowerStatusResp_t PowerStatusBattery1Out;
 extern PowerStatusResp_t PowerStatusBattery2Out;
 
+void InitAppComm(void);
+
 #endif
