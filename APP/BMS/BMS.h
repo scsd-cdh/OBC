@@ -5,7 +5,7 @@
 #include "i2c.h"
 
 #define SYSTEM_STATUS_RESP_LEN 5     // Response length for system status 
-#define POWER_STATUS_RESP_LEN 16  
+#define CURRENT_VOLTAGE_RESP_LEN 4
 
 void initBSP();
 
@@ -13,8 +13,12 @@ enum BMS_TelemetryRequestCmdId {
   BMS_SYSTEM_STATUS_ID = TINYPROTOCOL_TLM_RESERVED,
   BMS_HEALTH_CHECK_ID,
   BMS_FLAG_ID,
-  BMS_POWER_STATUS_ID,
-  BMS_HEATERS_CONTROLLER_ID
+  BMS_CURRENT_DRAW_ID,
+  BMS_CURRENT_CHARGE_ID,
+  BMS_VOLTAGE_BATTERY1_ID,
+  BMS_VOLTAGE_BATTERY2_ID,
+  BMS_VOLTAGE_COMBINED_ID,
+  BMS_HEATERS_CONTROLLER_ID,
 };
 
 typedef union SystemStatusResp {
@@ -25,18 +29,29 @@ typedef union SystemStatusResp {
     uint8_t buffer[SYSTEM_STATUS_RESP_LEN];
 } SystemStatusResp_t;
 
-typedef union PowerStatusResp {
+typedef union CurrentResp {
     struct {
-        uint16_t current : 15;
-        uint16_t voltage : 15;
-        uint8_t battery_number : 3;
+        uint16_t isense1 : 16;
+        uint16_t isense2 : 16;
     };
-    uint8_t buffer[SYSTEM_STATUS_RESP_LEN];
-} PowerStatusResp_t;
+    uint8_t buffer[CURRENT_VOLTAGE_RESP_LEN];
+} CurrentResp_t;
 
+typedef union VoltageResp {
+    struct {
+        uint16_t vcell_a : 16;
+        uint16_t vcell_b : 16;
+    };
+    uint8_t buffer[CURRENT_VOLTAGE_RESP_LEN];
+} VoltageResp_t;
 
-extern PowerStatusResp_t PowerStatusBattery1Out;
-extern PowerStatusResp_t PowerStatusBattery2Out;
+typedef union CombinedVoltageResp {
+    struct {
+        uint16_t vbatt1 : 16;
+        uint16_t vbatt2 : 16;
+    };
+    uint8_t buffer[CURRENT_VOLTAGE_RESP_LEN];
+} CombinedVoltageResp_t;
 
 void InitAppComm(void);
 

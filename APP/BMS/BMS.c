@@ -7,10 +7,13 @@
 #endif
 
 // ADC pins
+// Current sensing 
+// NOTE: 1 and 2 does not refer to battery number!! We don't know what it means right now! Waiting  for elec update 
 #define I_SENSE_VUR_1_CP_PIN      ADC12_B_INPUT_A10 // PIN 42 5989
 #define I_SENSE_VUR_2_CP_PIN      ADC12_B_INPUT_A0  // PIN 39 5989
 #define I_SENSE_CHR_1_CP_PIN      ADC12_B_INPUT_A9  // PIN 41 5989
 #define I_SENSE_CHR_2_CP_PIN      ADC12_B_INPUT_A8  // PIN 40 5989
+// Voltage sensing
 #define V_CELL_1A_CP_PIN          ADC12_B_INPUT_A13 // PIN 45 5989
 #define V_CELL_1B_CP_PIN          ADC12_B_INPUT_A12 // PIN 44 5989
 #define V_CELL_2A_CP_PIN          ADC12_B_INPUT_A3  // PIN 36 5989
@@ -30,20 +33,6 @@
 #define V_BATTPACK_1_CP_MEM       ADC12_B_MEMORY_8  
 #define V_BATTPACK_2_CP_MEM       ADC12_B_MEMORY_9
 
-PowerStatusResp_t PowerStatusBattery1Out = {
-    .current = 0,
-    .voltage = 0,
-};
-
-PowerStatusResp_t PowerStatusBattery2Out = {
-    .current = 0,
-    .voltage = 0,
-};
-
-const SystemStatusResp_t SystemStatusOut = {
-    .runtime = 0x12,
-    .fw_version = 0xA, 
-};
 
 static void initADCs() 
 {
@@ -197,7 +186,7 @@ void initBSP()
 volatile uint8_t buffer[8];
 const uint8_t outBuffer[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-void I2C_Proc_RX_Data(uint8_t data);
+static void I2C_Proc_RX_Data(uint8_t data);
 
 static uint16_t SendTelemetryResponse()
 {
@@ -243,24 +232,69 @@ static void I2C_Proc_RX_Data(uint8_t data)
 }
 
 
+static const SystemStatusResp_t sSystemStatus = {
+    .runtime = 0x12,
+    .fw_version = 0xA, 
+};
+
+static CurrentResp_t sCurrentDraw = {
+    .isense1 = 0,
+    .isense2 = 0,
+};
+
+static CurrentResp_t sCurrentCharge = {
+    .isense1 = 0,
+    .isense2 = 0,
+};
+
+static VoltageResp_t sVoltageBattery1 = {
+    .vcell_a = 0,
+    .vcell_b = 0,
+};
+
+static VoltageResp_t sVoltageBattery2 = {
+    .vcell_a = 0,
+    .vcell_b = 0,
+};
+
+static CombinedVoltageResp_t sCombinedBatteryVoltage = {
+    .vbatt1 = 0,
+    .vbatt2 = 0,
+};
+
 void InitAppComm()
 {
     sI2cConfigCb_t i2cConfig = {
       .Rx_Proc_Data = I2C_Proc_RX_Data,
-        .slave_addr = SLAVE_ADDR
+        .slave_addr = SLAVE_ADDR,
     };
     initI2C(&i2cConfig);
 
     TINYPROTOCOL_Initialize();
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, SystemStatusOut.buffer , sizeof(SystemStatusOut.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_POWER_STATUS_ID, PowerStatusBattery1Out.buffer, sizeof(PowerStatusBattery1Out.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, sSystemStatus.buffer , sizeof(sSystemStatus.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_DRAW_ID, sCurrentDraw.buffer, sizeof(sCurrentDraw.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_CHARGE_ID, sCurrentCharge.buffer, sizeof(sCurrentCharge.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sVoltageBattery1.buffer, sizeof(sVoltageBattery1.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sCurrentDraw.buffer, sizeof(sCurrentDraw.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_COMBINED_ID, sCombinedBatteryVoltage.buffer, sizeof(sCombinedBatteryVoltage));
 }
 
 // ISR
 void RoutineCycle_Process()
 {
-}
+    sCurrentDraw.isense1 = Read_ADC(I_SENSE_VUR_1_CP_MEM);
+    sCurrentDraw.isense2 = Read_ADC(I_SENSE_VUR_2_CP_MEM);
+    sCurrentCharge.isense1 = Read_ADC(I_SENSE_CHR_1_CP_MEM);
+    sCurrentCharge.isense2 = Read_ADC(I_SENSE_CHR_2_CP_MEM);
 
+    sVoltageBattery1.vcell_a = Read_ADC(V_CELL_1A_CP_MEM);
+    sVoltageBattery1.vcell_b = Read_ADC(V_CELL_1B_CP_MEM);
+    sVoltageBattery2.vcell_a = Read_ADC(V_CELL_2A_CP_MEM);
+    sVoltageBattery2.vcell_b = Read_ADC(V_CELL_2B_CP_MEM);
+
+    sCombinedBatteryVoltage.vbatt1 = Read_ADC(V_BATTPACK_1_CP_MEM);
+    sCombinedBatteryVoltage.vbatt2 = Read_ADC(V_BATTPACK_2_CP_MEM);
+}
 
 /*ISR that maintains LPM until 30 minutes has passed*/
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
