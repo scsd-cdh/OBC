@@ -101,6 +101,21 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>DRIVERS/MSP430/ADC</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/CRC_HW</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/CS</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>DRIVERS/MSP430/GPIO</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -111,12 +126,19 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+
 			<name>DRIVERS/MSP430/RTC_B</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+
 			<name>DRIVERS/MSP430/UTILS</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/WDT</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -151,6 +173,7 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+
 			<name>DRIVERS/MSP430/GPIO/gpio.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/GPIO/gpio.c</locationURI>
@@ -171,6 +194,7 @@
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/I2C/i2c.h</locationURI>
 		</link>
 		<link>
+
 			<name>DRIVERS/MSP430/RTC_B/rtc_b.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_B/rtc_b.c</locationURI>
@@ -181,6 +205,7 @@
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_B/rtc_b.h</locationURI>
 		</link>
 		<link>
+
 			<name>DRIVERS/MSP430/UTILS/utils.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/UTILS/utils.c</locationURI>
@@ -191,6 +216,7 @@
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/UTILS/utils.h</locationURI>
 		</link>
 		<link>
+
 			<name>DRIVERS/MSP430/ADC/include/adc12_b.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/adc12_b.c</locationURI>
@@ -206,9 +232,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+
 			<name>DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</locationURI>
 		</link>
+
 	</linkedResources>
 </projectDescription>

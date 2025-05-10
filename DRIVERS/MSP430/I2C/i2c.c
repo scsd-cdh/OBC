@@ -1,5 +1,7 @@
 
 #include "i2c.h"
+#include "spi.h"
+#include "MRAM_SPI.h"
 #include "utils.h"
 
 typedef enum eI2C_Mode {
@@ -66,10 +68,16 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
 #endif
 {
   //Must read from UCB0RXBUF
-  switch(__even_in_range(UCB0IV, USCI_I2C_UCBIT9IFG))
+  switch(__even_in_range(UCB0IV, USCI_I2C_UCBIT9IFG + USCI_SPI_UCTXIFG))
   {
     case USCI_NONE:          break;         // Vector 0: No interrupts
-    case USCI_I2C_UCALIFG:   break;         // Vector 2: ALIFG
+    case USCI_SPI_UCRXIFG:      // UCRXIFG -- SPI receive  Vector 2: ALIFG
+            rxData = EUSCI_B_SPI_receiveData(EUSCI_B0_BASE);
+            // Delay between transmissions for slave to process information
+            __delay_cycles(40);
+            __bic_SR_register_on_exit(LPM0_bits);
+            break;     
+    
     case USCI_I2C_UCNACKIFG: break;         // Vector 4: NACKIFG
     case USCI_I2C_UCSTTIFG:  break;         // Vector 6: STTIFG
     case USCI_I2C_UCSTPIFG:                 // Vector 8: STPIFG
@@ -104,8 +112,10 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
         TransmitIndex = (TransmitIndex + 1) % MAX_BUFFER_SIZE;
         i2cSlaveCtx.i2c_mode = I2C_TX_MODE;
         break;                      // Interrupt Vector: I2C Mode: UCTXIFG
+
+   
     default: 
-        break;
+            break;
   }
 }
 
