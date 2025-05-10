@@ -13,7 +13,8 @@
 #define I_SENSE_CHR_2_CP_PIN      ADC12_B_INPUT_A8  // PIN 40 5989
 #define V_CELL_1A_CP_PIN          ADC12_B_INPUT_A13 // PIN 45 5989
 #define V_CELL_1B_CP_PIN          ADC12_B_INPUT_A12 // PIN 44 5989
-#define V_CELL_2A_CP_PIN          ADC12_B_INPUT_A2  // PIN 37 5989
+#define V_CELL_2A_CP_PIN          ADC12_B_INPUT_A3  // PIN 36 5989
+#define V_CELL_2B_CP_PIN          ADC12_B_INPUT_A2  // PIN 37 5989
 #define V_BATTPACK_1_CP_PIN       ADC12_B_INPUT_A11 // PIN 43 5989
 #define V_BATTPACK_2_CP_PIN       ADC12_B_INPUT_A1  // PIN 38 5989
 
@@ -25,8 +26,9 @@
 #define V_CELL_1A_CP_MEM          ADC12_B_MEMORY_4
 #define V_CELL_1B_CP_MEM          ADC12_B_MEMORY_5
 #define V_CELL_2A_CP_MEM          ADC12_B_MEMORY_6
-#define V_BATTPACK_1_CP_MEM       ADC12_B_MEMORY_7  
-#define V_BATTPACK_2_CP_MEM       ADC12_B_MEMORY_8
+#define V_CELL_2B_CP_MEM          ADC12_B_MEMORY_7
+#define V_BATTPACK_1_CP_MEM       ADC12_B_MEMORY_8  
+#define V_BATTPACK_2_CP_MEM       ADC12_B_MEMORY_9
 
 PowerStatusResp_t PowerStatusBattery1Out = {
     .current = 0,
@@ -52,6 +54,7 @@ static void initADCs()
     ADC_PinSelect(V_CELL_1A_CP_PIN,         V_CELL_1A_CP_MEM);
     ADC_PinSelect(V_CELL_1B_CP_PIN,         V_CELL_1B_CP_MEM);
     ADC_PinSelect(V_CELL_2A_CP_PIN,         V_CELL_2A_CP_MEM);
+    ADC_PinSelect(V_CELL_2B_CP_PIN,         V_CELL_2B_CP_MEM);
     ADC_PinSelect(V_BATTPACK_1_CP_PIN,      V_BATTPACK_1_CP_MEM);
     ADC_PinSelect(V_BATTPACK_2_CP_PIN,      V_BATTPACK_2_CP_MEM);
 }
