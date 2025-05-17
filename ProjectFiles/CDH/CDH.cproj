@@ -328,7 +328,7 @@
   <armgcc.linker.miscellaneous.LinkerFlags>-Tsamv71q21b_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.linker.miscellaneous.OtherObjects>
     <ListValues>
-      <Value>C:\Users\space\OBC\APP\CDH_App\Device_Startup\samv71q21b_flash.ld</Value>
+      <Value>../../../APP/CDH_App/Device_Startup/samv71q21b_flash.ld</Value>
     </ListValues>
   </armgcc.linker.miscellaneous.OtherObjects>
   <armgcc.assembler.general.IncludePaths>
@@ -551,7 +551,6 @@
     <Folder Include="hal" />
     <Folder Include="hal\utils" />
     <Folder Include="hpl" />
-    <Folder Include="hri" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

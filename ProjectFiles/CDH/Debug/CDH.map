@@ -9519,7 +9519,7 @@ LOAD hpl/hpl_xdmac.o
 START GROUP
 LOAD c:/program files (x86)/atmel/studio/7.0/toolchain/arm/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libm.a
 END GROUP
-LOAD C:\Users\space\OBC\APP\CDH_App\Device_Startup\samv71q21b_flash.ld
+LOAD ../../../APP/CDH_App/Device_Startup/samv71q21b_flash.ld
                 0x00000400                STACK_SIZE = DEFINED (STACK_SIZE)?STACK_SIZE:DEFINED (__stack_size__)?__stack_size__:0x400
                 0x00000200                HEAP_SIZE = DEFINED (HEAP_SIZE)?HEAP_SIZE:DEFINED (__heap_size__)?__heap_size__:0x200
                 [!provide]                PROVIDE (__exidx_start, .)
