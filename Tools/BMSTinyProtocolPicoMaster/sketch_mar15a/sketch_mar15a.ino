@@ -97,12 +97,12 @@ void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
   Serial.println();
   Wire.write(crc); 
 
-  Wire.requestFrom(0x8, len);    // read
+  Wire.endTransmission(false);
+
+  Wire.requestFrom(0x8, len, true);    // read
   for (size_t i = 0; i < len; i++) {
     buff[i] = Wire.read();
   }
-
-  Wire.endTransmission(0x08);
 }
 
 void setup() {
