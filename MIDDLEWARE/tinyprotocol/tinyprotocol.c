@@ -80,7 +80,7 @@ int16_t TINYPROTOCOL_ParseByte(const struct TINYPROTOCOL_Config *cfg, uint8_t by
             }
             break;
         case TINYPROTOCOL_FSM_EXPECT_TLM_REQ: {
-         uint8_t crc = TINYPROTOCOL_CalculateCRC(&tlm_current_channel, 1);
+            uint8_t crc = TINYPROTOCOL_CalculateCRC(&tlm_current_channel, 1);
             if (crc != byte) {
                 TlmAckPacket.result = TLM_ACK_PACKET_RESULT_EINVALID_CRC;
             } else {

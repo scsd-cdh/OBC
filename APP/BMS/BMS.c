@@ -1,5 +1,7 @@
 #include "BMS.h"
 #include "ADC_Read.h"
+#include "msp430.h"
+#include "gpio.h"
 #if defined (__MSP430FR5989__)
 #include "rtc_c.h"
 #elif defined (__MSP430FR5969__)
@@ -8,7 +10,7 @@
 
 // ADC pins
 // Current sensing 
-// NOTE: 1 and 2 does not refer to battery number!! We don't know what it means right now! Waiting  for elec update 
+// 1 and 2 does in fact refer to battery number
 #define I_SENSE_VUR_1_CP_PIN      ADC12_B_INPUT_A10 // PIN 42 5989
 #define I_SENSE_VUR_2_CP_PIN      ADC12_B_INPUT_A0  // PIN 39 5989
 #define I_SENSE_CHR_1_CP_PIN      ADC12_B_INPUT_A9  // PIN 41 5989
@@ -33,6 +35,50 @@
 #define V_BATTPACK_1_CP_MEM       ADC12_B_MEMORY_8  
 #define V_BATTPACK_2_CP_MEM       ADC12_B_MEMORY_9
 
+// GPIO pins
+#define OVP_FLAG_1A_PIN GPIO_PIN0 
+#define UVP_FLAG_1B_PIN GPIO_PIN1 
+#define UVP_FLAG_1A_PIN GPIO_PIN2 
+#define OVP_FLAG_1B_PIN GPIO_PIN3 
+#define OCP_FLAG_1_PIN  GPIO_PIN0 
+#define OVP_FLAG_2A_PIN GPIO_PIN3 
+#define OVP_FLAG_2B_PIN GPIO_PIN4 
+#define UVP_FLAG_2A_PIN GPIO_PIN5 
+#define UVP_FLAG_2B_PIN GPIO_PIN6 
+#define OCP_FLAG_2_PIN  GPIO_PIN7 
+
+// Static data buffers to be sent back to CDH
+static const SystemStatusResp_t sSystemStatus = {
+    .runtime = 0x12,
+    .fw_version = 0xA, 
+};
+
+static CurrentResp_t sCurrentDraw = {
+    .isense1 = 1,
+    .isense2 = 2,
+};
+
+static CurrentResp_t sCurrentCharge = {
+    .isense1 = 3,
+    .isense2 = 4,
+};
+
+static VoltageResp_t sVoltageBattery1 = {
+    .vcell_a = 5,
+    .vcell_b = 6,
+};
+
+static VoltageResp_t sVoltageBattery2 = {
+    .vcell_a = 7,
+    .vcell_b = 8,
+};
+
+static CombinedVoltageResp_t sCombinedBatteryVoltage = {
+    .vbatt1 = 9,
+    .vbatt2 = 10,
+};
+
+static Flag_t sFlags[2] = {0};
 
 static void initADCs() 
 {
@@ -62,6 +108,21 @@ static void initGPIO()
     // Disable the GPIO power-on default high-impedance mode to activate
     // previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
+
+    // Flag pins
+    // MSP430FR5989 Pins 10 through 13 use GPIO_PORT_P5
+    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 10
+    GPIO_setAsInputPin(GPIO_PORT_P5, UVP_FLAG_1B_PIN); // MSP430FR5989 11
+    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 12
+    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 13
+
+    // MSP430FR5989 Pins 14, 25 through 29 use GPIO_PORT_P3 
+    GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_1_PIN);  // MSP430FR5989 14
+    GPIO_setAsInputPin(GPIO_PORT_P3, OVP_FLAG_2A_PIN); // MSP430FR5989 25
+    GPIO_setAsInputPin(GPIO_PORT_P3, OVP_FLAG_2B_PIN); // MSP430FR5989 26
+    GPIO_setAsInputPin(GPIO_PORT_P3, UVP_FLAG_2A_PIN); // MSP430FR5989 27
+    GPIO_setAsInputPin(GPIO_PORT_P3, UVP_FLAG_2B_PIN); // MSP430FR5989 28
+    GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_2_PIN);  // MSP430FR5989 29
 }
 
 // FIXME: Copied directly from PDS
@@ -82,7 +143,7 @@ static void initClockTo16MHz()
 
 
 #if defined (__MSP430FR5989__)
-static void initRTCC()
+static void initRTC()
 {
     Calendar currentTime;
 
@@ -125,7 +186,7 @@ static void initRTCC()
 }
 
 #elif defined (__MSP430FR5969__)
-static void initRTCB()
+static void initRTC()
 {
     Calendar currentTime;
 
@@ -172,23 +233,16 @@ void initBSP()
 {
     initClockTo16MHz();
     initGPIO();
-    #if defined (__MSP430FR5989__)
-    initRTCC();
-    #elif defined (__MSP430FR6989__)
-    initRTCB();
-    #endif
+    initRTC();
     initADCs();
 }
 
 // App communications
 #define SLAVE_ADDR 0x08
 
-volatile uint8_t buffer[8];
-const uint8_t outBuffer[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-
 static void I2C_Proc_RX_Data(uint8_t data);
 
-static uint16_t SendTelemetryResponse()
+static uint16_t SendTelemetryResponse(uint8_t request)
 {
     uint8_t bytes[TINYPROTOCOL_MAX_PACKET_SIZE];
     uint8_t count = 0;
@@ -196,6 +250,7 @@ static uint16_t SendTelemetryResponse()
 
     while(TINYPROTOCOL_TelemetryBytesLeft() > 0) {
         int16_t result = TINYPROTOCOL_ReadNextTelemetryByte(pbyte);
+        volatile uint8_t byte = *pbyte;
         if (result == ETINYPROTOCOL_SUCCESS) {
             pbyte++;
             count++;
@@ -211,7 +266,7 @@ static uint16_t SendTelemetryResponse()
 
 static int16_t ProcessTelemetryRequest(uint8_t request)
 {
-    return SendTelemetryResponse();
+    return SendTelemetryResponse(request);
 }
 
 static int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size)
@@ -231,69 +286,56 @@ static void I2C_Proc_RX_Data(uint8_t data)
     TINYPROTOCOL_ParseByte(&protocolConfig, data);
 }
 
-
-static const SystemStatusResp_t sSystemStatus = {
-    .runtime = 0x12,
-    .fw_version = 0xA, 
-};
-
-static CurrentResp_t sCurrentDraw = {
-    .isense1 = 0,
-    .isense2 = 0,
-};
-
-static CurrentResp_t sCurrentCharge = {
-    .isense1 = 0,
-    .isense2 = 0,
-};
-
-static VoltageResp_t sVoltageBattery1 = {
-    .vcell_a = 0,
-    .vcell_b = 0,
-};
-
-static VoltageResp_t sVoltageBattery2 = {
-    .vcell_a = 0,
-    .vcell_b = 0,
-};
-
-static CombinedVoltageResp_t sCombinedBatteryVoltage = {
-    .vbatt1 = 0,
-    .vbatt2 = 0,
-};
-
 void InitAppComm()
 {
     sI2cConfigCb_t i2cConfig = {
       .Rx_Proc_Data = I2C_Proc_RX_Data,
         .slave_addr = SLAVE_ADDR,
     };
-    initI2C(&i2cConfig);
+    initI2C(&i2cConfig);  
 
     TINYPROTOCOL_Initialize();
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, sSystemStatus.buffer , sizeof(sSystemStatus.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_FLAG_ID, sFlags, sizeof(sFlags));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_DRAW_ID, sCurrentDraw.buffer, sizeof(sCurrentDraw.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_CHARGE_ID, sCurrentCharge.buffer, sizeof(sCurrentCharge.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sVoltageBattery1.buffer, sizeof(sVoltageBattery1.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sCurrentDraw.buffer, sizeof(sCurrentDraw.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_COMBINED_ID, sCombinedBatteryVoltage.buffer, sizeof(sCombinedBatteryVoltage));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY2_ID, sVoltageBattery2.buffer, sizeof(sVoltageBattery2.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_COMBINED_ID, sCombinedBatteryVoltage.buffer, sizeof(sCombinedBatteryVoltage.buffer));
+
+
 }
 
-// ISR
-void RoutineCycle_Process()
+// ISR -- collect ADC data and put it into buffers
+static inline void RoutineCycle_Process()
 {
-    sCurrentDraw.isense1 = Read_ADC(I_SENSE_VUR_1_CP_MEM);
-    sCurrentDraw.isense2 = Read_ADC(I_SENSE_VUR_2_CP_MEM);
-    sCurrentCharge.isense1 = Read_ADC(I_SENSE_CHR_1_CP_MEM);
-    sCurrentCharge.isense2 = Read_ADC(I_SENSE_CHR_2_CP_MEM);
+    // sCurrentDraw.isense1 = Read_ADC(I_SENSE_VUR_1_CP_MEM);
+    // sCurrentDraw.isense2 = Read_ADC(I_SENSE_VUR_2_CP_MEM);
+    // sCurrentCharge.isense1 = Read_ADC(I_SENSE_CHR_1_CP_MEM);
+    // sCurrentCharge.isense2 = Read_ADC(I_SENSE_CHR_2_CP_MEM);
 
-    sVoltageBattery1.vcell_a = Read_ADC(V_CELL_1A_CP_MEM);
-    sVoltageBattery1.vcell_b = Read_ADC(V_CELL_1B_CP_MEM);
-    sVoltageBattery2.vcell_a = Read_ADC(V_CELL_2A_CP_MEM);
-    sVoltageBattery2.vcell_b = Read_ADC(V_CELL_2B_CP_MEM);
+    // sVoltageBattery1.vcell_a = Read_ADC(V_CELL_1A_CP_MEM);
+    // sVoltageBattery1.vcell_b = Read_ADC(V_CELL_1B_CP_MEM);
+    // sVoltageBattery2.vcell_a = Read_ADC(V_CELL_2A_CP_MEM);
+    // sVoltageBattery2.vcell_b = Read_ADC(V_CELL_2B_CP_MEM);
 
-    sCombinedBatteryVoltage.vbatt1 = Read_ADC(V_BATTPACK_1_CP_MEM);
-    sCombinedBatteryVoltage.vbatt2 = Read_ADC(V_BATTPACK_2_CP_MEM);
+    // sCombinedBatteryVoltage.vbatt1 = Read_ADC(V_BATTPACK_1_CP_MEM);
+    // sCombinedBatteryVoltage.vbatt2 = Read_ADC(V_BATTPACK_2_CP_MEM);
+
+    sCurrentDraw.isense1 = 1;
+    sCurrentDraw.isense2 = 2;
+    
+    sCurrentCharge.isense1 = 3;
+    sCurrentCharge.isense2 = 4;
+
+    sVoltageBattery1.vcell_a = 5;
+    sVoltageBattery1.vcell_b = 6;
+    
+    sVoltageBattery2.vcell_a = 7;
+    sVoltageBattery2.vcell_b = 8;
+
+    sCombinedBatteryVoltage.vbatt1 = 9;
+    sCombinedBatteryVoltage.vbatt2 = 10;
 }
 
 /*ISR that maintains LPM until 30 minutes has passed*/
@@ -309,7 +351,7 @@ void RTC_ISR (void)
     {
         case 2:     //RTCRDYIFG, triggered every second
             // TODO - move to another timer if it needs to be called more than once a second
-            RoutineCycle_Process();
-            break;
+        RoutineCycle_Process();          
+        break;
     }
 }

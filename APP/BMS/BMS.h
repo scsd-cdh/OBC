@@ -9,16 +9,18 @@
 
 void initBSP();
 
+// NOTE: Strangest thing... If I don't assign these, when they get passed into TINYPROTOCOL_RegisterTelemetryChannel
+// The copied variable appears to be incremented by 1... No idea
 enum BMS_TelemetryRequestCmdId {
   BMS_SYSTEM_STATUS_ID = TINYPROTOCOL_TLM_RESERVED,
-  BMS_HEALTH_CHECK_ID,
-  BMS_FLAG_ID,
-  BMS_CURRENT_DRAW_ID,
-  BMS_CURRENT_CHARGE_ID,
-  BMS_VOLTAGE_BATTERY1_ID,
-  BMS_VOLTAGE_BATTERY2_ID,
-  BMS_VOLTAGE_COMBINED_ID,
-  BMS_HEATERS_CONTROLLER_ID,
+  BMS_HEALTH_CHECK_ID = 1,
+  BMS_FLAG_ID = 2,
+  BMS_CURRENT_DRAW_ID = 3,
+  BMS_CURRENT_CHARGE_ID = 4,
+  BMS_VOLTAGE_BATTERY1_ID = 5,
+  BMS_VOLTAGE_BATTERY2_ID = 6,
+  BMS_VOLTAGE_COMBINED_ID = 7,
+  BMS_HEATERS_CONTROLLER_ID = 8,
 };
 
 typedef union SystemStatusResp {
@@ -52,6 +54,8 @@ typedef union CombinedVoltageResp {
     };
     uint8_t buffer[CURRENT_VOLTAGE_RESP_LEN];
 } CombinedVoltageResp_t;
+
+typedef uint8_t Flag_t;
 
 void InitAppComm(void);
 
