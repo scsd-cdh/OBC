@@ -199,6 +199,9 @@ uint32_t _get_cycles_for_ms(const uint16_t ms)
 {
 	return _get_cycles_for_ms_internal(ms, CONF_HCLK_FREQUENCY, HCLK_FREQ_POWER);
 }
+
+
+#if 0 // TODO - enable if needed
 /**
  * \brief Initialize delay functionality
  */
@@ -234,3 +237,4 @@ void _delay_cycles(void *const hw, uint32_t cycles)
 #endif
 #endif
 }
+#endif

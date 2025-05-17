@@ -21,6 +21,12 @@ extern "C" {
 #include <hal_io.h>
 #include <hal_sleep.h>
 
+#include <hal_timer.h>
+
+#include <hal_delay.h>
+
+#include <hal_wdt.h>
+
 #include <hal_spi_m_sync.h>
 
 #include <hal_i2c_m_sync.h>
@@ -47,6 +53,10 @@ extern struct usart_sync_descriptor Debug_USART_0;
 extern struct usart_sync_descriptor LVDS_USART_1;
 
 extern struct usart_sync_descriptor LVDS2_USART_2;
+
+extern struct timer_descriptor TIMER_0;
+
+extern struct wdt_descriptor WDT_0;
 
 void MRAM_SPI_0_PORT_init(void);
 void MRAM_SPI_0_CLOCK_init(void);

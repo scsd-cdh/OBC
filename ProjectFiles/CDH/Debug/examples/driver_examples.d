@@ -173,6 +173,11 @@ examples/driver_examples.d examples/driver_examples.o: \
  ../../../DRIVERS/SAMV71/hal/include/hpl_init.h \
  ../../../DRIVERS/SAMV71/hal/include/hal_io.h \
  ../../../DRIVERS/SAMV71/hal/include/hal_sleep.h \
+ ../../../DRIVERS/SAMV71/hal/include/hal_timer.h \
+ ../../../DRIVERS/SAMV71/hal/utils/include/utils_list.h \
+ ../../../DRIVERS/SAMV71/hal/include/hpl_timer.h \
+ ../../../DRIVERS/SAMV71/hal/include/hal_wdt.h \
+ ../../../DRIVERS/SAMV71/hal/include/hpl_wdt.h \
  ../../../DRIVERS/SAMV71/hal/include/hal_spi_m_sync.h \
  ../../../DRIVERS/SAMV71/hal/include/hpl_spi_m_sync.h \
  ../../../DRIVERS/SAMV71/hal/include/hpl_spi.h \
@@ -537,6 +542,16 @@ C:\Program\ Files\ (x86)\Atmel\Studio\7.0\Packs\atmel\SAMV71_DFP\2.4.182\samv71b
 ../../../DRIVERS/SAMV71/hal/include/hal_io.h:
 
 ../../../DRIVERS/SAMV71/hal/include/hal_sleep.h:
+
+../../../DRIVERS/SAMV71/hal/include/hal_timer.h:
+
+../../../DRIVERS/SAMV71/hal/utils/include/utils_list.h:
+
+../../../DRIVERS/SAMV71/hal/include/hpl_timer.h:
+
+../../../DRIVERS/SAMV71/hal/include/hal_wdt.h:
+
+../../../DRIVERS/SAMV71/hal/include/hpl_wdt.h:
 
 ../../../DRIVERS/SAMV71/hal/include/hal_spi_m_sync.h:
 

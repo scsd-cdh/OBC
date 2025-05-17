@@ -12,6 +12,8 @@
 #include <peripheral_clk_config.h>
 #include <utils.h>
 #include <hpl_spi_base.h>
+#include <hpl_tc.h>
+#include <hpl_wdt.h>
 
 struct spi_m_sync_descriptor MRAM_SPI_0;
 
@@ -24,6 +26,35 @@ struct usart_sync_descriptor Debug_USART_0;
 struct usart_sync_descriptor LVDS_USART_1;
 
 struct usart_sync_descriptor LVDS2_USART_2;
+
+struct timer_descriptor TIMER_0;
+
+struct wdt_descriptor WDT_0;
+
+void TIMER_0_PORT_init(void)
+{
+}
+/**
+ * \brief Timer initialization function
+ *
+ * Enables Timer peripheral, clocks and initializes Timer driver
+ */
+static void TIMER_0_init(void)
+{
+	_pmc_enable_periph_clock(ID_TC0_CHANNEL0);
+	TIMER_0_PORT_init();
+	timer_init(&TIMER_0, TC0, _tc_get_timer());
+}
+
+void delay_driver_init(void)
+{
+	delay_init(SysTick);
+}
+
+void WDT_0_init(void)
+{
+	wdt_init(&WDT_0, WDT);
+}
 
 void MRAM_SPI_0_PORT_init(void)
 {
@@ -193,6 +224,12 @@ void system_init(void)
 	gpio_set_pin_direction(LED0, GPIO_DIRECTION_OUT);
 
 	gpio_set_pin_pull_mode(LED0, GPIO_PULL_UP);
+
+	TIMER_0_init();
+
+	delay_driver_init();
+
+	WDT_0_init();
 
 	MRAM_SPI_0_init();
 

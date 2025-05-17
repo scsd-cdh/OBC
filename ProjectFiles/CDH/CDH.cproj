@@ -305,6 +305,13 @@
       <Value>../../../DRIVERS/SAMV71/hpl/uart</Value>
       <Value>../../../DRIVERS/SAMV71/hpl/xdmac</Value>
       <Value>../../../DRIVERS/SAMV71/hri</Value>
+      <Value>../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0</Value>
+      <Value>../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include</Value>
+      <Value>../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/portable/GCC/ARM_CM7</Value>
+      <Value>../../../THIRDPARTY/RTOS</Value>
+      <Value>../../../DRIVERS/SAMV71/hpl/systick</Value>
+      <Value>../../../DRIVERS/SAMV71/hpl/tc</Value>
+      <Value>../../../DRIVERS/SAMV71/hpl/wdt</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
@@ -349,6 +356,13 @@
       <Value>../../../DRIVERS/SAMV71/hpl/uart</Value>
       <Value>../../../DRIVERS/SAMV71/hpl/xdmac</Value>
       <Value>../../../DRIVERS/SAMV71/hri</Value>
+      <Value>../../../DRIVERS/SAMV71/hpl/wdt</Value>
+      <Value>../../../DRIVERS/SAMV71/hpl/tc</Value>
+      <Value>../../../DRIVERS/SAMV71/hpl/systick</Value>
+      <Value>../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/portable/GCC/ARM_CM7</Value>
+      <Value>../../../THIRDPARTY/RTOS</Value>
+      <Value>../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include</Value>
+      <Value>../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
@@ -370,6 +384,13 @@
       <Value>../../../DRIVERS/SAMV71/hpl/uart</Value>
       <Value>../../../DRIVERS/SAMV71/hpl/xdmac</Value>
       <Value>../../../DRIVERS/SAMV71/hri</Value>
+      <Value>../../../DRIVERS/SAMV71/hpl/wdt</Value>
+      <Value>../../../DRIVERS/SAMV71/hpl/tc</Value>
+      <Value>../../../DRIVERS/SAMV71/hpl/systick</Value>
+      <Value>../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/portable/GCC/ARM_CM7</Value>
+      <Value>../../../THIRDPARTY/RTOS</Value>
+      <Value>../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include</Value>
+      <Value>../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -487,9 +508,17 @@
       <SubType>compile</SubType>
       <Link>hal\hal_spi_m_sync.c</Link>
     </Compile>
+    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_timer.c">
+      <SubType>compile</SubType>
+      <Link>hal\hal_timer.c</Link>
+    </Compile>
     <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_usart_sync.c">
       <SubType>compile</SubType>
       <Link>hal\hal_usart_sync.c</Link>
+    </Compile>
+    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_wdt.c">
+      <SubType>compile</SubType>
+      <Link>hal\hal_wdt.c</Link>
     </Compile>
     <Compile Include="..\..\DRIVERS\SAMV71\hal\utils\src\utils_assert.c">
       <SubType>compile</SubType>
@@ -531,6 +560,14 @@
       <SubType>compile</SubType>
       <Link>hpl\hpl_spi.c</Link>
     </Compile>
+    <Compile Include="..\..\DRIVERS\SAMV71\hpl\systick\hpl_systick_ARMv7_base.c">
+      <SubType>compile</SubType>
+      <Link>hpl\hpl_systick_ARMv7_base.c</Link>
+    </Compile>
+    <Compile Include="..\..\DRIVERS\SAMV71\hpl\tc\hpl_tc.c">
+      <SubType>compile</SubType>
+      <Link>hpl\hpl_tc.c</Link>
+    </Compile>
     <Compile Include="..\..\DRIVERS\SAMV71\hpl\twihs\hpl_twihs.c">
       <SubType>compile</SubType>
       <Link>hpl\hpl_twihs.c</Link>
@@ -539,9 +576,53 @@
       <SubType>compile</SubType>
       <Link>hpl\hpl_uart.c</Link>
     </Compile>
+    <Compile Include="..\..\DRIVERS\SAMV71\hpl\wdt\hpl_wdt.c">
+      <SubType>compile</SubType>
+      <Link>hpl\hpl_wdt.c</Link>
+    </Compile>
     <Compile Include="..\..\DRIVERS\SAMV71\hpl\xdmac\hpl_xdmac.c">
       <SubType>compile</SubType>
       <Link>hpl\hpl_xdmac.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\rtos_port.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\rtos_port.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\croutine.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\croutine.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\event_groups.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\event_groups.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\list.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\list.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\portable\GCC\ARM_CM7\port.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\port.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\portable\MemMang\heap_1.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\heap_1.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\queue.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\queue.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\stream_buffer.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\stream_buffer.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\tasks.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\tasks.c</Link>
+    </Compile>
+    <Compile Include="..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\timers.c">
+      <SubType>compile</SubType>
+      <Link>FreeRtos\timers.c</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -551,6 +632,7 @@
     <Folder Include="hal" />
     <Folder Include="hal\utils" />
     <Folder Include="hpl" />
+    <Folder Include="FreeRtos" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

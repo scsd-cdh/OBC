@@ -171,6 +171,11 @@ main.d main.o: ../../../APP/CDH_App/main.c \
  ../../../DRIVERS/SAMV71/hal/include/hpl_init.h \
  ../../../DRIVERS/SAMV71/hal/include/hal_io.h \
  ../../../DRIVERS/SAMV71/hal/include/hal_sleep.h \
+ ../../../DRIVERS/SAMV71/hal/include/hal_timer.h \
+ ../../../DRIVERS/SAMV71/hal/utils/include/utils_list.h \
+ ../../../DRIVERS/SAMV71/hal/include/hpl_timer.h \
+ ../../../DRIVERS/SAMV71/hal/include/hal_wdt.h \
+ ../../../DRIVERS/SAMV71/hal/include/hpl_wdt.h \
  ../../../DRIVERS/SAMV71/hal/include/hal_spi_m_sync.h \
  ../../../DRIVERS/SAMV71/hal/include/hpl_spi_m_sync.h \
  ../../../DRIVERS/SAMV71/hal/include/hpl_spi.h \
@@ -185,7 +190,20 @@ main.d main.o: ../../../APP/CDH_App/main.c \
  ../../../DRIVERS/SAMV71/hpl/uart/hpl_uart_base.h \
  ../../../DRIVERS/SAMV71/hal/include/hpl_usart_async.h \
  ../../../DRIVERS/SAMV71/hal/include/hpl_usart.h \
- ../../../DRIVERS/SAMV71/hal/include/hpl_irq.h
+ ../../../DRIVERS/SAMV71/hal/include/hpl_irq.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/FreeRTOS.h \
+ ../../../APP/CDH_App/Config/FreeRTOSConfig.h \
+ ../../../APP/CDH_App/Config/peripheral_clk_config.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/projdefs.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/portable.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/deprecated_definitions.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/portable/GCC/ARM_CM7/portmacro.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/mpu_wrappers.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/timers.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/task.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/list.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/event_groups.h \
+ ../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/timers.h
 
 ../../../APP/CDH_App/atmel_start.h:
 
@@ -533,6 +551,16 @@ C:\Program\ Files\ (x86)\Atmel\Studio\7.0\Packs\atmel\SAMV71_DFP\2.4.182\samv71b
 
 ../../../DRIVERS/SAMV71/hal/include/hal_sleep.h:
 
+../../../DRIVERS/SAMV71/hal/include/hal_timer.h:
+
+../../../DRIVERS/SAMV71/hal/utils/include/utils_list.h:
+
+../../../DRIVERS/SAMV71/hal/include/hpl_timer.h:
+
+../../../DRIVERS/SAMV71/hal/include/hal_wdt.h:
+
+../../../DRIVERS/SAMV71/hal/include/hpl_wdt.h:
+
 ../../../DRIVERS/SAMV71/hal/include/hal_spi_m_sync.h:
 
 ../../../DRIVERS/SAMV71/hal/include/hpl_spi_m_sync.h:
@@ -562,3 +590,29 @@ C:\Program\ Files\ (x86)\Atmel\Studio\7.0\Packs\atmel\SAMV71_DFP\2.4.182\samv71b
 ../../../DRIVERS/SAMV71/hal/include/hpl_usart.h:
 
 ../../../DRIVERS/SAMV71/hal/include/hpl_irq.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/FreeRTOS.h:
+
+../../../APP/CDH_App/Config/FreeRTOSConfig.h:
+
+../../../APP/CDH_App/Config/peripheral_clk_config.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/projdefs.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/portable.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/deprecated_definitions.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/portable/GCC/ARM_CM7/portmacro.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/mpu_wrappers.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/timers.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/task.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/list.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/event_groups.h:
+
+../../../THIRDPARTY/RTOS/freertos/FreeRTOSV10.0.0/Source/include/timers.h:
