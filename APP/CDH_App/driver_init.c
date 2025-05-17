@@ -190,6 +190,10 @@ void system_init(void)
 
 	gpio_set_pin_function(Trans_Irq, GPIO_PIN_FUNCTION_OFF);
 
+	gpio_set_pin_direction(LED0, GPIO_DIRECTION_OUT);
+
+	gpio_set_pin_pull_mode(LED0, GPIO_PULL_UP);
+
 	MRAM_SPI_0_init();
 
 	Mas_I2C_0_init();
@@ -198,7 +202,7 @@ void system_init(void)
 
 	Debug_USART_0_init();
 
-	LVDS_USART_1_init();
+	// LVDS_USART_1_init();
 
-	LVDS2_USART_2_init();
+	// LVDS2_USART_2_init();
 }
