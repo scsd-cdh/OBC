@@ -54,28 +54,28 @@ static const SystemStatusResp_t sSystemStatus = {
 };
 
 static CurrentResp_t sCurrentDraw = {
-    .isense1 = 1,
-    .isense2 = 2,
+    .isense1 = 0,
+    .isense2 = 0,
 };
 
 static CurrentResp_t sCurrentCharge = {
-    .isense1 = 3,
-    .isense2 = 4,
+    .isense1 = 0,
+    .isense2 = 0,
 };
 
 static VoltageResp_t sVoltageBattery1 = {
-    .vcell_a = 5,
-    .vcell_b = 6,
+    .vcell_a = 0,
+    .vcell_b = 0,
 };
 
 static VoltageResp_t sVoltageBattery2 = {
-    .vcell_a = 7,
-    .vcell_b = 8,
+    .vcell_a = 0,
+    .vcell_b = 0,
 };
 
 static CombinedVoltageResp_t sCombinedBatteryVoltage = {
-    .vbatt1 = 9,
-    .vbatt2 = 10,
+    .vbatt1 = 0,
+    .vbatt2 = 0,
 };
 
 static Flag_t sFlags[2] = {0};
@@ -302,40 +302,25 @@ void InitAppComm()
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sVoltageBattery1.buffer, sizeof(sVoltageBattery1.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY2_ID, sVoltageBattery2.buffer, sizeof(sVoltageBattery2.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_COMBINED_ID, sCombinedBatteryVoltage.buffer, sizeof(sCombinedBatteryVoltage.buffer));
-
+    
 
 }
 
 // ISR -- collect ADC data and put it into buffers
 static inline void RoutineCycle_Process()
 {
-    // sCurrentDraw.isense1 = Read_ADC(I_SENSE_VUR_1_CP_MEM);
-    // sCurrentDraw.isense2 = Read_ADC(I_SENSE_VUR_2_CP_MEM);
-    // sCurrentCharge.isense1 = Read_ADC(I_SENSE_CHR_1_CP_MEM);
-    // sCurrentCharge.isense2 = Read_ADC(I_SENSE_CHR_2_CP_MEM);
+    sCurrentDraw.isense1 = Read_ADC(I_SENSE_VUR_1_CP_MEM);
+    sCurrentDraw.isense2 = Read_ADC(I_SENSE_VUR_2_CP_MEM);
+    sCurrentCharge.isense1 = Read_ADC(I_SENSE_CHR_1_CP_MEM);
+    sCurrentCharge.isense2 = Read_ADC(I_SENSE_CHR_2_CP_MEM);
 
-    // sVoltageBattery1.vcell_a = Read_ADC(V_CELL_1A_CP_MEM);
-    // sVoltageBattery1.vcell_b = Read_ADC(V_CELL_1B_CP_MEM);
-    // sVoltageBattery2.vcell_a = Read_ADC(V_CELL_2A_CP_MEM);
-    // sVoltageBattery2.vcell_b = Read_ADC(V_CELL_2B_CP_MEM);
+    sVoltageBattery1.vcell_a = Read_ADC(V_CELL_1A_CP_MEM);
+    sVoltageBattery1.vcell_b = Read_ADC(V_CELL_1B_CP_MEM);
+    sVoltageBattery2.vcell_a = Read_ADC(V_CELL_2A_CP_MEM);
+    sVoltageBattery2.vcell_b = Read_ADC(V_CELL_2B_CP_MEM);
 
-    // sCombinedBatteryVoltage.vbatt1 = Read_ADC(V_BATTPACK_1_CP_MEM);
-    // sCombinedBatteryVoltage.vbatt2 = Read_ADC(V_BATTPACK_2_CP_MEM);
-
-    sCurrentDraw.isense1 = 1;
-    sCurrentDraw.isense2 = 2;
-    
-    sCurrentCharge.isense1 = 3;
-    sCurrentCharge.isense2 = 4;
-
-    sVoltageBattery1.vcell_a = 5;
-    sVoltageBattery1.vcell_b = 6;
-    
-    sVoltageBattery2.vcell_a = 7;
-    sVoltageBattery2.vcell_b = 8;
-
-    sCombinedBatteryVoltage.vbatt1 = 9;
-    sCombinedBatteryVoltage.vbatt2 = 10;
+    sCombinedBatteryVoltage.vbatt1 = Read_ADC(V_BATTPACK_1_CP_MEM);
+    sCombinedBatteryVoltage.vbatt2 = Read_ADC(V_BATTPACK_2_CP_MEM);
 }
 
 /*ISR that maintains LPM until 30 minutes has passed*/
