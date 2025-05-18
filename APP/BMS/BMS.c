@@ -13,8 +13,10 @@
 // 1 and 2 does in fact refer to battery number
 #define I_SENSE_VUR_1_CP_PIN      ADC12_B_INPUT_A10 // PIN 42 5989
 #define I_SENSE_VUR_2_CP_PIN      ADC12_B_INPUT_A0  // PIN 39 5989
+
 #define I_SENSE_CHR_1_CP_PIN      ADC12_B_INPUT_A9  // PIN 41 5989
 #define I_SENSE_CHR_2_CP_PIN      ADC12_B_INPUT_A8  // PIN 40 5989
+
 // Voltage sensing
 #define V_CELL_1A_CP_PIN          ADC12_B_INPUT_A13 // PIN 45 5989
 #define V_CELL_1B_CP_PIN          ADC12_B_INPUT_A12 // PIN 44 5989
@@ -82,8 +84,9 @@ static Flag_t sFlags[2] = {0};
 
 static void initADCs() 
 {
-    ADC_init_Standard();
+    ADC_initMultiple();
 
+    ADC12_B_disableConversions(ADC12_B_BASE, 1);
     // Selects what pin to get mapped to what ADC memory thing
     ADC_PinSelect(I_SENSE_VUR_1_CP_PIN,     I_SENSE_VUR_1_CP_MEM);
     ADC_PinSelect(I_SENSE_VUR_2_CP_PIN,     I_SENSE_VUR_2_CP_MEM);
@@ -94,7 +97,23 @@ static void initADCs()
     ADC_PinSelect(V_CELL_2A_CP_PIN,         V_CELL_2A_CP_MEM);
     ADC_PinSelect(V_CELL_2B_CP_PIN,         V_CELL_2B_CP_MEM);
     ADC_PinSelect(V_BATTPACK_1_CP_PIN,      V_BATTPACK_1_CP_MEM);
-    ADC_PinSelect(V_BATTPACK_2_CP_PIN,      V_BATTPACK_2_CP_MEM);
+
+    // NOTE: You need to set the end of sequence to the last ADC pin and set sequence of channels mode!!! Otherwise 
+    // it will only read the first pin you set (i.e. MEM0!!!)
+    // Manually select last pin and set ENDOFSEQUENCE
+    ADC12_B_configureMemoryParam eos = {
+        .memoryBufferControlIndex = V_BATTPACK_2_CP_MEM,         // MEM9
+        .inputSourceSelect        = V_BATTPACK_2_CP_PIN,
+        .refVoltageSourceSelect   = ADC12_B_VREFPOS_AVCC_VREFNEG_VSS,
+        .endOfSequence            = ADC12_B_ENDOFSEQUENCE,
+        .windowComparatorSelect   = ADC12_B_WINDOW_COMPARATOR_DISABLE,
+        .differentialModeSelect   = ADC12_B_DIFFERENTIAL_MODE_DISABLE
+    };
+    ADC12_B_configureMemory(ADC12_B_BASE, &eos);
+
+    /* 4. Sequence‑of‑channels mode, one pass per trigger */
+    // This allows us to use more than one MEM
+    ADC12CTL1 |= ADC12CONSEQ_1;   // driverlib name: ADC12_B_SEQUENCEOFCHANNELS
 }
 
 static void initGPIO()
@@ -302,25 +321,30 @@ void InitAppComm()
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sVoltageBattery1.buffer, sizeof(sVoltageBattery1.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY2_ID, sVoltageBattery2.buffer, sizeof(sVoltageBattery2.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_COMBINED_ID, sCombinedBatteryVoltage.buffer, sizeof(sCombinedBatteryVoltage.buffer));
-    
-
 }
 
 // ISR -- collect ADC data and put it into buffers
 static inline void RoutineCycle_Process()
 {
-    sCurrentDraw.isense1 = Read_ADC(I_SENSE_VUR_1_CP_MEM);
-    sCurrentDraw.isense2 = Read_ADC(I_SENSE_VUR_2_CP_MEM);
-    sCurrentCharge.isense1 = Read_ADC(I_SENSE_CHR_1_CP_MEM);
-    sCurrentCharge.isense2 = Read_ADC(I_SENSE_CHR_2_CP_MEM);
+    // Must do this this way (all at once) if using SEQOFCHANNELS mode
+    /* trigger the ten‑channel sweep */
+    ADC12_B_startConversion(ADC12_B_BASE,
+        ADC12_B_START_AT_ADC12MEM0,
+        ADC12_B_SEQOFCHANNELS);        // ENC+SC, walk MEM0→MEM9
 
-    sVoltageBattery1.vcell_a = Read_ADC(V_CELL_1A_CP_MEM);
-    sVoltageBattery1.vcell_b = Read_ADC(V_CELL_1B_CP_MEM);
-    sVoltageBattery2.vcell_a = Read_ADC(V_CELL_2A_CP_MEM);
-    sVoltageBattery2.vcell_b = Read_ADC(V_CELL_2B_CP_MEM);
+    while (ADC12_B_isBusy(ADC12_B_BASE));
 
-    sCombinedBatteryVoltage.vbatt1 = Read_ADC(V_BATTPACK_1_CP_MEM);
-    sCombinedBatteryVoltage.vbatt2 = Read_ADC(V_BATTPACK_2_CP_MEM);
+    /* pull results out */
+    sCurrentDraw.isense1             = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_1_CP_MEM);
+    sCurrentDraw.isense2             = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_2_CP_MEM);
+    sCurrentCharge.isense1           = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_1_CP_MEM);
+    sCurrentCharge.isense2           = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_2_CP_MEM);
+    sVoltageBattery1.vcell_a         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1A_CP_MEM);
+    sVoltageBattery1.vcell_b         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1B_CP_MEM);
+    sVoltageBattery2.vcell_a         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2A_CP_MEM);
+    sVoltageBattery2.vcell_b         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2B_CP_MEM);
+    sCombinedBatteryVoltage.vbatt1   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
+    sCombinedBatteryVoltage.vbatt2   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
 }
 
 /*ISR that maintains LPM until 30 minutes has passed*/
