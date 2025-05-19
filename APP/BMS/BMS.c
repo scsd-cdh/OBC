@@ -2,6 +2,7 @@
 #include "ADC_Read.h"
 #include "msp430.h"
 #include "gpio.h"
+#include <stdint.h>
 #if defined (__MSP430FR5989__)
 #include "rtc_c.h"
 #elif defined (__MSP430FR5969__)
@@ -80,7 +81,9 @@ static CombinedVoltageResp_t sCombinedBatteryVoltage = {
     .vbatt2 = 0,
 };
 
-static Flag_t sFlags[2] = {0};
+static Flag_t sFlags = {
+    .val = 0x00,
+};
 
 static void initADCs() 
 {
@@ -130,13 +133,13 @@ static void initGPIO()
 
     // Flag pins
     // MSP430FR5989 Pins 10 through 13 use GPIO_PORT_P5
-    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 10
+
+    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 10 P5.0
     GPIO_setAsInputPin(GPIO_PORT_P5, UVP_FLAG_1B_PIN); // MSP430FR5989 11
     GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 12
     GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 13
-
     // MSP430FR5989 Pins 14, 25 through 29 use GPIO_PORT_P3 
-    GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_1_PIN);  // MSP430FR5989 14
+    GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_1_PIN);  // MSP430FR5989 14 P3.0
     GPIO_setAsInputPin(GPIO_PORT_P3, OVP_FLAG_2A_PIN); // MSP430FR5989 25
     GPIO_setAsInputPin(GPIO_PORT_P3, OVP_FLAG_2B_PIN); // MSP430FR5989 26
     GPIO_setAsInputPin(GPIO_PORT_P3, UVP_FLAG_2A_PIN); // MSP430FR5989 27
@@ -159,7 +162,6 @@ static void initClockTo16MHz()
 
     CSCTL0_H = 0;                             // Lock CS registers
 }
-
 
 #if defined (__MSP430FR5989__)
 static void initRTC()
@@ -315,7 +317,7 @@ void InitAppComm()
 
     TINYPROTOCOL_Initialize();
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, sSystemStatus.buffer , sizeof(sSystemStatus.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_FLAG_ID, sFlags, sizeof(sFlags));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_FLAG_ID, sFlags.buffer, sizeof(sFlags.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_DRAW_ID, sCurrentDraw.buffer, sizeof(sCurrentDraw.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_CHARGE_ID, sCurrentCharge.buffer, sizeof(sCurrentCharge.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sVoltageBattery1.buffer, sizeof(sVoltageBattery1.buffer));
@@ -345,6 +347,37 @@ static inline void RoutineCycle_Process()
     sVoltageBattery2.vcell_b         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2B_CP_MEM);
     sCombinedBatteryVoltage.vbatt1   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
     sCombinedBatteryVoltage.vbatt2   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
+
+    volatile uint8_t ovp1Aval = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
+    sFlags.val |= ovp1Aval << 9;
+
+    volatile uint8_t uvp1Bval = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1B_PIN);
+    sFlags.val |= uvp1Bval << 8;
+
+    volatile uint8_t uvp1Aval = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1A_PIN);
+    sFlags.val |= uvp1Aval << 7;
+
+    volatile uint8_t ovp1Bval = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1B_PIN);
+    sFlags.val |= ovp1Bval << 6;
+
+    volatile uint8_t ocp1val = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_1_PIN);
+    sFlags.val |= ocp1val << 5;
+
+    volatile uint8_t ovp2Aval = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2A_PIN);
+    sFlags.val |= ovp2Aval << 4;
+
+    volatile uint8_t ovp2Bval = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2B_PIN);
+    sFlags.val |= ovp2Bval << 3;
+
+    volatile uint8_t uvp2Aval = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2A_PIN);
+    sFlags.val |= uvp2Aval << 2;
+
+    volatile uint8_t uvp2Bval = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2B_PIN);
+    sFlags.val |= uvp2Bval << 1;
+
+    volatile uint8_t ocp2val = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
+    sFlags.val |= ocp2val;
+
 }
 
 /*ISR that maintains LPM until 30 minutes has passed*/
