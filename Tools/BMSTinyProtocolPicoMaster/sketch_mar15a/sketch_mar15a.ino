@@ -47,15 +47,23 @@ uint8_t TINYPROTOCOL_CalculateCRC(const uint8_t* buffer, uint8_t buffer_size) {
 // Extract:  0x7F & 0x81 0b01111111
 //                       0b00000001 // which is our example command id
 #define BMS_SYSTEM_STATUS_ID 0x81
-#define BMS_CURRENT_DRAW_ID 0x83
-#define BMS_CURRENT_CHARGE_ID 0x84
-#define BMS_VOLTAGE_BATTERY1_ID 0x85
-#define BMS_VOLTAGE_BATTERY2_ID 0x86
-#define BMS_VOLTAGE_COMBINED_ID 0x87
+#define BMS_FLAG_ID 0x83
+#define BMS_CURRENT_DRAW_ID 0x84
+#define BMS_CURRENT_CHARGE_ID 0x85
+#define BMS_VOLTAGE_BATTERY1_ID 0x86
+#define BMS_VOLTAGE_BATTERY2_ID 0x87
+#define BMS_VOLTAGE_COMBINED_ID 0x88
 
+void requestFlags() {
+  uint8_t buff[2] = {};
+  sendTeleChannelRequest(BMS_FLAG_ID, buff, sizeof(buff));
+  Serial.print("buffer: ");
+  Serial.print(buff[0], BIN);
+  Serial.println(buff[1], BIN);
+}
 
-void sendCmd() {
-  Serial.println("################### START ASKING FOR STUFF ##############################");
+void requestADC() {
+  Serial.println("################### ADC data begin ##############################");
   uint8_t buff[4] = {};  
   sendTeleChannelRequest(BMS_CURRENT_DRAW_ID, buff, sizeof(buff));
   Serial.println("Current Draw: ");
@@ -76,7 +84,7 @@ void sendCmd() {
   sendTeleChannelRequest(BMS_VOLTAGE_COMBINED_ID, buff, sizeof(buff));
   Serial.println("Voltage Combined:");
   printBufferInHex(buff, sizeof(buff));
-  Serial.println("################### DONE ASKING FOR STUFF ##############################");
+  Serial.println("################### adc data end ##############################");
 }
 
 void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
@@ -106,13 +114,16 @@ void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
 }
 
 void setup() {
+  pinMode(1, OUTPUT);
+  digitalWrite(1, HIGH);
   Wire.begin();         // Initialize I2C
   Serial.begin(9600);   // Start Serial Monitor
   while (!Serial);      // Wait for Serial Monitor to open (for some boards)
 }
 
 void loop() {
-  sendCmd();            // Send command and read data
+  // requestADC();            // Send command and read data
+  requestFlags();
   delay(5000);          // Wait 1 second before repeating
 }
 
