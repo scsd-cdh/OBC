@@ -1,0 +1,10 @@
+*.xml
+*.mk
+*.yml
+*.mc3
+*.properties
+Debug/
+build/
+*.d
+*.o
+ProjectFiles/CDH/.generated_files/*
