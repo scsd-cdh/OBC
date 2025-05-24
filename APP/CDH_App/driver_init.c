@@ -239,6 +239,7 @@ void system_init(void)
 
 	Debug_USART_0_init();
 
+//	TODO - fix and reenable
 	// LVDS_USART_1_init();
 
 	// LVDS2_USART_2_init();

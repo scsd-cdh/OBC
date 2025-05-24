@@ -1,0 +1,8 @@
+RTOS_LED_WITH_LIBCSP
+*.o
+*.d
+src/*.o
+src/*.d
+*.xml
+*.mk
+*.properties
