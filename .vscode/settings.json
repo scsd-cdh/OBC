@@ -5,6 +5,8 @@
         "bsp.h": "c",
         "appcomm.h": "c",
         "tinyprotocol.h": "c",
-        "comm.h": "c"
+        "comm.h": "c",
+        "hal_i2c_m_sync.h": "c",
+        "peripheral_clk_config.h": "c"
     }
 }
