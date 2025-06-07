@@ -61,10 +61,6 @@ void assert_triggered(const char *file, uint32_t line);
 #define configUSE_COUNTING_SEMAPHORES 1
 #endif
 
-#ifndef configSUPPORT_STATIC_ALLOCATION
-#define configSUPPORT_STATIC_ALLOCATION 0
-#endif
-
 // </h>
 
 // <e> Advanced

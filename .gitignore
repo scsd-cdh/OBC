@@ -6,3 +6,11 @@ src/*.d
 *.xml
 *.mk
 *.properties
+*.bin
+*.eep
+*.elf
+*.hex
+*.lss
+*.map
+*.srec
+Debug/
