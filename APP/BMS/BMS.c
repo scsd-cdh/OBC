@@ -2,6 +2,7 @@
 #include "ADC_Read.h"
 #include "msp430.h"
 #include "gpio.h"
+#include "PWM.h"
 #include <stdint.h>
 #if defined (__MSP430FR5989__)
 #include "rtc_c.h"
@@ -50,6 +51,33 @@
 #define UVP_FLAG_2B_PIN GPIO_PIN6 
 #define OCP_FLAG_2_PIN  GPIO_PIN7 
 
+
+// PWM designated output pins
+#define HEATER_PWM_PORT GPIO_PORT_P2 // Port
+// Pins
+#if defined (__MSP430FR5989__)
+#define HEATER1_PWM_PIN GPIO_PIN4 
+#define HEATER2_PWM_PIN GPIO_PIN5
+#define HEATER3_PWM_PIN GPIO_PIN6
+#define HEATER4_PWM_PIN GPIO_PIN7 
+
+#define HEATER1_CCR TIMER_B_CAPTURECOMPARE_REGISTER_3
+#define HEATER2_CCR TIMER_B_CAPTURECOMPARE_REGISTER_4
+#define HEATER3_CCR TIMER_B_CAPTURECOMPARE_REGISTER_5
+#define HEATER4_CCR TIMER_B_CAPTURECOMPARE_REGISTER_6
+
+#elif defined (__MSP430FR5969__)
+#define HEATER1_PWM_PIN GPIO_PIN1 
+#define HEATER2_PWM_PIN GPIO_PIN5
+#define HEATER3_PWM_PIN GPIO_PIN6
+#define HEATER4_PWM_PIN GPIO_PIN0
+
+#define HEATER1_CCR TIMER_B_CAPTURECOMPARE_REGISTER_0
+#define HEATER2_CCR TIMER_B_CAPTURECOMPARE_REGISTER_0
+#define HEATER3_CCR TIMER_B_CAPTURECOMPARE_REGISTER_1
+#define HEATER4_CCR TIMER_B_CAPTURECOMPARE_REGISTER_6
+#endif  
+
 // Static data buffers to be sent back to CDH
 static const SystemStatusResp_t sSystemStatus = {
     .runtime = 0x12,
@@ -83,6 +111,10 @@ static CombinedVoltageResp_t sCombinedBatteryVoltage = {
 
 static Flag_t sFlags = {
     .val = 0x00,
+};
+
+static ExtADCResp_t sExtADCVals = {
+    .adc_vals = 0xEF42,
 };
 
 static void initADCs() 
@@ -145,6 +177,12 @@ static void initGPIO()
     GPIO_setAsInputPin(GPIO_PORT_P3, UVP_FLAG_2A_PIN); // MSP430FR5989 27
     GPIO_setAsInputPin(GPIO_PORT_P3, UVP_FLAG_2B_PIN); // MSP430FR5989 28
     GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_2_PIN);  // MSP430FR5989 29
+
+    // Init PWM 
+    PWM_PinSelect(HEATER_PWM_PORT, HEATER1_PWM_PIN);
+    PWM_PinSelect(HEATER_PWM_PORT, HEATER2_PWM_PIN);
+    PWM_PinSelect(HEATER_PWM_PORT, HEATER3_PWM_PIN);
+    PWM_PinSelect(HEATER_PWM_PORT, HEATER4_PWM_PIN);
 }
 
 // FIXME: Copied directly from PDS
@@ -290,9 +328,27 @@ static int16_t ProcessTelemetryRequest(uint8_t request)
     return SendTelemetryResponse(request);
 }
 
+// FIXME: Need to do research on what values the heaters actually expect... 
+// These are basically random
+static void SendPWM(const uint8_t* buffer, uint8_t size)
+{
+    PWM_Generate(1000, buffer[0], HEATER1_CCR);
+    PWM_Generate(1000, buffer[1], HEATER2_CCR);
+    PWM_Generate(1000, buffer[2], HEATER3_CCR);
+    PWM_Generate(1000, buffer[3], HEATER4_CCR);
+}
+
 static int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size)
 {
-    return 0;
+    switch (command) {
+        case BMS_HEATERS_CONTROLLER_ID:
+            SendPWM(buffer, size);
+            break;
+        
+        default: 
+            return ETINYPROTOCOL_INVALID_CMD_ID;
+    }
+    return ETINYPROTOCOL_SUCCESS;
 }
 
 const struct TINYPROTOCOL_Config protocolConfig =
@@ -323,11 +379,15 @@ void InitAppComm()
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sVoltageBattery1.buffer, sizeof(sVoltageBattery1.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY2_ID, sVoltageBattery2.buffer, sizeof(sVoltageBattery2.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_COMBINED_ID, sCombinedBatteryVoltage.buffer, sizeof(sCombinedBatteryVoltage.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_THERMISTOR_DATA_ID, sExtADCVals.buffer, sizeof(sExtADCVals.buffer));
+
+    TINYPROTOCOL_RegisterTelecommand(BMS_HEATERS_CONTROLLER_ID, 4);
 }
 
-// ISR -- collect ADC data and put it into buffers
+// ISR 
 static inline void RoutineCycle_Process()
 {
+    // Collect ADC data and put it into buffers
     // Must do this this way (all at once) if using SEQOFCHANNELS mode
     /* trigger the ten‑channel sweep */
     ADC12_B_startConversion(ADC12_B_BASE,
@@ -348,6 +408,7 @@ static inline void RoutineCycle_Process()
     sCombinedBatteryVoltage.vbatt1   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
     sCombinedBatteryVoltage.vbatt2   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
 
+    // Collect GPIO flag data and put it into buffer
     volatile uint8_t ovp1Aval = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
     sFlags.val |= ovp1Aval << 9;
 
