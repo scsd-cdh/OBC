@@ -53,6 +53,45 @@ uint8_t TINYPROTOCOL_CalculateCRC(const uint8_t* buffer, uint8_t buffer_size) {
 #define BMS_VOLTAGE_BATTERY1_ID 0x86
 #define BMS_VOLTAGE_BATTERY2_ID 0x87
 #define BMS_VOLTAGE_COMBINED_ID 0x88
+#define BMS_HEATER_CONTROLLER_ID 0x09
+
+#define PWM_PIN 15
+
+void sendTeleCommand(uint8_t cmd_id, const uint8_t* buff, uint8_t size)
+{
+  uint8_t cpy[size + 1] = {};
+  cpy[0] = cmd_id;
+  memcpy(&cpy[1], buff, size);
+  const uint8_t crc = TINYPROTOCOL_CalculateCRC(cpy, size + 1);
+  Wire.beginTransmission(0x8);
+  Wire.write(0x9b);   // MAGIC
+  Serial.print("Sending CMD: ");
+  Serial.println(cmd_id, HEX);
+  Wire.write(cmd_id);
+  Serial.print("Sending Data: ");
+  for (uint8_t i = 0; i < size; ++i) {
+    Wire.write(buff[i]);
+    Serial.print(buff[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
+  Serial.print("Sending CRC: ");
+  Serial.print(crc, HEX);
+  Serial.println();
+  Wire.write(crc);
+  Wire.endTransmission(false);
+}
+
+void sendPWMData() {
+  uint8_t buff[4] = {0x01, 0x80, 0b10000001, 0x1};
+  Serial.print("Sending PWM data: ");
+  for (size_t i = 0; i < 4; ++i) {
+    Serial.print(" ");
+    Serial.print(buff[i], HEX);
+  }
+  Serial.println();
+  sendTeleCommand(BMS_HEATER_CONTROLLER_ID, buff, sizeof(buff));
+}
 
 void requestFlags() {
   uint8_t buff[2] = {};
@@ -123,8 +162,14 @@ void setup() {
 
 void loop() {
   // requestADC();            // Send command and read data
-  requestFlags();
-  delay(5000);          // Wait 1 second before repeating
+  // requestFlags();
+  sendPWMData();
+  delay(1000);          // Wait 1 second before repeating
+  // unsigned long highTime = pulseIn(PWM_PIN, HIGH);
+  // unsigned long lowTime = pulseIn(PWM_PIN, LOW);
+  // float dutyCycle = 100.0 * highTime / (highTime + lowTime);
+  // Serial.println(dutyCycle);  // percent (0–100%)
+  // delay(100);
 }
 
 void printBufferInHex(byte* buffer, size_t length) {
