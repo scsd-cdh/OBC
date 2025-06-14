@@ -21,6 +21,7 @@ enum BMS_TelemetryRequestCmdId {
   BMS_VOLTAGE_BATTERY2_ID = 7,
   BMS_VOLTAGE_COMBINED_ID = 8,
   BMS_HEATERS_CONTROLLER_ID = 9,
+  BMS_THERMISTOR_DATA_ID = 10,
 };
 
 typedef union SystemStatusResp {
@@ -59,6 +60,11 @@ typedef union Flag {
     uint16_t val : 16;
     uint8_t buffer[2];
 } Flag_t;
+
+typedef union ExtADCResp {
+    uint16_t adc_vals : 16;
+    uint8_t buffer[2];
+} ExtADCResp_t;
 
 void InitAppComm(void);
 
