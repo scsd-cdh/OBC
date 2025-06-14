@@ -83,7 +83,7 @@ void sendTeleCommand(uint8_t cmd_id, const uint8_t* buff, uint8_t size)
 }
 
 void sendPWMData() {
-  uint8_t buff[4] = {0x01, 0x80, 0b10000001, 0x1};
+  uint8_t buff[4] = {100, 100, 100, 100};
   Serial.print("Sending PWM data: ");
   for (size_t i = 0; i < 4; ++i) {
     Serial.print(" ");
@@ -153,6 +153,7 @@ void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
 }
 
 void setup() {
+  pinMode(15, INPUT);
   pinMode(1, OUTPUT);
   digitalWrite(1, HIGH);
   Wire.begin();         // Initialize I2C
@@ -165,11 +166,21 @@ void loop() {
   // requestFlags();
   sendPWMData();
   delay(1000);          // Wait 1 second before repeating
-  // unsigned long highTime = pulseIn(PWM_PIN, HIGH);
-  // unsigned long lowTime = pulseIn(PWM_PIN, LOW);
-  // float dutyCycle = 100.0 * highTime / (highTime + lowTime);
-  // Serial.println(dutyCycle);  // percent (0–100%)
-  // delay(100);
+  unsigned long highTime = pulseIn(PWM_PIN, HIGH);
+  unsigned long lowTime = pulseIn(PWM_PIN, LOW);
+  unsigned long period = highTime + lowTime;
+  Serial.print("HighTime: "); 
+  Serial.println(highTime);
+  Serial.println("LowTime: ");
+  Serial.println(lowTime);
+  Serial.print("Period: ");
+  Serial.println(period);
+  if (period > 0) {
+    float dutyCycle = 100.0 * highTime / period;
+    Serial.print("Duty Cycle: ");
+    Serial.println(dutyCycle);  // percent (0–100%)
+  }
+  delay(100);
 }
 
 void printBufferInHex(byte* buffer, size_t length) {
