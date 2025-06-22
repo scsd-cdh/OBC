@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 *.xml
 *.mk
 *.yml
@@ -8,3 +9,21 @@ build/
 *.d
 *.o
 ProjectFiles/CDH/.generated_files/*
+=======
+RTOS_LED_WITH_LIBCSP
+*.o
+*.d
+src/*.o
+src/*.d
+*.xml
+*.mk
+*.properties
+*.bin
+*.eep
+*.elf
+*.hex
+*.lss
+*.map
+*.srec
+Debug/
+>>>>>>> Stashed changes

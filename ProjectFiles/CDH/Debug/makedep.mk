@@ -30,7 +30,11 @@
 
 ..\..\DRIVERS\SAMV71\hal\src\hal_spi_m_sync.c
 
+..\..\DRIVERS\SAMV71\hal\src\hal_timer.c
+
 ..\..\DRIVERS\SAMV71\hal\src\hal_usart_sync.c
+
+..\..\DRIVERS\SAMV71\hal\src\hal_wdt.c
 
 ..\..\DRIVERS\SAMV71\hal\utils\src\utils_assert.c
 
@@ -52,9 +56,35 @@
 
 ..\..\DRIVERS\SAMV71\hpl\spi\hpl_spi.c
 
+..\..\DRIVERS\SAMV71\hpl\systick\hpl_systick_ARMv7_base.c
+
+..\..\DRIVERS\SAMV71\hpl\tc\hpl_tc.c
+
 ..\..\DRIVERS\SAMV71\hpl\twihs\hpl_twihs.c
 
 ..\..\DRIVERS\SAMV71\hpl\uart\hpl_uart.c
 
+..\..\DRIVERS\SAMV71\hpl\wdt\hpl_wdt.c
+
 ..\..\DRIVERS\SAMV71\hpl\xdmac\hpl_xdmac.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\rtos_port.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\croutine.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\event_groups.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\list.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\portable\GCC\ARM_CM7\port.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\portable\MemMang\heap_1.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\queue.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\stream_buffer.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\tasks.c
+
+..\..\THIRDPARTY\RTOS\freertos\FreeRTOSV10.0.0\Source\timers.c
 
