@@ -5,6 +5,9 @@
         "bsp.h": "c",
         "appcomm.h": "c",
         "tinyprotocol.h": "c",
-        "comm.h": "c"
+        "comm.h": "c",
+        "hpl_time_measure.h": "c",
+        "hpl_systick_armv7_config.h": "c",
+        "task.h": "c"
     }
 }
