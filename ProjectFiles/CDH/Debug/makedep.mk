@@ -58,3 +58,7 @@
 
 ..\..\DRIVERS\SAMV71\hpl\xdmac\hpl_xdmac.c
 
+..\..\MIDDLEWARE\commsdrive\commsdrive.c
+
+..\..\MIDDLEWARE\tinyprotocol\tinyprotocol.c
+

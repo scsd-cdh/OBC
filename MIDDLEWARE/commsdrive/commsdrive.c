@@ -16,12 +16,12 @@ static int16_t SendTelemetryResponse();
 
 //***************************Variables***************************************************
 
-const static struct TINYPROTOCOL_Config protocolConfig =
-{
-    .TINYPROTOCOL_ProcessTelecommand = ProcessTelecommand,
-    .TINYPROTOCOL_ProcessTelemetryRequest = ProcessTelemetryRequest,
-    .TINYPROTOCOL_WriteBuffer = transmitI2C
-};
+// const static struct TINYPROTOCOL_Config protocolConfig =
+// {
+//     .TINYPROTOCOL_ProcessTelecommand = ProcessTelecommand,
+//     .TINYPROTOCOL_ProcessTelemetryRequest = ProcessTelemetryRequest,
+//     .TINYPROTOCOL_WriteBuffer = transmitI2C
+// };
 
 static struct io_descriptor *Mas_I2C_0_io;
 static struct io_descriptor *Red_I2C_0_io;
@@ -33,22 +33,22 @@ void CommsDrive_Init(int16_t slaveAddr)
 
     i2c_m_sync_set_slaveaddr(&Mas_I2C_0, slaveAddr, I2C_M_SEVEN);
 	i2c_m_sync_set_slaveaddr(&Red_I2C_2, slaveAddr, I2C_M_SEVEN);
-    
 
+    i2c_m_sync_set_baudrate(&Mas_I2C_0, 0, 100000);
+    i2c_m_sync_set_baudrate(&Red_I2C_2, 0, 100000);
+    
 	i2c_m_sync_get_io_descriptor(&Mas_I2C_0, &Mas_I2C_0_io);
     i2c_m_sync_get_io_descriptor(&Red_I2C_2, &Red_I2C_0_io);
-
-    
-
-
-	// io_write(Mas_I2C_0_io, (uint8_t *)"Hello World!", 12);
 }
 
-void CommsDrive_Process()
+void CommsDrive_Process(void)
 {
-    io_read(&Mas_I2C_0_io, uint8_t *const buf, const uint16_t length)
-    io_read(&Red_I2C_0_io, uint8_t *const buf, const uint16_t length)
+	io_write(Mas_I2C_0_io, (uint8_t *)"Hello World!", 12);
 
-	i2c_m_sync_read_packet(&Mas_I2C_0, &Mas_I2C_0_io, &rxBuffer, 1);
-	i2c_m_sync_read_packet(&Red_I2C_2, &Red_I2C_0_io, &rxBuffer, 1);
+    return; // TODO
+    // io_read(&Mas_I2C_0_io, uint8_t *const buf, const uint16_t length)
+    // io_read(&Red_I2C_0_io, uint8_t *const buf, const uint16_t length)
+
+	// i2c_m_sync_read_packet(&Mas_I2C_0, &Mas_I2C_0_io, &rxBuffer, 1);
+	// i2c_m_sync_read_packet(&Red_I2C_2, &Red_I2C_0_io, &rxBuffer, 1);
 }
