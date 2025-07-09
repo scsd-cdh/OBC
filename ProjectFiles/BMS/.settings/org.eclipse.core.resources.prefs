@@ -1,10 +1,6 @@
 eclipse.preferences.version=1
-encoding//Debug/APP/BACKPLANE/subdir_rules.mk=UTF-8
-encoding//Debug/APP/BACKPLANE/subdir_vars.mk=UTF-8
 encoding//Debug/APP/BMS/subdir_rules.mk=UTF-8
 encoding//Debug/APP/BMS/subdir_vars.mk=UTF-8
-encoding//Debug/APP/PDS_App/subdir_rules.mk=UTF-8
-encoding//Debug/APP/PDS_App/subdir_vars.mk=UTF-8
 encoding//Debug/DRIVERS/MSP430/ADC/include/subdir_rules.mk=UTF-8
 encoding//Debug/DRIVERS/MSP430/ADC/include/subdir_vars.mk=UTF-8
 encoding//Debug/DRIVERS/MSP430/ADC/subdir_rules.mk=UTF-8
