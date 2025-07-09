@@ -78,6 +78,10 @@
 #define HEATER4_CCR TIMER_B_CAPTURECOMPARE_REGISTER_6
 #endif  
 
+// External ADC 
+#define ADS7138_ADDR 0x10  // Default I2C address
+
+
 // Static data buffers to be sent back to CDH
 static const SystemStatusResp_t sSystemStatus = {
     .runtime = 0x12,
@@ -159,6 +163,7 @@ static void initGPIO()
     P1OUT &= ~BIT0;                           // Clear P1.0 output latch
     P1DIR |= BIT0;                            // For LED
     P1SEL1 |= BIT6 | BIT7;                    // I2C pins
+
     // Disable the GPIO power-on default high-impedance mode to activate
     // previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
@@ -330,6 +335,7 @@ static int16_t ProcessTelemetryRequest(uint8_t request)
 
 // FIXME: Need to do research on what values the heaters actually expect... 
 // These are basically random
+// For now CDH is responsible for deciding what PWM values to send
 static void SendPWM(const uint8_t* buffer, uint8_t size)
 {
     PWM_Generate(1000, buffer[0], HEATER1_CCR);
@@ -363,13 +369,24 @@ static void I2C_Proc_RX_Data(uint8_t data)
     TINYPROTOCOL_ParseByte(&protocolConfig, data);
 }
 
+static void I2C_Master_Proc_RX_Data(uint8_t data)
+{
+    sExtADCVals.adc_vals = data;
+}
+
 void InitAppComm()
 {
-    sI2cConfigCb_t i2cConfig = {
-      .Rx_Proc_Data = I2C_Proc_RX_Data,
-        .slave_addr = SLAVE_ADDR,
+    // sI2cConfigCb_t i2cConfig = {
+    //   .Rx_Proc_Data = I2C_Proc_RX_Data,
+    //     .slave_addr = SLAVE_ADDR,
+    // };
+    // initI2C(&i2cConfig);  
+
+     sI2cConfigCb_t i2cConfig = {
+        .Rx_Proc_Data = I2C_Master_Proc_RX_Data,
+        .slave_addr = ADS7138_ADDR,
     };
-    initI2C(&i2cConfig);  
+    initI2CMaster(&i2cConfig);  
 
     TINYPROTOCOL_Initialize();
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, sSystemStatus.buffer , sizeof(sSystemStatus.buffer));
@@ -438,6 +455,9 @@ static inline void RoutineCycle_Process()
 
     volatile uint8_t ocp2val = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
     sFlags.val |= ocp2val;
+
+
+    // Get External ADC data
 
 }
 

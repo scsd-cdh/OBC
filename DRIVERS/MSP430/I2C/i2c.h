@@ -33,9 +33,15 @@ typedef struct sI2cConfigCb
  */
 void initI2C(sI2cConfigCb_t* cb_config);
 
+void initI2CMaster(sI2cConfigCb_t* cb_config);
+
+
 /** 
 * @brief Write 
 */
 int16_t transmitI2C(const uint8_t* data, uint8_t size) ;
+
+void transmitI2CMaster(const uint8_t* data, uint8_t size);
+
 
 #endif /* I2C */
