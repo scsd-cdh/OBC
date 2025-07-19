@@ -470,11 +470,15 @@ __attribute__((interrupt(RTC_VECTOR)))
 #endif
 void RTC_ISR (void)
 {
-    switch (__even_in_range(RTCIV,16))
+    switch (__even_in_range(RTCIV, 16))
     {
-        case 2:     //RTCRDYIFG, triggered every second
-            // TODO - move to another timer if it needs to be called more than once a second
-        RoutineCycle_Process();          
-        break;
+        case RTCIV_NONE:         break;
+        case RTCIV_RTCRDYIFG:    RoutineCycle_Process(); break;
+        case RTCIV_RTCTEVIFG:    P1OUT |= BIT0; break; // I think this is blinking an LED or some shit
+        case RTCIV_RTCAIFG:      /* alarm */ break;
+        case RTCIV_RT0PSIFG:     /* prescale 0 */ break;
+        case RTCIV_RT1PSIFG:     /* prescale 1 */ break;
+        case RTCIV_RTCOFIFG:     /* oscillator fault: clear fault, maybe restart LFXT */ break;
+        default:                 break;   // (should not happen)
     }
 }
