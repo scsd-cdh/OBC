@@ -29,9 +29,6 @@ int main(void)
     initBSP();
     InitAppComm();
 
-    uint8_t buffer[1] = { 0x02 };
-
-    transmitI2CMaster(buffer, 1);
-    
     __bis_SR_register(LPM0_bits + GIE);
+    return 0;
 }

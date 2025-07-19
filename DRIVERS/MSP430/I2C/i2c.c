@@ -42,24 +42,6 @@ void initI2C(sI2cConfigCb_t* cb_config)
     i2cSlaveCtx.i2c_mode = I2C_IDLE_MODE;
 }
 
-// TEMPORARY!! We will use eusci_b1 for the 5989 master, but 5969 does not have this block
-// Largely copied from TI MSP430FR59xx family user guide I2C master example
-void initI2CMaster(sI2cConfigCb_t* cb_config)
-{
-    UCB0CTLW0 = UCSWRST;                       // Software reset enabled
-    UCB0CTLW0 |= UCMODE_3 | UCSYNC | UCMST;    // I2C mode, sync mode
-    UCB0I2CSA = cb_config->slave_addr;         // Set slave address
-    UCB0CTLW1 = UCASTP_2;                      // automatic STOP assertion
-    UCB0TBCNT = 0x07;                          // TX 7 bytes of data
-    P1SEL1    |= BIT6 | BIT7;                // 8) pin-mux SDA/SCL
-    UCB0IE |= UCSTPIE;                         // Enable STOP interrupt
-    UCB0IE |= UCTXIE | UCRXIE;                // Enable TX and RX interrupt
-    UCB0CTLW0 &= ~UCSWRST;                     // clear reset register
-
-    i2cSlaveCtx.Rx_Proc_Data = cb_config->Rx_Proc_Data;
-    i2cSlaveCtx.i2c_mode = I2C_IDLE_MODE;
-}
-
 int16_t transmitI2C(const uint8_t* data, uint8_t size)
 {
     // Copy response to TransmitBuffer
