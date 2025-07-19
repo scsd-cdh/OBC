@@ -63,7 +63,7 @@ void sendTeleCommand(uint8_t cmd_id, const uint8_t* buff, uint8_t size)
   cpy[0] = cmd_id;
   memcpy(&cpy[1], buff, size);
   const uint8_t crc = TINYPROTOCOL_CalculateCRC(cpy, size + 1);
-  Wire.beginTransmission(0x8);
+  Wire.beginTransmission(0x08);
   Wire.write(0x9b);   // MAGIC
   Serial.print("Sending CMD: ");
   Serial.println(cmd_id, HEX);
@@ -144,7 +144,9 @@ void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
   Serial.println();
   Wire.write(crc); 
 
-  Wire.endTransmission(false);
+  if (Wire.endTransmission(false) == 0) {
+    Serial.println("ACK!");
+  }
 
   Wire.requestFrom(0x8, len, true);    // read
   for (size_t i = 0; i < len; i++) {
@@ -153,34 +155,36 @@ void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
 }
 
 void setup() {
-  pinMode(15, INPUT);
-  pinMode(1, OUTPUT);
-  digitalWrite(1, HIGH);
+  Wire.setSDA(4);
+  Wire.setSCL(5);
+  // pinMode(15, INPUT);
+  // pinMode(1, OUTPUT);
+  // digitalWrite(1, HIGH);
   Wire.begin();         // Initialize I2C
-  Serial.begin(9600);   // Start Serial Monitor
-  while (!Serial);      // Wait for Serial Monitor to open (for some boards)
+  Serial.begin(115200);   // Start Serial Monitor
+  // while (!Serial);      // Wait for Serial Monitor to open (for some boards)
 }
 
 void loop() {
-  // requestADC();            // Send command and read data
+  requestADC();            // Send command and read data
   // requestFlags();
-  sendPWMData();
+  // sendPWMData();
   delay(1000);          // Wait 1 second before repeating
-  unsigned long highTime = pulseIn(PWM_PIN, HIGH);
-  unsigned long lowTime = pulseIn(PWM_PIN, LOW);
-  unsigned long period = highTime + lowTime;
-  Serial.print("HighTime: "); 
-  Serial.println(highTime);
-  Serial.println("LowTime: ");
-  Serial.println(lowTime);
-  Serial.print("Period: ");
-  Serial.println(period);
-  if (period > 0) {
-    float dutyCycle = 100.0 * highTime / period;
-    Serial.print("Duty Cycle: ");
-    Serial.println(dutyCycle);  // percent (0–100%)
-  }
-  delay(100);
+  // unsigned long highTime = pulseIn(PWM_PIN, HIGH);
+  // unsigned long lowTime = pulseIn(PWM_PIN, LOW);
+  // unsigned long period = highTime + lowTime;
+  // Serial.print("HighTime: "); 
+  // Serial.println(highTime);
+  // Serial.println("LowTime: ");
+  // Serial.println(lowTime);
+  // Serial.print("Period: ");
+  // Serial.println(period);
+  // if (period > 0) {
+  //   float dutyCycle = 100.0 * highTime / period;
+  //   Serial.print("Duty Cycle: ");
+  //   Serial.println(dutyCycle);  // percent (0–100%)
+  // }
+  // delay(100);
 }
 
 void printBufferInHex(byte* buffer, size_t length) {
