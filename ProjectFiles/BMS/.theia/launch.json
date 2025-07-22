@@ -1,15 +1,24 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "BMS CCS Debug",
-      "type": "ccs-debug",
-      "request": "launch",
-      "project": "BMS",
-      "executable": "${workspaceFolder}/ProjectFiles/BMS/Debug/BMS.out",
-      "targetConfig": "${workspaceFolder}/.vscode/BMS_Debug.ccxml",
-      "connectionProbeName": "Texas Instruments XDS110 USB Debug Probe",
-      "deviceName": "MSP430FR5989"
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "BMS CCS Debug",
+            "type": "ccs-debug",
+            "request": "launch",
+            "project": "BMS",
+            "executable": "${workspaceFolder}/ProjectFiles/BMS/Debug/BMS.out",
+            "targetConfig": "${workspaceFolder}/.vscode/BMS_Debug.ccxml",
+            "connectionProbeName": "Texas Instruments XDS110 USB Debug Probe",
+            "deviceName": "MSP430FR5989"
+        },
+        {
+            "name": "msp430fr69xx_1.c",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "msp430fr69xx_1.c",
+                "resourceId": "/msp430fr69xx_1.c"
+            }
+        }
+    ]
 }
