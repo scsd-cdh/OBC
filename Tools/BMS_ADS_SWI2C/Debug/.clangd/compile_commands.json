@@ -1,0 +1,57 @@
+[
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/drivers/adc12_b.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/drivers/cs.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/drivers/eusci_a_spi.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/drivers/eusci_b_i2c.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/drivers/gpio.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/drivers/pmm.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/drivers/rtc_c.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/drivers/swi2c.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/drivers/wdt_a.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/msp430fr69xx_1.c"
+   },
+   {
+      "directory" : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/Debug",
+      "command"   : "clang++ -I\"/home/brendan/ti/ccs2002/ccs/ccs_base/msp430/include\" -I\"/home/brendan/Dev/space_stuff/msp430fr69xx_1.c\" -I\"/home/brendan/ti/ccs2002/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D_MPU_ENABLE -D__MSP430FR5989__",
+      "file"      : "/home/brendan/Dev/space_stuff/msp430fr69xx_1.c/peripherals/ads7138irter.c"
+   }
+]

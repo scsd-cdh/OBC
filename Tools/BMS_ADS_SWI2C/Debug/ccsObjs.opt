@@ -1,0 +1,15 @@
+"./msp430fr69xx_1.obj"
+"./drivers/adc12_b.obj"
+"./drivers/cs.obj"
+"./drivers/eusci_a_spi.obj"
+"./drivers/eusci_b_i2c.obj"
+"./drivers/gpio.obj"
+"./drivers/pmm.obj"
+"./drivers/rtc_c.obj"
+"./drivers/swi2c.obj"
+"./drivers/wdt_a.obj"
+"./peripherals/ads7138irter.obj"
+"../lnk_msp430fr5989.cmd"
+-llibmpu_init.a
+-llibmath.a
+-llibc.a
