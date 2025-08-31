@@ -449,6 +449,7 @@ static inline void RoutineCycle_Process()
     sCombinedBatteryVoltage.vbatt2   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
 
     // Collect GPIO flag data and put it into buffer
+    sFlags.val = 0x00;
     volatile uint8_t ovp1Aval = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
     sFlags.val |= ovp1Aval << 9;
 
