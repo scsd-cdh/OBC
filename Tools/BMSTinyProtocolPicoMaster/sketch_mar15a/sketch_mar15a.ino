@@ -53,7 +53,9 @@ uint8_t TINYPROTOCOL_CalculateCRC(const uint8_t* buffer, uint8_t buffer_size) {
 #define BMS_VOLTAGE_BATTERY1_ID 0x86
 #define BMS_VOLTAGE_BATTERY2_ID 0x87
 #define BMS_VOLTAGE_COMBINED_ID 0x88
-#define BMS_HEATER_CONTROLLER_ID 0x09
+#define BMS_THERMISTOR03_DATA_ID 0x8A
+#define BMS_THERMISTOR47_DATA_ID 0x8B
+#define BMS_HEATER_CONTROLLER_ID 0x09 // Telecommands do not have 0x80 in front!
 
 #define PWM_PIN 15
 
@@ -83,7 +85,7 @@ void sendTeleCommand(uint8_t cmd_id, const uint8_t* buff, uint8_t size)
 }
 
 void sendPWMData() {
-  uint8_t buff[4] = {100, 100, 100, 100};
+  uint8_t buff[4] = {75, 50, 98, 5};
   Serial.print("Sending PWM data: ");
   for (size_t i = 0; i < 4; ++i) {
     Serial.print(" ");
@@ -101,28 +103,65 @@ void requestFlags() {
   Serial.println(buff[1], BIN);
 }
 
+void printValue(byte* buffer) {
+  size_t length = 4;
+  int val1 = (buffer[1] << 8) | buffer[0];
+  int val2 = (buffer[3] << 8) | buffer[2];
+  Serial.print(val1);
+  Serial.print(" ");
+  Serial.print(val2);
+  Serial.println();
+}
+
+void printConvertedADCValue(byte* buffer) {
+  int val1 = (buffer[1] << 8) | buffer[0];
+  int val2 = (buffer[3] << 8) | buffer[2];
+  Serial.print(val1 * 3.3 / 4096);
+  Serial.print(" ");
+  Serial.print(val2 * 3.3 / 4096);
+  Serial.println();
+}
+
 void requestADC() {
   Serial.println("################### ADC data begin ##############################");
   uint8_t buff[4] = {};  
+
   sendTeleChannelRequest(BMS_CURRENT_DRAW_ID, buff, sizeof(buff));
   Serial.println("Current Draw: ");
-  printBufferInHex(buff, sizeof(buff));
+  Serial.print("Raw ADC value 1 and 2: ");
+  printValue(buff);
+  Serial.print("ADC value * 3.3 / 4096 (V): ");
+  printConvertedADCValue(buff);
   
   sendTeleChannelRequest(BMS_CURRENT_CHARGE_ID, buff, sizeof(buff));
   Serial.println("Current CHARGE: ");
-  printBufferInHex(buff, sizeof(buff));
+  Serial.print("Raw ADC value 1 and 2: ");
+  printValue(buff);
+  Serial.print("ADC value * 3.3 / 4096 (V): ");
+  printConvertedADCValue(buff);
+
 
   sendTeleChannelRequest(BMS_VOLTAGE_BATTERY1_ID, buff, sizeof(buff));
   Serial.println("Voltage Battery 1:");
-  printBufferInHex(buff, sizeof(buff));
+  Serial.print("Raw ADC value 1 and 2: ");
+  printValue(buff);
+  Serial.print("ADC value * 3.3 / 4096 (V): ");
+  printConvertedADCValue(buff);
 
   sendTeleChannelRequest(BMS_VOLTAGE_BATTERY2_ID, buff, sizeof(buff));
   Serial.println("Voltage Battery 2:");
-  printBufferInHex(buff, sizeof(buff));
+  Serial.print("Raw ADC value 1 and 2: ");
+  printValue(buff);
+  Serial.print("ADC value * 3.3 / 4096 (V): ");
+  printConvertedADCValue(buff);
 
   sendTeleChannelRequest(BMS_VOLTAGE_COMBINED_ID, buff, sizeof(buff));
   Serial.println("Voltage Combined:");
-  printBufferInHex(buff, sizeof(buff));
+  Serial.print("Raw ADC value 1 and 2: ");
+  printValue(buff);
+  Serial.print("ADC value * 3.3 / 4096 (V): ");
+  printConvertedADCValue(buff);
+
   Serial.println("################### adc data end ##############################");
 }
 
@@ -132,6 +171,8 @@ void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
   Wire.beginTransmission(0x08);
   Wire.write(0x9b);   // MAGIC
 
+  // FIXME: This is really stupid, this function should definitely expect unaltered channel_id/
+  //  As it stands it is expecting channel_id | 0x80
   uint8_t cmd_id = channel_id & 0x7F;
   Serial.print(" sending cmd: cmd id: ");
   Serial.print(cmd_id, HEX);
@@ -145,13 +186,39 @@ void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
   Wire.write(crc); 
 
   if (Wire.endTransmission(false) == 0) {
-    Serial.println("ACK!");
+    // Serial.println("ACK!");
   }
 
   Wire.requestFrom(0x8, len, true);    // read
   for (size_t i = 0; i < len; i++) {
     buff[i] = Wire.read();
   }
+}
+
+void adcHalfChannelHelper(uint8_t channel_id, uint8_t* buffer, size_t len) {
+  uint8_t buffer_idx = 0;
+  sendTeleChannelRequest(channel_id, buffer, len);
+  for (size_t i = 0; i < len; ++i) {
+    Serial.print("ADC raw: ");
+    Serial.print(i);
+    Serial.print(" ");
+    uint16_t val = 0;
+    val = (buffer[buffer_idx] << 8) | (buffer[buffer_idx + 1] & 0xff);
+    buffer_idx += 2;
+    Serial.print(val, HEX);
+    Serial.print(" converted: ");
+    Serial.println(((float)val * 3.3) / (1 << 12));
+  }
+}
+
+void getExtADC() {
+  Serial.println("################### External ADC data begin ##############################");
+  size_t len = 8;
+  uint8_t buff03[len] = {};
+  uint8_t buff47[len] = {};  
+  adcHalfChannelHelper(BMS_THERMISTOR03_DATA_ID, buff03, len);
+  adcHalfChannelHelper(BMS_THERMISTOR47_DATA_ID, buff47, len);
+  Serial.println("################### External ADC data end ##############################");
 }
 
 void setup() {
@@ -166,9 +233,11 @@ void setup() {
 }
 
 void loop() {
-  requestADC();            // Send command and read data
+  // requestADC();            // Send command and read data
+  // Serial.println("Requesting Flags...");
   // requestFlags();
   // sendPWMData();
+  getExtADC();
   delay(1000);          // Wait 1 second before repeating
   // unsigned long highTime = pulseIn(PWM_PIN, HIGH);
   // unsigned long lowTime = pulseIn(PWM_PIN, LOW);
@@ -186,6 +255,8 @@ void loop() {
   // }
   // delay(100);
 }
+
+
 
 void printBufferInHex(byte* buffer, size_t length) {
   for (size_t i = 0; i < length; i++) {
