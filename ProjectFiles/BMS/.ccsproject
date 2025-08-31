@@ -16,4 +16,5 @@
 	<filesToOpen value=""/>
 	<activeTargetConfiguration value="targetConfigs/MSP430FR5989.ccxml"/>
 	<isTargetConfigurationManual value="false"/>
+	<isTargetManual value="false"/>
 </projectOptions>

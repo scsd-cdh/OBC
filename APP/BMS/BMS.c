@@ -4,6 +4,8 @@
 #include "gpio.h"
 #include "PWM.h"
 #include <stdint.h>
+#include "swi2c.h"
+#include "ads7138irter.h"
 #if defined (__MSP430FR5989__)
 #include "rtc_c.h"
 #elif defined (__MSP430FR5969__)
@@ -119,9 +121,13 @@ static Flag_t sFlags = {
     .val = 0x00,
 };
 
-static ExtADCResp_t sExtADCVals = {
-    .adc_vals = 0xEF42,
-};
+// Need 2 buffers since max buffer size for tinyprotocol is 11 and we have 8 16 bit 
+static uint8_t sExtADCBuffer03[8] = {};
+static uint8_t sExtADCBuffer47[8] = {};
+
+
+// Global SWI2C config "descriptor"
+static SWI2C_Descriptor sADS7138_SWI2C_Descriptor;
 
 static void initADCs() 
 {
@@ -375,11 +381,6 @@ static void I2C_Proc_RX_Data(uint8_t data)
     TINYPROTOCOL_ParseByte(&protocolConfig, data);
 }
 
-static void I2C_Master_Proc_RX_Data(uint8_t data)
-{
-    sExtADCVals.adc_vals = data;
-}
-
 void InitAppComm()
 {
     sI2cConfigCb_t i2cConfig = {
@@ -389,6 +390,21 @@ void InitAppComm()
 
     initI2C(&i2cConfig);  
 
+    // SW I2C
+    sADS7138_SWI2C_Descriptor.sda_port_out =   &P4OUT;
+    sADS7138_SWI2C_Descriptor.sda_port_in =    &P4IN;
+    sADS7138_SWI2C_Descriptor.sda_port_dir =   &P4DIR;
+    sADS7138_SWI2C_Descriptor.sda_pin =        GPIO_PIN1;
+    sADS7138_SWI2C_Descriptor.scl_port_out =   &P4OUT;
+    sADS7138_SWI2C_Descriptor.scl_port_in =    &P4IN;
+    sADS7138_SWI2C_Descriptor.scl_port_dir =   &P4DIR;
+    sADS7138_SWI2C_Descriptor.scl_pin =        GPIO_PIN0;
+    P4SEL0 &= ~(BIT0 | BIT1);
+    P4SEL1 &= ~(BIT0 | BIT1); 
+    P1DIR |= BIT0 | BIT1;
+
+    ADS7138IRTER_Initialize(&sADS7138_SWI2C_Descriptor);
+
     TINYPROTOCOL_Initialize();
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, sSystemStatus.buffer , sizeof(sSystemStatus.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_FLAG_ID, sFlags.buffer, sizeof(sFlags.buffer));
@@ -397,7 +413,8 @@ void InitAppComm()
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sVoltageBattery1.buffer, sizeof(sVoltageBattery1.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY2_ID, sVoltageBattery2.buffer, sizeof(sVoltageBattery2.buffer));
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_COMBINED_ID, sCombinedBatteryVoltage.buffer, sizeof(sCombinedBatteryVoltage.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_THERMISTOR_DATA_ID, sExtADCVals.buffer, sizeof(sExtADCVals.buffer));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_THERMISTOR03_DATA_ID, sExtADCBuffer03, sizeof(sExtADCBuffer03));
+    TINYPROTOCOL_RegisterTelemetryChannel(BMS_THERMISTOR47_DATA_ID, sExtADCBuffer47, sizeof(sExtADCBuffer47));
 
     TINYPROTOCOL_RegisterTelecommand(BMS_HEATERS_CONTROLLER_ID, 4);
 }
@@ -459,9 +476,30 @@ static inline void RoutineCycle_Process()
 
 
     // Get External ADC data
+    uint8_t i;
+    uint16_t val = 0;
+    uint8_t num_half_channels = 4;
+    uint8_t buffer_idx = 0;
+    for (i = 0 ; i < num_half_channels; i++) {
+        ADS7138IRTER_SingleRegisterWrite(&sADS7138_SWI2C_Descriptor, ADS7138_CHANNEL_SEL_REGISTER, i);
+        val = ADS7138IRTER_Read(&sADS7138_SWI2C_Descriptor); 
+        sExtADCBuffer03[buffer_idx] = val >> 8;
+        sExtADCBuffer03[buffer_idx + 1u] = val & 0xff; 
+        buffer_idx += 2;
+    }
+
+    buffer_idx = 0;
+    for (i = 0 ; i < num_half_channels; i++) {
+        ADS7138IRTER_SingleRegisterWrite(&sADS7138_SWI2C_Descriptor, ADS7138_CHANNEL_SEL_REGISTER, i + num_half_channels);
+        val = ADS7138IRTER_Read(&sADS7138_SWI2C_Descriptor); 
+        sExtADCBuffer47[buffer_idx] = val >> 8;
+        sExtADCBuffer47[buffer_idx + 1u] = val & 0xff; 
+        buffer_idx += 2;
+    }
 }
 
 /*ISR that maintains LPM until 30 minutes has passed*/
+// -- I have no idea what this means
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector=RTC_VECTOR
 __interrupt
