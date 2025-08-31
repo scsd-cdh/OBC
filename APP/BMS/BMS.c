@@ -346,14 +346,19 @@ static int16_t ProcessTelemetryRequest(uint8_t request)
 }
 
 // FIXME: Need to do research on what values the heaters actually expect... 
+// -- Heaters are likely just resistors, they don't necessarily **expect** values, but in the end 
+// -- I think it's ok for this to fall on CDH to decide
+// -- Also we're literally just gonna do 100% on and off we really don't even need to support values other than 99...
+// -- But I like the idea of this being CDHs decision at the end of the day...
 // These are basically random
 // For now CDH is responsible for deciding what PWM values to send
+// NOTE: Once PWM generate is set, it goes on forever. Those pins are set to generate that PWM signal until we tell them not to
 static void SendPWM(const uint8_t* buffer, uint8_t size)
 {
-    PWM_Generate(1000, buffer[0], HEATER1_CCR);
-    PWM_Generate(1000, buffer[1], HEATER2_CCR);
-    PWM_Generate(1000, buffer[2], HEATER3_CCR);
-    PWM_Generate(1000, buffer[3], HEATER4_CCR);
+    PWM_Generate(100-1, buffer[0], HEATER1_CCR);
+    PWM_Generate(100-1, buffer[1], HEATER2_CCR);
+    PWM_Generate(100-1, buffer[2], HEATER3_CCR);
+    PWM_Generate(100-1, buffer[3], HEATER4_CCR);
 }
 
 static int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size)
