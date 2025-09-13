@@ -19,9 +19,9 @@ void SWI2C_Init(SWI2C_Descriptor *descriptor) {
 }
 
 int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) {
-    uint_fast8_t bits, temp;
-    uint16_t ii = 0;
-    uint16_t i = 0;
+    uint_fast8_t numBits, currentByte;
+    uint16_t rxIndex = 0;
+    uint16_t sclStretchCnt = 0;
 
     /* Starting the timer */
     TB0CTL = TBSSEL_2 + MC_1 + TBCLR;
@@ -33,14 +33,14 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
     TIMER_ITERATION();
 
     /* Next doing the control byte */
-    temp = (descriptor->address << 1) | BIT0;
-    bits = 8;
+    currentByte = (descriptor->address << 1) | BIT0;
+    numBits = 8;
 
     /* Loop until all bits of the address byte are sent out */
     do
     {
         /* Deciding if we want to send a high or low out of the line */
-        if (temp & BIT7)
+        if (currentByte & BIT7)
         {
             *descriptor->sda_port_dir &= ~descriptor->sda_pin;
         }
@@ -54,13 +54,13 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
         TIMER_ITERATION();
 
         /* Incrementing to the next bit and waiting for the next clock cycle */
-        temp = (temp << 1);
-        bits = (bits - 1);
+        currentByte = (currentByte << 1);
+        numBits = (numBits - 1);
         *descriptor->scl_port_dir |= descriptor->scl_pin;
         TIMER_ITERATION();
 
     }
-    while (bits > 0);
+    while (numBits > 0);
 
     /* Detecting if we have a NAK on the bus. If the slave device NAKed the
      control byte, it probably isn't there on the bus so we should send
@@ -75,24 +75,24 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
     }
 
     /* Next, we want to read out all of the data requested */
-    for (ii = 0; ii < len; ii++)
+    for (rxIndex = 0; rxIndex < len; rxIndex++)
     {
         /*
          * Waiting for our clock line to go high if the slave is stretching
          */
-        for(i = 0; i < 5000; i ++) {
+        for(sclStretchCnt = 0; sclStretchCnt < 5000; sclStretchCnt ++) {
             if(*descriptor->scl_port_in & descriptor->scl_pin) {
                 break;
             }
 
-            if(i == 4999) {
+            if(sclStretchCnt == 4999) {
                 goto I2CReadTransactionCleanUp;
             }
         }
 
         /* Setup the read variables */
-        temp = 0;
-        bits = 0x08;
+        currentByte = 0;
+        numBits = 0x08;
 
         /* Sending out another clock cycle */
         *descriptor->scl_port_dir |= descriptor->scl_pin;
@@ -103,28 +103,28 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
         do
         {
             /* Priming our temporary variable and sending a clock pulse */
-            temp = (temp << 1);
+            currentByte = (currentByte << 1);
             *descriptor->scl_port_dir &= ~descriptor->scl_pin;
             TIMER_ITERATION();
 
             /* If the data line is high, recording that */
             if (*descriptor->sda_port_in & descriptor->sda_pin)
             {
-                temp += 1;
+                currentByte += 1;
             }
 
             /* Send out another clock cycle and decrement our counter */
-            bits = (bits - 1);
+            numBits = (numBits - 1);
             *descriptor->scl_port_dir |= descriptor->scl_pin;
             TIMER_ITERATION();
         }
-        while (bits > 0);
+        while (numBits > 0);
 
         /* Storing the data off */
-        buffer[ii] = temp;
+        buffer[rxIndex] = currentByte;
 
         /* Now the master needs to send out the ACK */
-        if (ii == len - 1)
+        if (rxIndex == len - 1)
             *descriptor->sda_port_dir &= ~descriptor->sda_pin;
         else
             *descriptor->sda_port_dir |= descriptor->sda_pin;
@@ -133,12 +133,12 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
         /*
          * Waiting for our clock line to go high if the slave is stretching
          */
-        for(i = 0; i < 5000; i ++) {
+        for(sclStretchCnt = 0; sclStretchCnt < 5000; sclStretchCnt ++) {
             if(*descriptor->scl_port_in & descriptor->scl_pin) {
                 break;
             }
 
-            if(i == 4999) {
+            if(sclStretchCnt == 4999) {
                 goto I2CReadTransactionCleanUp;
             }
         }
@@ -161,7 +161,7 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
     TB0CTL = MC_0;
 
     /* If all bytes were read, return true- otherwise false. */
-    return ii;
+    return rxIndex;
 }
 
 int32_t SWI2C_Write(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) {
