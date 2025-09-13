@@ -33,6 +33,25 @@ void ADC_init_Standard()
         ADC12_B_MULTIPLESAMPLESDISABLE);
 }
 
+void ADC_initMultiple() 
+{
+    ADC12_B_initParam adcParams = {
+        .sampleHoldSignalSourceSelect = ADC12_B_SAMPLEHOLDSOURCE_SC,
+        .clockSourceSelect = ADC12_B_CLOCKSOURCE_SMCLK,
+        .clockSourceDivider = ADC12_B_CLOCKDIVIDER_1,
+        .clockSourcePredivider = ADC12_B_CLOCKPREDIVIDER__1,
+        .internalChannelMap = ADC12_B_NOINTCH
+    };
+    ADC12_B_init(ADC12_B_BASE, &adcParams);
+
+    ADC12_B_enable(ADC12_B_BASE);
+
+    ADC12_B_setupSamplingTimer(ADC12_B_BASE,
+        ADC12_B_CYCLEHOLD_16_CYCLES,
+        ADC12_B_CYCLEHOLD_16_CYCLES,
+        ADC12_B_MULTIPLESAMPLESENABLE);
+}
+
 void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex){
     ADC12_B_configureMemoryParam memoryParams = {
         .memoryBufferControlIndex = memoryBufferIndex,
