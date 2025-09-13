@@ -38,6 +38,16 @@ typedef enum{
  ******************************************************************************/
 extern void ADC_init_Standard();
 
+/******************************************************************************
+ * @brief Same as ADC_init_Standard except ADC12_B_MULTIPLESAMPLESENABLE is set.
+ *
+ * This function sets up the ADC driver, configuring it to allow reading multiple 
+ * pins on a pass.
+ *
+ * @return None.
+ ******************************************************************************/
+extern void ADC_initMultiple();
+
 
 /******************************************************************************
  * @brief Configures a pin as an ADC pin and assigns its values to a memory register.
