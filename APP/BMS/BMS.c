@@ -154,11 +154,20 @@ static void initADCs()
 static void initGPIO()
 {
     WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
-
     // Configure GPIO
+<<<<<<< HEAD
     P1OUT &= ~BIT0;                           // Clear P1.0 output latch
     P1DIR |= BIT0;                            // For LED
     P1SEL1 |= BIT6 | BIT7;                    // I2C pins
+=======
+    
+    P1DIR |= BIT0 | BIT1;
+    P1OUT &= ~(BIT0 | BIT1);         // P1 setup for LED & reset output
+
+    P1SEL0 |= BIT6 | BIT7;                    // I2C pins
+    P1SEL1 &= ~(BIT6 | BIT7);
+
+>>>>>>> 8fb5b96 (BMS: P1SEL1 > P1SEL0 and use TI clock init)
     // Disable the GPIO power-on default high-impedance mode to activate
     // previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
@@ -185,20 +194,25 @@ static void initGPIO()
     PWM_PinSelect(HEATER_PWM_PORT, HEATER4_PWM_PIN);
 }
 
-// FIXME: Copied directly from PDS
-static void initClockTo16MHz()
+void initClockTo16MHz()
 {
     // Configure one FRAM waitstate as required by the device datasheet for MCLK
     // operation beyond 8MHz _before_ configuring the clock system.
     FRCTL0 = FRCTLPW | NWAITS_1;
 
     // Clock System Setup
-    CSCTL0_H = CSKEY >> 8;                    // Unlock CS registers
-    CSCTL1 = DCORSEL | DCOFSEL_4;             // Set DCO to 16MHz
-    CSCTL2 = SELA__VLOCLK | SELS__DCOCLK | SELM__DCOCLK;
-    CSCTL3 = DIVA__1 | DIVS__1 | DIVM__1;     // Set all dividers
-
-    CSCTL0_H = 0;                             // Lock CS registers
+    CSCTL0_H = CSKEY_H;                     // Unlock CS registers
+    CSCTL1 = DCOFSEL_0;                     // Set DCO to 1MHz
+    // Set SMCLK = MCLK = DCO, ACLK = LFXTCLK (VLOCLK if unavailable)
+    CSCTL2 = SELA__LFXTCLK | SELS__DCOCLK | SELM__DCOCLK;
+    // Per Device Errata set divider to 4 before changing frequency to
+    // prevent out of spec operation from overshoot transient
+    CSCTL3 = DIVA__4 | DIVS__4 | DIVM__4;   // Set all corresponding clk sources to divide by 4 for errata
+    CSCTL1 = DCOFSEL_4 | DCORSEL;           // Set DCO to 16MHz
+    // Delay by ~10us to let DCO settle. 60 cycles = 20 cycles buffer + (10us / (1/4MHz))
+    __delay_cycles(60);
+    CSCTL3 = DIVA__1 | DIVS__1 | DIVM__1;   // Set all dividers to 1 for 16MHz operation
+    CSCTL0_H = 0;                           // Lock CS registers
 }
 
 #if defined (__MSP430FR5989__)
@@ -296,9 +310,6 @@ void initBSP()
     initADCs();
 }
 
-// App communications
-#define SLAVE_ADDR 0x08
-
 static void I2C_Proc_RX_Data(uint8_t data);
 
 static uint16_t SendTelemetryResponse(uint8_t request)
@@ -369,6 +380,10 @@ void InitAppComm()
       .Rx_Proc_Data = I2C_Proc_RX_Data,
         .slave_addr = SLAVE_ADDR,
     };
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8fb5b96 (BMS: P1SEL1 > P1SEL0 and use TI clock init)
     initI2C(&i2cConfig);  
 
     TINYPROTOCOL_Initialize();
@@ -439,6 +454,11 @@ static inline void RoutineCycle_Process()
     volatile uint8_t ocp2val = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
     sFlags.val |= ocp2val;
 
+<<<<<<< HEAD
+=======
+
+    // Get External ADC data
+>>>>>>> 8fb5b96 (BMS: P1SEL1 > P1SEL0 and use TI clock init)
 }
 
 /*ISR that maintains LPM until 30 minutes has passed*/

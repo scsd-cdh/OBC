@@ -28,6 +28,6 @@ int main(void)
 {
     initBSP();
     InitAppComm();
-    
     __bis_SR_register(LPM0_bits + GIE);
+    return 0;
 }
