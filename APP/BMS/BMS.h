@@ -127,6 +127,6 @@ typedef union Flag {
  * }
  * @endcode
  */
-void initBMS();
+extern void initBMS();
 
 #endif
