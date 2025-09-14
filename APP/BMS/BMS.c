@@ -345,9 +345,10 @@ static int16_t ProcessTelemetryRequest(uint8_t request)
 // -- I think it's ok for this to fall on CDH to decide
 // -- Also we're literally just gonna do 100% on and off we really don't even need to support values other than 99...
 // -- But I like the idea of this being CDHs decision at the end of the day...
-// These are basically random
+// NOTE: Once PWM generate is set, it goes on forever. Those pins are set to generate that PWM signal until we tell them not to
 static void SendPWM(const uint8_t* buffer, uint8_t size)
 {
+    // It's 100-1 and not 99 because that's what they do in the TI examples for PWM, IDK why the do that but best to stick to a standard if it exists
     PWM_Generate(100-1, buffer[0], HEATER1_CCR);
     PWM_Generate(100-1, buffer[1], HEATER2_CCR);
     PWM_Generate(100-1, buffer[2], HEATER3_CCR);
