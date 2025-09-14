@@ -91,6 +91,16 @@
 			<locationURI>PARENT-2-PROJECT_LOC/APP/BMS/BMS.h</locationURI>
 		</link>
 		<link>
+			<name>APP/BMS/ads7138irter.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/BMS/ads7138irter.c</locationURI>
+		</link>
+		<link>
+			<name>APP/BMS/ads7138irter.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/BMS/ads7138irter.h</locationURI>
+		</link>
+		<link>
 			<name>APP/BMS/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/APP/BMS/main.c</locationURI>
@@ -122,6 +132,11 @@
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/RTC_C</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/SWI2C</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -229,6 +244,16 @@
 			<name>DRIVERS/MSP430/RTC_C/rtc_c.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_C/rtc_c.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/SWI2C/swi2c.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/SWI2C/swi2c.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/SWI2C/swi2c.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/SWI2C/swi2c.h</locationURI>
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/UTILS/hw_memmap.h</name>
