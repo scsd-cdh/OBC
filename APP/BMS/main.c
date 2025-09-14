@@ -30,7 +30,7 @@
 volatile uint8_t buffer[8];
 const uint8_t outBuffer[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-static const SystemStatusResp_t SystemStatusOut = {
+const SystemStatusResp_t SystemStatusOut = {
     .runtime = 0x12,
     .fw_version = 0xA, 
 };
@@ -54,6 +54,8 @@ uint16_t SendTelemetryResponse()
     }
     
     transmitI2C(bytes, count);
+
+    
     return ETINYPROTOCOL_SUCCESS;
 } 
 

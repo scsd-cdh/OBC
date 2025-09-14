@@ -40,5 +40,10 @@
 			<type>2</type>
 			<location>C:/Users/space/CDH/OBC/MIDDLEWARE</location>
 		</link>
+		<link>
+			<name>DRIVERS/MSP430/RTC_C</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/Documents/OBC/DRIVERS/MSP430/RTC_C</locationURI>
+		</link>
 	</linkedResources>
 </projectDescription>

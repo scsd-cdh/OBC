@@ -1,10 +1,13 @@
 #include "BMS.h"
 #include "ADC_Read.h"
-#include "rtc_b.h"
+#include "rtc_c.h"
 
-// Basically the only pin exposed on the launchpad 
+
+// ADC pin mappings
+// I_SENSE_CHR_CP: Current sensing for battery charging current
+// This is supposed to be for pin 40. We need to map pin to memory where ADC does it's thing 
 // ADC pin numbers
-#define I_SENSE_CHR_CP_ADC_IN_PIN ADC12_B_INPUT_A7 // PIN 40
+#define I_SENSE_CHR_CP_ADC_IN_PIN ADC12_B_INPUT_A8 // PIN 40
 
 // ADC MEM buffer
 #define I_SENSE_CHR_CP_ADC_MEM ADC12_B_MEMORY_0
@@ -19,6 +22,7 @@ static void initADCs()
 {
     ADC_init_Standard();
 
+    // Selects what pin to get mapped to what ADC memory thing
     ADC_PinSelect(I_SENSE_CHR_CP_ADC_IN_PIN, I_SENSE_CHR_CP_ADC_MEM);
 }
 
@@ -51,7 +55,7 @@ static void initClockTo16MHz()
     CSCTL0_H = 0;                             // Lock CS registers
 }
 
-static void initRTCB()
+static void initRTCC()
 {
     Calendar currentTime;
 
@@ -65,40 +69,39 @@ static void initRTCB()
     currentTime.Year       = 0x7E9;  // 2025
 
     //Initialize Calendar Mode of RTC
-    RTC_B_initCalendar(RTC_B_BASE, &currentTime, RTC_B_FORMAT_BCD);
+    RTC_C_initCalendar(RTC_C_BASE, &currentTime, RTC_C_FORMAT_BCD);
 
     //Setup Calendar Alarm for 30 minutes after start.
-    RTC_B_configureCalendarAlarmParam param = {0};
+    RTC_C_configureCalendarAlarmParam param = {0};
     param.minutesAlarm      = 0x2;  // Currently set to 2 minute for testing - TODO change to 24 hours
     param.hoursAlarm        = 0x0;
     param.dayOfWeekAlarm    = 0x0;
     param.dayOfMonthAlarm   = 0x0;
-    RTC_B_configureCalendarAlarm(RTC_B_BASE, &param);
+    RTC_C_configureCalendarAlarm(RTC_C_BASE, &param);
 
-    RTC_B_clearInterrupt(RTC_B_BASE,
-        RTC_B_CLOCK_READ_READY_INTERRUPT +
-        RTC_B_TIME_EVENT_INTERRUPT +
-        RTC_B_CLOCK_ALARM_INTERRUPT
+    RTC_C_clearInterrupt(RTC_C_BASE,
+        RTC_C_CLOCK_READ_READY_INTERRUPT +
+        RTC_C_TIME_EVENT_INTERRUPT +
+        RTC_C_CLOCK_ALARM_INTERRUPT
         );
     //Enable interrupt for RTC Ready Status, which asserts when the RTC
     //Calendar registers are ready to read.
     //Also, enable interrupts for the Calendar alarm and Calendar event.
-    RTC_B_enableInterrupt(RTC_B_BASE,
-        RTC_B_CLOCK_READ_READY_INTERRUPT +
-        RTC_B_TIME_EVENT_INTERRUPT +
-        RTC_B_CLOCK_ALARM_INTERRUPT
+    RTC_C_enableInterrupt(RTC_C_BASE,
+        RTC_C_CLOCK_READ_READY_INTERRUPT +
+        RTC_C_TIME_EVENT_INTERRUPT +
+        RTC_C_CLOCK_ALARM_INTERRUPT
     );
 
     //Start RTC Clock
-    RTC_B_startClock(RTC_B_BASE);
+    RTC_C_startClock(RTC_C_BASE);
 }
-
 
 void initBSP()
 {
     initClockTo16MHz();
     initGPIO();
-    initRTCB();
+    initRTCC();
     initADCs();
 }
 
@@ -121,7 +124,7 @@ __interrupt
 #elif defined(__GNUC__)
 __attribute__((interrupt(RTC_VECTOR)))
 #endif
-void RTC_B_ISR (void)
+void RTC_C_ISR (void)
 {
     switch (__even_in_range(RTCIV,16))
     {
