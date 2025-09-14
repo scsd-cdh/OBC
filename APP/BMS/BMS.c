@@ -1,3 +1,67 @@
+/*
+ * BMS.c
+ *
+ *  Battery Management System (BMS) application logic for MSP4305969/89 microcontroller.
+ *  This file handles initialization and periodic operation of battery monitoring hardware,
+ *  including ADC setup for current and voltage sensing, GPIO configuration for protection flags,
+ *  PWM control for battery heaters, and I2C communications for telemetry and telecommand.
+ *
+ *  ADC channels are assigned to specific pins and memory buffers for multi-channel sweeps.
+ *  GPIO pins are configured for over-voltage, under-voltage, and over-current protection flags.
+ *  PWM outputs control battery heaters, with flexible duty cycle settings.
+ *  Real-Time Clock (RTC) is used for periodic wakeup and routine execution.
+ *  Telemetry and telecommand are handled via a custom protocol (tinyprotocol) over I2C.
+ *
+ *  * --- BMS.c Code Walkthrough ---
+ *
+ * This file implements the Battery Management System (BMS) logic for the MSP430.
+ * 
+ * Key sections:
+ * 
+ * 1. Hardware Definitions:
+ *    - ADC pin assignments: Each *_PIN macro maps a physical pin to an ADC input channel.
+ *    - ADC memory buffers: Each *_MEM macro maps an ADC channel to a memory buffer. These buffers store the results of ADC conversions.
+ *    - GPIO pin assignments: Unique macros for each protection flag (over-voltage, under-voltage, over-current) mapped to specific pins.
+ *    - PWM heater pins: Defines which pins are used for heater PWM outputs.
+ *    - External ADC and I2C addresses.
+ *
+ * 2. Static Data Buffers:
+ *    - Buffers for system status, current, voltage, flags, and external ADC readings.
+ *    - These are used for telemetry responses and protocol communication.
+ *
+ * 3. Initialization Functions:
+ *    - initADCs(): Sets up all ADC channels and memory buffers for multi-channel sweeps.
+ *    - initGPIO(): Configures all GPIO pins for flags, I2C, and PWM outputs.
+ *    - initClockTo16MHz(): Sets the MSP430 clock to 16MHz for fast operation.
+ *    - initRTC(): Initializes the Real-Time Clock for periodic interrupts.
+ *    - initBSP(): Calls all hardware initialization routines.
+ *
+ * 4. Communication Setup:
+ *    - InitAppComm(): Initializes I2C and the custom tinyprotocol for telemetry/telecommand.
+ *    - Registers all telemetry channels and telecommands.
+ *
+ * 5. Main Periodic Routine:
+ *    - RoutineCycle_Process(): Called by RTC interrupt. Sweeps ADCs, reads GPIO flags, collects external ADC data, and updates buffers.
+ *
+ * 6. Interrupt Service Routine:
+ *    - RTC_ISR(): Handles RTC interrupts, triggers periodic routine, and blinks LED for events.
+ *
+ * 7. Telemetry and Telecommand Handlers:
+ *    - SendTelemetryResponse(): Responds to telemetry requests.
+ *    - ProcessTelemetryRequest(): Dispatches telemetry responses.
+ *    - SendPWM(): Sets heater PWM duty cycles.
+ *    - ProcessTelecommand(): Handles incoming telecommands (e.g., heater control).
+ *
+ * --- Notes for Reviewers ---
+ * - ADC memory buffers are crucial for storing conversion results; each sensor channel has a dedicated buffer.
+ * - GPIO flag assignments should be unique and clearly mapped to physical pins.
+ * - All hardware initialization is grouped for clarity and maintainability.
+ * - Telemetry/telecommand protocol is modular and easily extendable.
+ * - RoutineCycle_Process is the main data acquisition and update loop, triggered by RTC.
+ * - Comments throughout the file explain hardware mapping and logic flow.
+ *  Author: Brendan Kelly
+ */
+
 #include "BMS.h"
 #include "ADC_Read.h"
 #include "msp430.h"
@@ -12,12 +76,16 @@
 #include "rtc_b.h"
 #endif
 
-// ADC pins
-// Current sensing 
+// ADC pin assignments for current and voltage sensing
+// Each *_PIN macro maps a physical pin to an ADC input channel
+// Each *_MEM macro maps an ADC channel to a memory buffer
 // 1 and 2 does in fact refer to battery number
+
+// Current sensing VUR = Discharge current
 #define I_SENSE_VUR_1_CP_PIN      ADC12_B_INPUT_A10 // PIN 42 5989
 #define I_SENSE_VUR_2_CP_PIN      ADC12_B_INPUT_A0  // PIN 39 5989
 
+// Current sensing CHR = Charge current
 #define I_SENSE_CHR_1_CP_PIN      ADC12_B_INPUT_A9  // PIN 41 5989
 #define I_SENSE_CHR_2_CP_PIN      ADC12_B_INPUT_A8  // PIN 40 5989
 
@@ -41,7 +109,7 @@
 #define V_BATTPACK_1_CP_MEM       ADC12_B_MEMORY_8  
 #define V_BATTPACK_2_CP_MEM       ADC12_B_MEMORY_9
 
-// GPIO pins
+// GPIO pin assignments for over-voltage, under-voltage, and over-current protection flags
 #define OVP_FLAG_1A_PIN GPIO_PIN0 
 #define UVP_FLAG_1B_PIN GPIO_PIN1 
 #define UVP_FLAG_1A_PIN GPIO_PIN2 
@@ -82,7 +150,7 @@
 
 #define SLAVE_ADDR 0x08
 
-// Static data buffers to be sent back to CDH
+// Static data buffers to be sent back to CDH via tinyprotocol
 static const SystemStatusResp_t sSystemStatus = {
     .runtime = 0x12,
     .fw_version = 0xA, 
@@ -125,6 +193,12 @@ static uint8_t sExtADCBuffer47[8] = {};
 // Global SWI2C config "descriptor"
 static SWI2C_Descriptor sADS7138_SWI2C_Descriptor;
 
+/* INITIALIZATOIN LOGIC */
+// Note most of the code is initialization, since the main logic is just reading sensors and updating buffers
+// Init ADCs
+// Sets up all ADC channels and memory buffers for multi-channel sweeps
+// Uses ADC12_B driverlib
+// NOTE: You need to set the end of sequence to the last ADC pin and set sequence. I repeat this a lot because it's easy to miss!
 static void initADCs() 
 {
     ADC_initMultiple();
@@ -155,10 +229,12 @@ static void initADCs()
     ADC12_B_configureMemory(ADC12_B_BASE, &eos);
 
     /* 4. Sequence‑of‑channels mode, one pass per trigger */
-    // This allows us to use more than one MEM
+    // This allows us to use more than one MEM, necessary for multiple sensors
     ADC12CTL1 |= ADC12CONSEQ_1;   // driverlib name: ADC12_B_SEQUENCEOFCHANNELS
 }
 
+// Initialize GPIO pins for flags, I2C, and PWM outputs
+// Uses GPIO driverlib
 static void initGPIO()
 {
     WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
@@ -173,9 +249,8 @@ static void initGPIO()
     // previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
 
-    // Flag pins
+    // Set flag pins
     // MSP430FR5989 Pins 10 through 13 use GPIO_PORT_P5
-
     GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 10 P5.0
     GPIO_setAsInputPin(GPIO_PORT_P5, UVP_FLAG_1B_PIN); // MSP430FR5989 11
     GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 12
@@ -195,7 +270,9 @@ static void initGPIO()
     PWM_PinSelect(HEATER_PWM_PORT, HEATER4_PWM_PIN);
 }
 
-void initClockTo16MHz()
+// Initialize clock to 16MHz
+// Uses direct register manipulation as per device datasheet
+static void initClockTo16MHz()
 {
     // Configure one FRAM waitstate as required by the device datasheet for MCLK
     // operation beyond 8MHz _before_ configuring the clock system.
@@ -216,6 +293,8 @@ void initClockTo16MHz()
     CSCTL0_H = 0;                           // Lock CS registers
 }
 
+// Initialize the Real-Time Clock (RTC) for periodic interrupts
+// Uses RTC_C or RTC_B driverlib depending on device
 #if defined (__MSP430FR5989__)
 static void initRTC()
 {
@@ -303,14 +382,8 @@ static void initRTC()
 }
 #endif
 
-void initBSP()
-{
-    initClockTo16MHz();
-    initGPIO();
-    initRTC();
-    initADCs();
-}
 
+// Private helper functions for telemetry and telecommand processing
 static void I2C_Proc_RX_Data(uint8_t data);
 
 static uint16_t SendTelemetryResponse(uint8_t request)
@@ -340,11 +413,7 @@ static int16_t ProcessTelemetryRequest(uint8_t request)
     return SendTelemetryResponse(request);
 }
 
-// FIXME: Need to do research on what values the heaters actually expect... 
-// -- Heaters are likely just resistors, they don't necessarily **expect** values, but in the end 
-// -- I think it's ok for this to fall on CDH to decide
-// -- Also we're literally just gonna do 100% on and off we really don't even need to support values other than 99...
-// -- But I like the idea of this being CDHs decision at the end of the day...
+// NOTE: Likely just going to be turning heaters all the way on and all the way off, but for now the API is flexible
 // NOTE: Once PWM generate is set, it goes on forever. Those pins are set to generate that PWM signal until we tell them not to
 static void SendPWM(const uint8_t* buffer, uint8_t size)
 {
@@ -380,7 +449,18 @@ static void I2C_Proc_RX_Data(uint8_t data)
     TINYPROTOCOL_ParseByte(&protocolConfig, data);
 }
 
-void InitAppComm()
+// Hardware initialization. Initializes MSP430 specific device modules for I2C, ADC, GPIO, Clock, and RTC
+static void initHardware()
+{
+    initClockTo16MHz();
+    initGPIO();
+    initRTC();
+    initADCs();
+}
+
+// App communication initialization. Initializes I2C and tinyprotocol, registers telemetry and telecommand channels
+// NOTE: Must be called after initBSP since it uses I2C pins
+static void InitAppComm()
 {
     sI2cConfigCb_t i2cConfig = {
       .Rx_Proc_Data = I2C_Proc_RX_Data,
@@ -417,9 +497,23 @@ void InitAppComm()
     TINYPROTOCOL_RegisterTelecommand(BMS_HEATERS_CONTROLLER_ID, 4);
 }
 
-// ISR 
+// Public BMS initialization. Calls initBSP and InitAppComm
+void initBMS()
+{
+    initHardware();
+    InitAppComm();
+}
+/* END INITIALIZATION LOGIC  */
+
+/* 
+ * RTC ISR and main program logic. 
+ * This is where data is collected and stored into static buffers as per tinyprotocol 
+ * NOTE: inlining functions is entirely up to the compiler, therefore logic for different buffers (i.e. ADC, GPIO, etc) is kept in one function
+ *  due to paranoia that the compiler might not inline it. This is subject to refactor. It is possible to force inline or use macros.
+ */  
 static inline void RoutineCycle_Process()
 {
+    /* MSP430xxxx ON DEVICE ADCs */
     // Collect ADC data and put it into buffers
     // Must do this this way (all at once) if using SEQOFCHANNELS mode
     /* trigger the ten‑channel sweep */
@@ -441,7 +535,8 @@ static inline void RoutineCycle_Process()
     sCombinedBatteryVoltage.vbatt1   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
     sCombinedBatteryVoltage.vbatt2   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
 
-    // Collect GPIO flag data and put it into buffer
+    /* FLAGS */
+    // Read GPIO flags and put them into buffer
     sFlags.val = 0x00;
     volatile uint8_t ovp1Aval = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
     sFlags.val |= ovp1Aval << 9;
@@ -473,7 +568,7 @@ static inline void RoutineCycle_Process()
     volatile uint8_t ocp2val = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
     sFlags.val |= ocp2val;
 
-
+    /* TI ADS7138IRTER EXTERNAL ADC DATA  (THERMISTORS)*/
     // Get External ADC data
     uint8_t i;
     uint16_t val = 0;

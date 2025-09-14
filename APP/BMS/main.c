@@ -26,8 +26,7 @@
 
 int main(void)
 {
-    initBSP();
-    InitAppComm();
+    initBMS();
     __bis_SR_register(LPM0_bits + GIE);
     return 0;
 }
