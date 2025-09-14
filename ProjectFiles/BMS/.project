@@ -61,6 +61,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>MIDDLEWARE/ADS7138</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>MIDDLEWARE/MRAM</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -89,16 +94,6 @@
 			<name>APP/BMS/BMS.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/APP/BMS/BMS.h</locationURI>
-		</link>
-		<link>
-			<name>APP/BMS/ads7138irter.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/BMS/ads7138irter.c</locationURI>
-		</link>
-		<link>
-			<name>APP/BMS/ads7138irter.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/BMS/ads7138irter.h</locationURI>
 		</link>
 		<link>
 			<name>APP/BMS/main.c</name>
@@ -144,6 +139,16 @@
 			<name>DRIVERS/MSP430/UTILS</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/ADS7138/ads7138irter.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/ADS7138/ads7138irter.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/ADS7138/ads7138irter.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/ADS7138/ads7138irter.h</locationURI>
 		</link>
 		<link>
 			<name>MIDDLEWARE/MRAM/mram.h</name>
