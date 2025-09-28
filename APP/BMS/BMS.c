@@ -62,12 +62,13 @@
  *  Author: Brendan Kelly
  */
 
+#include <stdint.h>
+
 #include "BMS.h"
 #include "ADC_Read.h"
 #include "msp430.h"
 #include "gpio.h"
 #include "PWM.h"
-#include <stdint.h>
 #include "swi2c.h"
 #include "ads7138irter.h"
 #if defined (__MSP430FR5989__)
@@ -192,6 +193,8 @@ static uint8_t sExtADCBuffer47[8] = {};
 
 // Global SWI2C config "descriptor"
 static SWI2C_Descriptor sADS7138_SWI2C_Descriptor;
+
+static volatile bool sISRTriggered = false;
 
 /* INITIALIZATOIN LOGIC */
 // Note most of the code is initialization, since the main logic is just reading sensors and updating buffers
@@ -498,7 +501,7 @@ static void InitAppComm()
 }
 
 // Public BMS initialization. Calls initBSP and InitAppComm
-void initBMS()
+void BMS_init()
 {
     initHardware();
     InitAppComm();
@@ -511,7 +514,7 @@ void initBMS()
  * NOTE: inlining functions is entirely up to the compiler, therefore logic for different buffers (i.e. ADC, GPIO, etc) is kept in one function
  *  due to paranoia that the compiler might not inline it. This is subject to refactor. It is possible to force inline or use macros.
  */  
-static inline void RoutineCycle_Process()
+extern void BMS_collectData()
 {
     /* MSP430xxxx ON DEVICE ADCs */
     // Collect ADC data and put it into buffers
@@ -590,6 +593,12 @@ static inline void RoutineCycle_Process()
         sExtADCBuffer47[buffer_idx + 1u] = val & 0xff; 
         buffer_idx += 2;
     }
+    sISRTriggered = false;
+}
+
+bool BMS_ISRTriggered()
+{
+    return (bool)sISRTriggered;
 }
 
 /*ISR that maintains LPM until 30 minutes has passed*/
@@ -605,7 +614,9 @@ void RTC_ISR (void)
     switch (__even_in_range(RTCIV, 16))
     {
         case RTCIV_NONE:         break;
-        case RTCIV_RTCRDYIFG:    RoutineCycle_Process(); break;
+        case RTCIV_RTCRDYIFG: 
+            sISRTriggered = true; 
+            break;
         case RTCIV_RTCTEVIFG:    P1OUT |= BIT0; break; // I think this is blinking an LED or some shit
         case RTCIV_RTCAIFG:      /* alarm */ break;
         case RTCIV_RT0PSIFG:     /* prescale 0 */ break;

@@ -15,8 +15,12 @@
 #ifndef BMS_H
 #define BMS_H
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #include "tinyprotocol.h"
 #include "i2c.h"
+
 
 /**
  * @def SYSTEM_STATUS_RESP_LEN
@@ -117,16 +121,52 @@ typedef union Flag {
  *
  * Sets up ADCs, GPIOs, PWM, RTC, and registers telemetry/telecommand channels.
  *  
- * @note All logic is handled in RTC interrupt and tinyprotocol callbacks.
  * @code
  * int main(void)
  * {
- *     initBMS(); // Initialize all BMS hardware and protocol
- *     __bis_SR_register(LPM0_bits + GIE); 
+ *     BMS_init();
+ * 
+ *     __bis_SR_register(GIE);
+ *     while (1) {
+ *         if (BMS_ISRTriggered()) {
+ *             BMS_collectData();
+ *         }
+ *     }
  *     return 0;
  * }
  * @endcode
  */
-extern void initBMS();
+extern void BMS_init();
+
+
+/**
+ * @brief Synchronous data-acquisition pass that refreshes telemetry buffers.
+ *
+ * Starts one ADC12_B sequence-of-channels sweep (MEM0→MEM9) and *busy-waits*
+ * until it completes, then copies results into current/voltage unions. Also
+ * samples protection-flag GPIOs and reads 8 channels from the external
+ * ADS7138 (thermistors) over software I²C into the two 8-byte buffers.
+ *
+ * @details
+ * - **Synchronous/blocking:** contains a busy-wait on ADC completion.
+ * - **Side effects:** clears the internal “RTC fired” flag exposed by
+ *   ::BMS_ISRTriggered(), acknowledging the event, and modifies internal static 
+ *   data buffers to be read by master (CDH) via Tiny Protocol
+ *
+ * @pre ::BMS_init() has been called.
+ * @post Telemetry buffers registered with tinyprotocol contain fresh data.
+ */
+extern void BMS_collectData();
+
+/**
+ * @brief Check whether an RTC event occurred since the last collection.
+ *
+ * This returns a latch set by the RTC ISR. The latch is cleared by
+ * ::BMS_collectData() after it completes a refresh cycle.
+ *
+ * @return `true` if an RTC event has occurred and data collection is due;
+ *         `false` otherwise.
+ */
+extern bool BMS_ISRTriggered();
 
 #endif

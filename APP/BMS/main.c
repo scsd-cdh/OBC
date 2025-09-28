@@ -22,11 +22,16 @@
 
 #include "BMS.h"
 #include "i2c.h"
-#include <sys/types.h>
 
 int main(void)
 {
-    initBMS();
-    __bis_SR_register(LPM0_bits + GIE);
+    BMS_init();
+
+    __bis_SR_register(GIE);
+    while (1) {
+        if (BMS_ISRTriggered()) {
+            BMS_collectData();
+        }
+    }
     return 0;
 }
