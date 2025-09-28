@@ -11,6 +11,9 @@
  */
 
 #include "sam.h"
+#include <stdint.h>
+
+typedef uint16_t size_t;
 
 #define MISOpin   20u   // PD20 = SPI0_MISO
 #define MOSIpin   21u   // PD21 = SPI0_MOSI
@@ -20,7 +23,14 @@
 #define PD_MASK   ((1u<<MISOpin)|(1u<<MOSIpin)|(1u<<SPCKpin)|(1u<<NPCS1pin))
 
 // Target SPI bit rate (adjust as needed)
-#define SPI_BAUD_HZ   1000000u
+#define SPI_BAUD_HZ   100000u
+
+#define MRAM_RDSR 0x05
+#define MRAM_RDID 0x9F
+
+#define MRAM_STATUS_REGISTER_ID_DATA_BYTES 1
+#define MRAM_DEVICE_ID_DATA_BYTES 4
+
 
 // Helper to compute SCBR = MCK / SPI_BAUD (clamped to 1..255)
 static inline uint32_t spi_scbr(uint32_t mck, uint32_t baud)
@@ -29,6 +39,75 @@ static inline uint32_t spi_scbr(uint32_t mck, uint32_t baud)
     if (div < 1u)   div = 1u;
     if (div > 255u) div = 255u;
     return div;
+}
+
+static void SPI_masterTransfer(const uint8_t cmdId)
+{
+	 while ((SPI0->SPI_SR & SPI_SR_TDRE) == 0) { /* wait */ }
+	 // In fixed select mode, TDR.PCS is ignored; only write data
+	 SPI0->SPI_TDR = SPI_TDR_TD(cmdId);
+}
+
+static inline uint8_t SPI_masterReceive()
+{
+	while ((SPI0->SPI_SR & SPI_SR_RDRF) == 0) {}      // wait data ready
+	return (uint8_t)SPI0->SPI_RDR;
+}
+
+static inline void SPI_masterReceiveBulk(volatile uint8_t* buffer, size_t len)
+{
+
+}
+
+static void SPI_masterSendAndReceive(const uint8_t cmdId, volatile uint8_t* buffer, size_t len)
+{
+	// Optionally wait for TXEMPTY to ensure CS deasserts between frames
+	while ((SPI0->SPI_SR & SPI_SR_TXEMPTY) == 0) { /* wait */ }
+	SPI_masterTransfer(cmdId);
+
+	// Clear any received data (optional but tidy if MISO is connected)
+	if (SPI0->SPI_SR & SPI_SR_RDRF) {
+		(void)SPI0->SPI_RDR;
+	}
+	
+	SPI_masterReceiveBulk(buffer, len);
+
+	/* optional: after last transfer */
+	while ((SPI0->SPI_SR & SPI_SR_TXEMPTY) == 0) {}   // last bit shifted out
+}
+
+//NOTE: Produces big gaps in between bytes in the SCK and in the CS line that seem to produce some weirdness 
+//		when I tried to factor this into different functions. Seemed to make some difference in the gap but not enough
+//	    to make the weirdness go away when inlining the functions. Further debugging required.
+static void MRAM_readDeviceID(volatile uint8_t* buffer, size_t len)
+{
+	uint8_t cmdId = MRAM_RDID;
+	// Optionally wait for TXEMPTY to ensure CS deasserts between frames
+	while ((SPI0->SPI_SR & SPI_SR_TXEMPTY) == 0) { /* wait */ }
+	// In fixed select mode, TDR.PCS is ignored; only write data
+	SPI0->SPI_TDR = SPI_TDR_TD(cmdId);
+	// Clear any received data (optional but tidy if MISO is connected)
+	if (SPI0->SPI_SR & SPI_SR_RDRF) {
+		(void)SPI0->SPI_RDR;
+	}
+	
+	 int i;
+	 for (i = 0; i < len; ++i) {
+		 while ((SPI0->SPI_SR & SPI_SR_TDRE) == 0) { /* wait */ }
+		// In fixed select mode, TDR.PCS is ignored; only write data
+		 SPI0->SPI_TDR = SPI_TDR_TD(0x00);
+	
+	 	while ((SPI0->SPI_SR & SPI_SR_RDRF) == 0) {}      // wait data ready
+		 buffer[i] = (uint8_t)SPI0->SPI_RDR;
+	 }
+	 
+	/* optional: after last transfer */
+	while ((SPI0->SPI_SR & SPI_SR_TXEMPTY) == 0) {}   // last bit shifted out
+}
+
+static void MRAM_readStatusRegister(volatile uint8_t* buffer, uint8_t len)
+{
+	SPI_masterSendAndReceive(MRAM_RDSR, buffer, len);
 }
 
 int main(void)
@@ -73,25 +152,18 @@ int main(void)
     SPI0->SPI_CR = SPI_CR_SPIEN;                // enable SPI
 
     // --- Simple transmit loop (polling)
-    uint8_t data = 0x55;
+	volatile uint8_t MRAM_deviceIdBuffer[MRAM_DEVICE_ID_DATA_BYTES] = {};
+	volatile uint8_t MRAM_statusRegisterBuffer[MRAM_STATUS_REGISTER_ID_DATA_BYTES] = {};
     for (;;)
     {
         // Wait for TDRE (TDR empty) then write a byte.
         while ((SPI0->SPI_SR & SPI_SR_TDRE) == 0) { /* wait */ }
 
-        // In fixed select mode, TDR.PCS is ignored; only write data
-        SPI0->SPI_TDR = SPI_TDR_TD(data);
-
-        // Optionally wait for TXEMPTY to ensure CS deasserts between frames
-        while ((SPI0->SPI_SR & SPI_SR_TXEMPTY) == 0) { /* wait */ }
-
-        // Clear any received data (optional but tidy if MISO is connected)
-        if (SPI0->SPI_SR & SPI_SR_RDRF) {
-            (void)SPI0->SPI_RDR;
-        }
+		MRAM_readDeviceID(MRAM_deviceIdBuffer, MRAM_DEVICE_ID_DATA_BYTES);
 
         // Change data pattern for visibility on a logic analyzer
-        data ^= 0xFF;
         for (volatile uint32_t i = 0; i < 100000; ++i) { __NOP(); }
     }
+	
+	return 0;
 }
