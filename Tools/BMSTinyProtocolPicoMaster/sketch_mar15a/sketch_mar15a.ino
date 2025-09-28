@@ -85,6 +85,7 @@ void sendTeleCommand(uint8_t cmd_id, const uint8_t* buff, uint8_t size)
 }
 
 void sendPWMData() {
+  Serial.println("################### Sending PWM data... ##############################");
   uint8_t buff[4] = {75, 50, 98, 5};
   Serial.print("Sending PWM data: ");
   for (size_t i = 0; i < 4; ++i) {
@@ -93,14 +94,17 @@ void sendPWMData() {
   }
   Serial.println();
   sendTeleCommand(BMS_HEATER_CONTROLLER_ID, buff, sizeof(buff));
+  Serial.println("################### Done Sending PWM ##############################");
 }
 
 void requestFlags() {
+  Serial.println("################### Flags begin ##############################");
   uint8_t buff[2] = {};
   sendTeleChannelRequest(BMS_FLAG_ID, buff, sizeof(buff));
   Serial.print("buffer: ");
   Serial.print(buff[0], BIN);
   Serial.println(buff[1], BIN);
+  Serial.println("################### Flags end ##############################");
 }
 
 void printValue(byte* buffer) {
@@ -123,7 +127,7 @@ void printConvertedADCValue(byte* buffer) {
 }
 
 void requestADC() {
-  Serial.println("################### ADC data begin ##############################");
+  Serial.println("################### Internal ADC data begin ##############################");
   uint8_t buff[4] = {};  
 
   sendTeleChannelRequest(BMS_CURRENT_DRAW_ID, buff, sizeof(buff));
@@ -162,7 +166,7 @@ void requestADC() {
   Serial.print("ADC value * 3.3 / 4096 (V): ");
   printConvertedADCValue(buff);
 
-  Serial.println("################### adc data end ##############################");
+  Serial.println("################### Internal ADC data end ##############################");
 }
 
 void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
@@ -233,27 +237,14 @@ void setup() {
 }
 
 void loop() {
-  // requestADC();            // Send command and read data
-  // Serial.println("Requesting Flags...");
-  // requestFlags();
-  // sendPWMData();
+  requestADC();            // Send command and read data
+  delay(10);
+  requestFlags();
+  delay(10);
   getExtADC();
+  delay(10);
+  sendPWMData();
   delay(1000);          // Wait 1 second before repeating
-  // unsigned long highTime = pulseIn(PWM_PIN, HIGH);
-  // unsigned long lowTime = pulseIn(PWM_PIN, LOW);
-  // unsigned long period = highTime + lowTime;
-  // Serial.print("HighTime: "); 
-  // Serial.println(highTime);
-  // Serial.println("LowTime: ");
-  // Serial.println(lowTime);
-  // Serial.print("Period: ");
-  // Serial.println(period);
-  // if (period > 0) {
-  //   float dutyCycle = 100.0 * highTime / period;
-  //   Serial.print("Duty Cycle: ");
-  //   Serial.println(dutyCycle);  // percent (0–100%)
-  // }
-  // delay(100);
 }
 
 
