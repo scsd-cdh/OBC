@@ -79,8 +79,9 @@ int16_t TINYPROTOCOL_ParseByte(const struct TINYPROTOCOL_Config *cfg, uint8_t by
                 rx_buffer[tlcmd_buffer_idx ++] = tlcmd_current;
             }
             break;
-        case TINYPROTOCOL_FSM_EXPECT_TLM_REQ:
-            if (TINYPROTOCOL_CalculateCRC(&tlm_current_channel, 1) != byte) {
+        case TINYPROTOCOL_FSM_EXPECT_TLM_REQ: {
+            uint8_t crc = TINYPROTOCOL_CalculateCRC(&tlm_current_channel, 1);
+            if (crc != byte) {
                 TlmAckPacket.result = TLM_ACK_PACKET_RESULT_EINVALID_CRC;
             } else {
                 cfg->TINYPROTOCOL_ProcessTelemetryRequest(TlmAckPacket.last_command & 0x7F);
@@ -89,6 +90,9 @@ int16_t TINYPROTOCOL_ParseByte(const struct TINYPROTOCOL_Config *cfg, uint8_t by
 
             current_state = TINYPROTOCOL_FSM_IDLE;
             break;
+        }
+           
+            
         case TINYPROTOCOL_FSM_EXPECT_TC:
             if (tlcmd_buffer_idx == tc_size[tlcmd_current]) {
                 if (TINYPROTOCOL_CalculateCRC(rx_buffer, tc_size[tlcmd_current]) == byte) {

@@ -1,0 +1,10 @@
+Debug/
+# CCS build artifacts
+Release/
+*.d
+*.obj
+*.out
+*.map
+*_linkInfo.xml
+.clangd
+
