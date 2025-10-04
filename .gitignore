@@ -8,3 +8,6 @@ build/
 *.d
 *.o
 ProjectFiles/CDH/.generated_files/*
+ProjectFiles/CDH/Debug/
+ProjectFiles/CDH/Debug/*
+ProjectFiles/CDH/.vs/CDH/v14/.atsuo
