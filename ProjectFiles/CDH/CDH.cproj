@@ -305,6 +305,7 @@
       <Value>../../../DRIVERS/SAMV71/hpl/uart</Value>
       <Value>../../../DRIVERS/SAMV71/hpl/xdmac</Value>
       <Value>../../../DRIVERS/SAMV71/hri</Value>
+      <Value>../../../DRIVERS/SAMV71/wrappers</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
@@ -543,6 +544,14 @@
       <SubType>compile</SubType>
       <Link>hpl\hpl_xdmac.c</Link>
     </Compile>
+    <Compile Include="..\..\DRIVERS\SAMV71\wrappers\SPI_Wrapper.c">
+      <SubType>compile</SubType>
+      <Link>wrappers\SPI_Wrapper.c</Link>
+    </Compile>
+    <Compile Include="..\..\DRIVERS\SAMV71\wrappers\SPI_Wrapper.h">
+      <SubType>compile</SubType>
+      <Link>wrappers\SPI_Wrapper.h</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Device_Startup" />
@@ -551,6 +560,7 @@
     <Folder Include="hal" />
     <Folder Include="hal\utils" />
     <Folder Include="hpl" />
+    <Folder Include="wrappers" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
