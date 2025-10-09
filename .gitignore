@@ -3,7 +3,9 @@
 *.yml
 *.mc3
 *.properties
-Debug/
+*Debug/
+*.atsuo
+*Release/
 build/
 *.d
 *.o
