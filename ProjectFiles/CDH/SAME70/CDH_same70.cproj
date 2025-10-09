@@ -1,0 +1,647 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="14.0">
+  <PropertyGroup>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>7.0</ProjectVersion>
+    <ToolchainName>com.Atmel.ARMGCC.C</ToolchainName>
+    <ProjectGuid>dce6c7e3-ee26-4d79-826b-08594b9ad897</ProjectGuid>
+    <avrdevice>ATSAME70Q21</avrdevice>
+    <avrdeviceseries>none</avrdeviceseries>
+    <OutputType>Executable</OutputType>
+    <Language>C</Language>
+    <OutputFileName>$(MSBuildProjectName)</OutputFileName>
+    <OutputFileExtension>.elf</OutputFileExtension>
+    <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
+    <AssemblyName>CDH_same70</AssemblyName>
+    <Name>CDH_same70</Name>
+    <RootNamespace>CDH_same70</RootNamespace>
+    <ToolchainFlavour>Native</ToolchainFlavour>
+    <KeepTimersRunning>true</KeepTimersRunning>
+    <OverrideVtor>false</OverrideVtor>
+    <CacheFlash>true</CacheFlash>
+    <ProgFlashFromRam>true</ProgFlashFromRam>
+    <RamSnippetAddress>0x20000000</RamSnippetAddress>
+    <UncachedRange />
+    <preserveEEPROM>true</preserveEEPROM>
+    <OverrideVtorValue>exception_table</OverrideVtorValue>
+    <BootSegment>2</BootSegment>
+    <ResetRule>0</ResetRule>
+    <eraseonlaunchrule>0</eraseonlaunchrule>
+    <EraseKey />
+    <AsfFrameworkConfig>
+      <framework-data xmlns="">
+        <options />
+        <configurations />
+        <files />
+        <documentation help="" />
+        <offline-documentation help="" />
+        <dependencies>
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.52.0" />
+        </dependencies>
+      </framework-data>
+    </AsfFrameworkConfig>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <ToolchainSettings>
+      <ArmGcc>
+        <armgcc.common.outputfiles.hex>True</armgcc.common.outputfiles.hex>
+        <armgcc.common.outputfiles.lss>True</armgcc.common.outputfiles.lss>
+        <armgcc.common.outputfiles.eep>True</armgcc.common.outputfiles.eep>
+        <armgcc.common.outputfiles.bin>True</armgcc.common.outputfiles.bin>
+        <armgcc.common.outputfiles.srec>True</armgcc.common.outputfiles.srec>
+        <armgcc.compiler.symbols.DefSymbols>
+          <ListValues>
+            <Value>NDEBUG</Value>
+          </ListValues>
+        </armgcc.compiler.symbols.DefSymbols>
+        <armgcc.compiler.directories.IncludePaths>
+          <ListValues>
+            <Value>%24(PackRepoDir)\arm\CMSIS\5.4.0\CMSIS\Core\Include\</Value>
+            <Value>%24(PackRepoDir)\atmel\SAME70_DFP\2.4.166\same70a\include</Value>
+          </ListValues>
+        </armgcc.compiler.directories.IncludePaths>
+        <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
+        <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
+        <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
+        <armgcc.linker.libraries.Libraries>
+          <ListValues>
+            <Value>libm</Value>
+          </ListValues>
+        </armgcc.linker.libraries.Libraries>
+        <armgcc.linker.libraries.LibrarySearchPaths>
+          <ListValues>
+            <Value>%24(ProjectDir)\Device_Startup</Value>
+          </ListValues>
+        </armgcc.linker.libraries.LibrarySearchPaths>
+        <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
+        <armgcc.linker.miscellaneous.LinkerFlags>-Tsame70q21_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
+        <armgcc.assembler.general.IncludePaths>
+          <ListValues>
+            <Value>%24(PackRepoDir)\arm\CMSIS\5.4.0\CMSIS\Core\Include\</Value>
+            <Value>%24(PackRepoDir)\atmel\SAME70_DFP\2.4.166\same70a\include</Value>
+          </ListValues>
+        </armgcc.assembler.general.IncludePaths>
+        <armgcc.preprocessingassembler.general.IncludePaths>
+          <ListValues>
+            <Value>%24(PackRepoDir)\arm\CMSIS\5.4.0\CMSIS\Core\Include\</Value>
+            <Value>%24(PackRepoDir)\atmel\SAME70_DFP\2.4.166\same70a\include</Value>
+          </ListValues>
+        </armgcc.preprocessingassembler.general.IncludePaths>
+      </ArmGcc>
+    </ToolchainSettings>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <ToolchainSettings>
+      <ArmGcc>
+        <armgcc.common.outputfiles.hex>True</armgcc.common.outputfiles.hex>
+        <armgcc.common.outputfiles.lss>True</armgcc.common.outputfiles.lss>
+        <armgcc.common.outputfiles.eep>True</armgcc.common.outputfiles.eep>
+        <armgcc.common.outputfiles.bin>True</armgcc.common.outputfiles.bin>
+        <armgcc.common.outputfiles.srec>True</armgcc.common.outputfiles.srec>
+        <armgcc.compiler.symbols.DefSymbols>
+          <ListValues>
+            <Value>DEBUG</Value>
+          </ListValues>
+        </armgcc.compiler.symbols.DefSymbols>
+        <armgcc.compiler.directories.IncludePaths>
+          <ListValues>
+            <Value>%24(PackRepoDir)\arm\CMSIS\5.4.0\CMSIS\Core\Include\</Value>
+            <Value>%24(PackRepoDir)\atmel\SAME70_DFP\2.4.166\same70a\include</Value>
+          </ListValues>
+        </armgcc.compiler.directories.IncludePaths>
+        <armgcc.compiler.optimization.level>Optimize debugging experience (-Og)</armgcc.compiler.optimization.level>
+        <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
+        <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
+        <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
+        <armgcc.compiler.miscellaneous.OtherFlags>@"%24(ProjectDir)includes_repo_same70.rsp" -std=gnu99</armgcc.compiler.miscellaneous.OtherFlags>
+        <armgcc.compiler.miscellaneous.Verbose>True</armgcc.compiler.miscellaneous.Verbose>
+        <armgcc.linker.libraries.Libraries>
+          <ListValues>
+            <Value>libm</Value>
+          </ListValues>
+        </armgcc.linker.libraries.Libraries>
+        <armgcc.linker.libraries.LibrarySearchPaths>
+          <ListValues>
+            <Value>%24(ProjectDir)\Device_Startup</Value>
+          </ListValues>
+        </armgcc.linker.libraries.LibrarySearchPaths>
+        <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
+        <armgcc.linker.memorysettings.ExternalRAM />
+        <armgcc.linker.miscellaneous.LinkerFlags>-Tsame70q21_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
+        <armgcc.assembler.general.IncludePaths>
+          <ListValues>
+            <Value>%24(PackRepoDir)\arm\CMSIS\5.4.0\CMSIS\Core\Include\</Value>
+            <Value>%24(PackRepoDir)\atmel\SAME70_DFP\2.4.166\same70a\include</Value>
+          </ListValues>
+        </armgcc.assembler.general.IncludePaths>
+        <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
+        <armgcc.preprocessingassembler.general.IncludePaths>
+          <ListValues>
+            <Value>%24(PackRepoDir)\arm\CMSIS\5.4.0\CMSIS\Core\Include\</Value>
+            <Value>%24(PackRepoDir)\atmel\SAME70_DFP\2.4.166\same70a\include</Value>
+          </ListValues>
+        </armgcc.preprocessingassembler.general.IncludePaths>
+        <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
+      </ArmGcc>
+    </ToolchainSettings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\core\hpl_core_m7_base.c">
+      <Link>hpl\hpl_core_m7_base.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\core\hpl_init.c">
+      <Link>hpl\hpl_init.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\pmc\hpl_pmc.c">
+      <Link>hpl\hpl_pmc.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\pmc\hpl_sleep.c">
+      <Link>hpl\hpl_sleep.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\spi\hpl_spi.c">
+      <Link>hpl\hpl_spi.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\twihs\hpl_twihs.c">
+      <Link>hpl\hpl_twihs.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\uart\hpl_uart.c">
+      <Link>hpl\hpl_uart.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\xdmac\hpl_xdmac.c">
+      <Link>hpl\hpl_xdmac.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\core\hpl_core_port.h">
+      <Link>hpl_core_port.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\pio\hpl_gpio_base.h">
+      <Link>hpl_gpio_base.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\pmc\hpl_pmc.h">
+      <Link>hpl_pmc.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\spi\hpl_spi_base.h">
+      <Link>hpl_spi_base.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hpl\uart\hpl_uart_base.h">
+      <Link>hpl_uart_base.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_acc_e70.h">
+      <Link>hri\hri_acc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_aes_e70.h">
+      <Link>hri\hri_aes_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_afec_e70.h">
+      <Link>hri\hri_afec_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_chipid_e70.h">
+      <Link>hri\hri_chipid_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_dacc_e70.h">
+      <Link>hri\hri_dacc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_efc_e70.h">
+      <Link>hri\hri_efc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_gmac_e70.h">
+      <Link>hri\hri_gmac_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_gpbr_e70.h">
+      <Link>hri\hri_gpbr_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_hsmci_e70.h">
+      <Link>hri\hri_hsmci_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_icm_e70.h">
+      <Link>hri\hri_icm_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_isi_e70.h">
+      <Link>hri\hri_isi_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_lockbit_e70.h">
+      <Link>hri\hri_lockbit_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_matrix_e70.h">
+      <Link>hri\hri_matrix_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <!-- omit MCAN/MLB for SAME70; add if your device actually has them -->
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_pio_e70.h">
+      <Link>hri\hri_pio_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_pmc_e70.h">
+      <Link>hri\hri_pmc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_pwm_e70.h">
+      <Link>hri\hri_pwm_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_qspi_e70.h">
+      <Link>hri\hri_qspi_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_rstc_e70.h">
+      <Link>hri\hri_rstc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_rswdt_e70.h">
+      <Link>hri\hri_rswdt_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_rtc_e70.h">
+      <Link>hri\hri_rtc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_rtt_e70.h">
+      <Link>hri\hri_rtt_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_sdramc_e70.h">
+      <Link>hri\hri_sdramc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_smc_e70.h">
+      <Link>hri\hri_smc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_spi_e70.h">
+      <Link>hri\hri_spi_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_ssc_e70.h">
+      <Link>hri\hri_ssc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_supc_e70.h">
+      <Link>hri\hri_supc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_tc_e70.h">
+      <Link>hri\hri_tc_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_trng_e70.h">
+      <Link>hri\hri_trng_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_twihs_e70.h">
+      <Link>hri\hri_twihs_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_uart_e70.h">
+      <Link>hri\hri_uart_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_usart_e70.h">
+      <Link>hri\hri_usart_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_usbhs_e70.h">
+      <Link>hri\hri_usbhs_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_utmi_e70.h">
+      <Link>hri\hri_utmi_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_wdt_e70.h">
+      <Link>hri\hri_wdt_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_xdmac_e70.h">
+      <Link>hri\hri_xdmac_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <!-- Family aggregator -->
+    <Compile Include="..\..\..\DRIVERS\SAME70\hri\hri_e70.h">
+      <Link>hri\hri_e70.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\src\hal_atomic.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_atomic.c</Link> 
+	</Compile>
+	  <!-- <Compile Include="C:\Users\space\CDH2\OBC\DRIVERS\SAME70\hal\src\hal_atomic.c">
+      <Link>hal\src\hal_atomic.c</Link>
+      <SubType>compile</SubType>
+    </Compile> -->
+	 
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\src\hal_delay.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_delay.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\src\hal_gpio.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_gpio.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\src\hal_i2c_m_sync.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_i2c_m_sync.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\src\hal_init.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_init.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\src\hal_io.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_io.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\src\hal_sleep.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_sleep.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\src\hal_spi_m_sync.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_spi_m_sync.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\src\hal_usart_sync.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_usart_sync.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\src\utils_assert.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_assert.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\src\utils_event.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_event.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\src\utils_list.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_list.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\src\utils_ringbuffer.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_ringbuffer.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\src\utils_syscalls.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_syscalls.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hal_atomic.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hal_atomic.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hal_delay.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hal_delay.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hal_gpio.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hal_gpio.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hal_i2c_m_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hal_i2c_m_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hal_init.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hal_init.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hal_io.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hal_io.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hal_sleep.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hal_sleep.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hal_spi_m_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hal_spi_m_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hal_usart_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hal_usart_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_core.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_core.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_delay.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_delay.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_dma.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_dma.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_ext_irq.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_ext_irq.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_gpio.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_gpio.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_i2c_m_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_i2c_m_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_i2c_m_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_i2c_m_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_i2c_s_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_i2c_s_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_i2c_s_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_i2c_s_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_init.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_init.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_irq.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_irq.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_missing_features.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_missing_features.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_reset.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_reset.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_sleep.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_sleep.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_spi.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_spi_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_spi_dma.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_dma.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_spi_m_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_m_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_spi_m_dma.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_m_dma.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_spi_m_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_m_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_spi_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_spi_s_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_s_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_spi_s_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_s_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_usart.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_usart.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_usart_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_usart_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_usart_dma.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_usart_dma.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\include\hpl_usart_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_usart_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\compiler.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\compiler.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\err_codes.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\err_codes.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\events.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\events.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\parts.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\parts.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\utils.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\utils_assert.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_assert.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\utils_event.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_event.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\utils_increment_macro.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_increment_macro.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\utils_list.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_list.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\utils_repeat_macro.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_repeat_macro.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAME70\hal\utils\include\utils_ringbuffer.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_ringbuffer.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\APP\CDH_App\atmel_start.c">
+      <SubType>compile</SubType>
+      <Link>atmel_start.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\APP\CDH_App\atmel_start.h">
+      <SubType>compile</SubType>
+      <Link>atmel_start.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\APP\CDH_App\atmel_start_pins.h">
+      <SubType>compile</SubType>
+      <Link>atmel_start_pins.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\APP\CDH_App\driver_init.c">
+      <SubType>compile</SubType>
+      <Link>driver_init.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\APP\CDH_App\driver_init.h">
+      <SubType>compile</SubType>
+      <Link>driver_init.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\APP\CDH_App\main.c">
+      <SubType>compile</SubType>
+      <Link>main.c</Link>
+    </Compile>
+    <Compile Include="Device_Startup\startup_same70q21.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Device_Startup\system_same70q21.c">
+      <SubType>compile</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Device_Startup\" />
+    <Folder Include="hal\" />
+    <Folder Include="hal\include\" />
+    <Folder Include="hal\src\" />
+    <Folder Include="hal\utils\" />
+    <Folder Include="hal\utils\include\" />
+    <Folder Include="hal\utils\src\" />
+    <Folder Include="hpl\" />
+    <Folder Include="hri\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Device_Startup\same70q21_flash.ld">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="Device_Startup\same70q21_sram.ld">
+      <SubType>compile</SubType>
+    </None>
+  </ItemGroup>
+  <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
+</Project>
