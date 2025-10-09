@@ -10,3 +10,4 @@ build/
 *.d
 *.o
 ProjectFiles/CDH/.generated_files/*
+ProjectFiles/CDH/Debug/
