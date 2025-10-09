@@ -15,4 +15,5 @@
 -I"../../../../DRIVERS/SAME70/hpl/xdmac"
 
 -I"../../../../DRIVERS/SAME70/hri"
-
+-I"../../../../DRIVERS/CDH_COMMON"
+-I"../../../../DRIVERS/CDH_COMMON/wrappers"
