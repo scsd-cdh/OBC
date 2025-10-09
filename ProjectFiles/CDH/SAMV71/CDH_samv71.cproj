@@ -13,7 +13,7 @@
     <OutputFileExtension>.elf</OutputFileExtension>
     <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
     <AssemblyName>CDH</AssemblyName>
-    <Name>CDH</Name>
+    <Name>CDH_samv71</Name>
     <RootNamespace>CDH</RootNamespace>
     <ToolchainFlavour>Native</ToolchainFlavour>
     <KeepTimersRunning>true</KeepTimersRunning>
@@ -291,20 +291,20 @@
     <ListValues>
       <Value>%24(PackRepoDir)\atmel\SAMV71_DFP\2.4.182\samv71b\include</Value>
       <Value>%24(PackRepoDir)\arm\CMSIS\5.4.0\CMSIS\Core\Include\</Value>
-      <Value>../../../APP/CDH_App</Value>
-      <Value>../../../APP/CDH_App/examples</Value>
-      <Value>../../../APP/CDH_App/Config</Value>
-      <Value>../../../APP/CDH_App/Device_Startup</Value>
-      <Value>../../../DRIVERS/SAMV71/hal/include</Value>
-      <Value>../../../DRIVERS/SAMV71/hal/utils/include</Value>
-      <Value>../../../DRIVERS/SAMV71/hpl/core</Value>
-      <Value>../../../DRIVERS/SAMV71/hpl/pio</Value>
-      <Value>../../../DRIVERS/SAMV71/hpl/pmc</Value>
-      <Value>../../../DRIVERS/SAMV71/hpl/spi</Value>
-      <Value>../../../DRIVERS/SAMV71/hpl/twihs</Value>
-      <Value>../../../DRIVERS/SAMV71/hpl/uart</Value>
-      <Value>../../../DRIVERS/SAMV71/hpl/xdmac</Value>
-      <Value>../../../DRIVERS/SAMV71/hri</Value>
+      <Value>../../../../APP/CDH_App</Value>
+      <Value>../../../../APP/CDH_App/examples</Value>
+      <Value>../../../../APP/CDH_App/Config</Value>
+      <Value>../../../../APP/CDH_App/Device_Startup</Value>
+      <Value>../../../../DRIVERS/SAMV71/hal/include</Value>
+      <Value>../../../../DRIVERS/SAMV71/hal/utils/include</Value>
+      <Value>../../../../DRIVERS/SAMV71/hpl/core</Value>
+      <Value>../../../../DRIVERS/SAMV71/hpl/pio</Value>
+      <Value>../../../../DRIVERS/SAMV71/hpl/pmc</Value>
+      <Value>../../../../DRIVERS/SAMV71/hpl/spi</Value>
+      <Value>../../../../DRIVERS/SAMV71/hpl/twihs</Value>
+      <Value>../../../../DRIVERS/SAMV71/hpl/uart</Value>
+      <Value>../../../../DRIVERS/SAMV71/hpl/xdmac</Value>
+      <Value>../../../../DRIVERS/SAMV71/hri</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
@@ -320,17 +320,12 @@
   <armgcc.linker.libraries.LibrarySearchPaths>
     <ListValues>
       <Value>%24(ProjectDir)\Device_Startup</Value>
-      <Value>../../../APP/CDH_App/Device_Startup</Value>
+      <Value>../../../../APP/CDH_App</Value>
     </ListValues>
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
   <armgcc.linker.memorysettings.ExternalRAM />
   <armgcc.linker.miscellaneous.LinkerFlags>-Tsamv71q21b_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
-  <armgcc.linker.miscellaneous.OtherObjects>
-    <ListValues>
-      <Value>../../../APP/CDH_App/Device_Startup/samv71q21b_flash.ld</Value>
-    </ListValues>
-  </armgcc.linker.miscellaneous.OtherObjects>
   <armgcc.assembler.general.IncludePaths>
     <ListValues>
       <Value>%24(PackRepoDir)\arm\CMSIS\5.4.0\CMSIS\Core\Include\</Value>
@@ -377,180 +372,399 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="..\..\APP\CDH_App\Device_Startup\samv71q21b_flash.ld">
-      <SubType>compile</SubType>
-      <Link>Device_Startup\samv71q21b_flash.ld</Link>
-    </None>
-    <None Include="..\..\APP\CDH_App\Device_Startup\samv71q21b_sram.ld">
-      <SubType>compile</SubType>
-      <Link>Device_Startup\samv71q21b_sram.ld</Link>
-    </None>
+    <Folder Include="Config" />
+    <Folder Include="examples" />
+    <Folder Include="Device_Startup" />
+    <Folder Include="hal" />
+    <Folder Include="hal\include" />
+    <Folder Include="hal\utils" />
+    <Folder Include="hal\src" />
+    <Folder Include="hal\utils\include" />
+    <Folder Include="hal\utils\src" />
+    <Folder Include="hpl" />
+    <Folder Include="hpl\core" />
+    <Folder Include="hpl\xdmac" />
+    <Folder Include="hpl\uart" />
+    <Folder Include="hpl\twihs" />
+    <Folder Include="hpl\spi" />
+    <Folder Include="hpl\pmc" />
+    <Folder Include="hpl\pio" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\APP\CDH_App\atmel_start.c">
+    <Compile Include="..\..\..\APP\CDH_App\atmel_start.c">
       <SubType>compile</SubType>
       <Link>atmel_start.c</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\atmel_start.h">
+    <Compile Include="..\..\..\APP\CDH_App\atmel_start.h">
       <SubType>compile</SubType>
       <Link>atmel_start.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\atmel_start_pins.h">
+    <Compile Include="..\..\..\APP\CDH_App\atmel_start_pins.h">
       <SubType>compile</SubType>
       <Link>atmel_start_pins.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\Config\hpl_pmc_config.h">
+    <Compile Include="..\..\..\APP\CDH_App\Config\hpl_pmc_config.h">
       <SubType>compile</SubType>
       <Link>Config\hpl_pmc_config.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\Config\hpl_spi_config.h">
+    <Compile Include="..\..\..\APP\CDH_App\Config\hpl_spi_config.h">
       <SubType>compile</SubType>
       <Link>Config\hpl_spi_config.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\Config\hpl_twihs_config.h">
+    <Compile Include="..\..\..\APP\CDH_App\Config\hpl_twihs_config.h">
       <SubType>compile</SubType>
       <Link>Config\hpl_twihs_config.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\Config\hpl_uart_config.h">
+    <Compile Include="..\..\..\APP\CDH_App\Config\hpl_uart_config.h">
       <SubType>compile</SubType>
       <Link>Config\hpl_uart_config.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\Config\hpl_xdmac_config.h">
+    <Compile Include="..\..\..\APP\CDH_App\Config\hpl_xdmac_config.h">
       <SubType>compile</SubType>
       <Link>Config\hpl_xdmac_config.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\Config\peripheral_clk_config.h">
+    <Compile Include="..\..\..\APP\CDH_App\Config\peripheral_clk_config.h">
       <SubType>compile</SubType>
       <Link>Config\peripheral_clk_config.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\Config\RTE_Components.h">
+    <Compile Include="..\..\..\APP\CDH_App\Config\RTE_Components.h">
       <SubType>compile</SubType>
       <Link>Config\RTE_Components.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\Device_Startup\startup_samv71q21b.c">
+    <Compile Include="..\..\..\APP\CDH_App\Device_Startup\startup_samv71q21b.c">
       <SubType>compile</SubType>
       <Link>Device_Startup\startup_samv71q21b.c</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\Device_Startup\system_samv71q21b.c">
+    <Compile Include="..\..\..\APP\CDH_App\Device_Startup\system_samv71q21b.c">
       <SubType>compile</SubType>
       <Link>Device_Startup\system_samv71q21b.c</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\driver_init.c">
+    <Compile Include="..\..\..\APP\CDH_App\driver_init.c">
       <SubType>compile</SubType>
       <Link>driver_init.c</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\driver_init.h">
+    <Compile Include="..\..\..\APP\CDH_App\driver_init.h">
       <SubType>compile</SubType>
       <Link>driver_init.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\examples\driver_examples.c">
+    <Compile Include="..\..\..\APP\CDH_App\examples\driver_examples.c">
       <SubType>compile</SubType>
       <Link>examples\driver_examples.c</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\examples\driver_examples.h">
+    <Compile Include="..\..\..\APP\CDH_App\examples\driver_examples.h">
       <SubType>compile</SubType>
       <Link>examples\driver_examples.h</Link>
     </Compile>
-    <Compile Include="..\..\APP\CDH_App\main.c">
+    <Compile Include="..\..\..\APP\CDH_App\main.c">
       <SubType>compile</SubType>
       <Link>main.c</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_atomic.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hal_atomic.h">
       <SubType>compile</SubType>
-      <Link>hal\hal_atomic.c</Link>
+      <Link>hal\include\hal_atomic.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_delay.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hal_delay.h">
       <SubType>compile</SubType>
-      <Link>hal\hal_delay.c</Link>
+      <Link>hal\include\hal_delay.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_gpio.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hal_gpio.h">
       <SubType>compile</SubType>
-      <Link>hal\hal_gpio.c</Link>
+      <Link>hal\include\hal_gpio.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_i2c_m_sync.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hal_i2c_m_sync.h">
       <SubType>compile</SubType>
-      <Link>hal\hal_i2c_m_sync.c</Link>
+      <Link>hal\include\hal_i2c_m_sync.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_init.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hal_init.h">
       <SubType>compile</SubType>
-      <Link>hal\hal_init.c</Link>
+      <Link>hal\include\hal_init.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_io.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hal_io.h">
       <SubType>compile</SubType>
-      <Link>hal\hal_io.c</Link>
+      <Link>hal\include\hal_io.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_sleep.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hal_sleep.h">
       <SubType>compile</SubType>
-      <Link>hal\hal_sleep.c</Link>
+      <Link>hal\include\hal_sleep.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_spi_m_sync.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hal_spi_m_sync.h">
       <SubType>compile</SubType>
-      <Link>hal\hal_spi_m_sync.c</Link>
+      <Link>hal\include\hal_spi_m_sync.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\src\hal_usart_sync.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hal_usart_sync.h">
       <SubType>compile</SubType>
-      <Link>hal\hal_usart_sync.c</Link>
+      <Link>hal\include\hal_usart_sync.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\utils\src\utils_assert.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_core.h">
       <SubType>compile</SubType>
-      <Link>hal\utils\utils_assert.c</Link>
+      <Link>hal\include\hpl_core.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\utils\src\utils_event.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_delay.h">
       <SubType>compile</SubType>
-      <Link>hal\utils\utils_event.c</Link>
+      <Link>hal\include\hpl_delay.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\utils\src\utils_list.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_dma.h">
       <SubType>compile</SubType>
-      <Link>hal\utils\utils_list.c</Link>
+      <Link>hal\include\hpl_dma.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\utils\src\utils_ringbuffer.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_ext_irq.h">
       <SubType>compile</SubType>
-      <Link>hal\utils\utils_ringbuffer.c</Link>
+      <Link>hal\include\hpl_ext_irq.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hal\utils\src\utils_syscalls.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_gpio.h">
       <SubType>compile</SubType>
-      <Link>hal\utils\utils_syscalls.c</Link>
+      <Link>hal\include\hpl_gpio.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hpl\core\hpl_core_m7_base.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_i2c_m_async.h">
       <SubType>compile</SubType>
-      <Link>hpl\hpl_core_m7_base.c</Link>
+      <Link>hal\include\hpl_i2c_m_async.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hpl\core\hpl_init.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_i2c_m_sync.h">
       <SubType>compile</SubType>
-      <Link>hpl\hpl_init.c</Link>
+      <Link>hal\include\hpl_i2c_m_sync.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hpl\pmc\hpl_pmc.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_i2c_s_async.h">
       <SubType>compile</SubType>
-      <Link>hpl\hpl_pmc.c</Link>
+      <Link>hal\include\hpl_i2c_s_async.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hpl\pmc\hpl_sleep.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_i2c_s_sync.h">
       <SubType>compile</SubType>
-      <Link>hpl\hpl_sleep.c</Link>
+      <Link>hal\include\hpl_i2c_s_sync.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hpl\spi\hpl_spi.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_init.h">
       <SubType>compile</SubType>
-      <Link>hpl\hpl_spi.c</Link>
+      <Link>hal\include\hpl_init.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hpl\twihs\hpl_twihs.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_irq.h">
       <SubType>compile</SubType>
-      <Link>hpl\hpl_twihs.c</Link>
+      <Link>hal\include\hpl_irq.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hpl\uart\hpl_uart.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_missing_features.h">
       <SubType>compile</SubType>
-      <Link>hpl\hpl_uart.c</Link>
+      <Link>hal\include\hpl_missing_features.h</Link>
     </Compile>
-    <Compile Include="..\..\DRIVERS\SAMV71\hpl\xdmac\hpl_xdmac.c">
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_reset.h">
       <SubType>compile</SubType>
-      <Link>hpl\hpl_xdmac.c</Link>
+      <Link>hal\include\hpl_reset.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_sleep.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_sleep.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_spi.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_spi_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_spi_dma.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_dma.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_spi_m_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_m_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_spi_m_dma.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_m_dma.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_spi_m_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_m_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_spi_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_spi_s_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_s_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_spi_s_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_spi_s_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_usart.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_usart.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_usart_async.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_usart_async.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_usart_dma.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_usart_dma.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\include\hpl_usart_sync.h">
+      <SubType>compile</SubType>
+      <Link>hal\include\hpl_usart_sync.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\src\hal_atomic.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_atomic.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\src\hal_delay.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_delay.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\src\hal_gpio.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_gpio.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\src\hal_i2c_m_sync.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_i2c_m_sync.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\src\hal_init.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_init.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\src\hal_io.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_io.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\src\hal_sleep.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_sleep.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\src\hal_spi_m_sync.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_spi_m_sync.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\src\hal_usart_sync.c">
+      <SubType>compile</SubType>
+      <Link>hal\src\hal_usart_sync.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\compiler.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\compiler.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\err_codes.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\err_codes.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\events.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\events.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\parts.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\parts.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\utils.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\utils_assert.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_assert.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\utils_event.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_event.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\utils_increment_macro.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_increment_macro.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\utils_list.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_list.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\utils_repeat_macro.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_repeat_macro.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\include\utils_ringbuffer.h">
+      <SubType>compile</SubType>
+      <Link>hal\utils\include\utils_ringbuffer.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\src\utils_assert.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_assert.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\src\utils_event.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_event.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\src\utils_list.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_list.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\src\utils_ringbuffer.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_ringbuffer.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hal\utils\src\utils_syscalls.c">
+      <SubType>compile</SubType>
+      <Link>hal\utils\src\utils_syscalls.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\core\hpl_core_m7_base.c">
+      <SubType>compile</SubType>
+      <Link>hpl\core\hpl_core_m7_base.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\core\hpl_core_port.h">
+      <SubType>compile</SubType>
+      <Link>hpl\core\hpl_core_port.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\core\hpl_init.c">
+      <SubType>compile</SubType>
+      <Link>hpl\core\hpl_init.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\pio\hpl_gpio_base.h">
+      <SubType>compile</SubType>
+      <Link>hpl\pio\hpl_gpio_base.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\pmc\hpl_pmc.c">
+      <SubType>compile</SubType>
+      <Link>hpl\pmc\hpl_pmc.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\pmc\hpl_pmc.h">
+      <SubType>compile</SubType>
+      <Link>hpl\pmc\hpl_pmc.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\pmc\hpl_sleep.c">
+      <SubType>compile</SubType>
+      <Link>hpl\pmc\hpl_sleep.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\spi\hpl_spi.c">
+      <SubType>compile</SubType>
+      <Link>hpl\spi\hpl_spi.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\spi\hpl_spi_base.h">
+      <SubType>compile</SubType>
+      <Link>hpl\spi\hpl_spi_base.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\twihs\hpl_twihs.c">
+      <SubType>compile</SubType>
+      <Link>hpl\twihs\hpl_twihs.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\uart\hpl_uart.c">
+      <SubType>compile</SubType>
+      <Link>hpl\uart\hpl_uart.c</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\uart\hpl_uart_base.h">
+      <SubType>compile</SubType>
+      <Link>hpl\uart\hpl_uart_base.h</Link>
+    </Compile>
+    <Compile Include="..\..\..\DRIVERS\SAMV71\hpl\xdmac\hpl_xdmac.c">
+      <SubType>compile</SubType>
+      <Link>hpl\xdmac\hpl_xdmac.c</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Device_Startup" />
-    <Folder Include="Config" />
-    <Folder Include="examples" />
-    <Folder Include="hal" />
-    <Folder Include="hal\utils" />
-    <Folder Include="hpl" />
+    <None Include="..\..\..\APP\CDH_App\Device_Startup\samv71q21b_flash.ld">
+      <SubType>compile</SubType>
+      <Link>Device_Startup\samv71q21b_flash.ld</Link>
+    </None>
+    <None Include="..\..\..\APP\CDH_App\Device_Startup\samv71q21b_sram.ld">
+      <SubType>compile</SubType>
+      <Link>Device_Startup\samv71q21b_sram.ld</Link>
+    </None>
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
