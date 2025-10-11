@@ -34,8 +34,9 @@ void CommsDrive_Init(int16_t slaveAddr)
     i2c_m_sync_set_slaveaddr(&Mas_I2C_0, slaveAddr, I2C_M_SEVEN);
 	i2c_m_sync_set_slaveaddr(&Red_I2C_2, slaveAddr, I2C_M_SEVEN);
 
-    i2c_m_sync_set_baudrate(&Mas_I2C_0, 0, 100000);
-    i2c_m_sync_set_baudrate(&Red_I2C_2, 0, 100000);
+    // TODO - fix if needed (default baudrate - 100Khz)
+    // i2c_m_sync_set_baudrate(&Mas_I2C_0, 0, 100000);
+    // i2c_m_sync_set_baudrate(&Red_I2C_2, 0, 100000);
     
 	i2c_m_sync_get_io_descriptor(&Mas_I2C_0, &Mas_I2C_0_io);
     i2c_m_sync_get_io_descriptor(&Red_I2C_2, &Red_I2C_0_io);
@@ -44,8 +45,8 @@ void CommsDrive_Init(int16_t slaveAddr)
 void CommsDrive_Process(void)
 {
 	io_write(Mas_I2C_0_io, (uint8_t *)"Hello World!", 12);
+    return; 
 
-    return; // TODO
     // io_read(&Mas_I2C_0_io, uint8_t *const buf, const uint16_t length)
     // io_read(&Red_I2C_0_io, uint8_t *const buf, const uint16_t length)
 
