@@ -174,6 +174,15 @@
       <Link>hpl\hpl_core_m7_base.c</Link>
       <SubType>compile</SubType>
     </Compile>
+	<!-- All .h files directly in MIDDLEWARE -->
+	<Compile Include="..\..\..\MIDDLEWARE\MRAM\mram.h">
+		<Link>MIDDLEWARE\MRAM\mram.h</Link>
+		<SubType>compile</SubType>
+	</Compile>
+	<Compile Include="..\..\..\MIDDLEWARE\MRAM\mram.c">
+		<Link>MIDDLEWARE\MRAM\mram.c</Link>
+		<SubType>compile</SubType>
+	</Compile>
     <Compile Include="..\..\..\DRIVERS\SAME70\hpl\core\hpl_init.c">
       <Link>hpl\hpl_init.c</Link>
       <SubType>compile</SubType>
