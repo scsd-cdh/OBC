@@ -15,7 +15,7 @@ int main(void)
 	
 	atmel_start_init();
 	
-	spi_m_sync_enable(&SPI0_desc);
+	//spi_m_sync_enable(&SPI0_desc);
 	
 	/* Replace with your application code */
 	uint8_t tx = 0x9F;
