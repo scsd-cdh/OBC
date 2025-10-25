@@ -248,9 +248,7 @@ static void initGPIO()
     P1SEL0 |= BIT6 | BIT7;                    // I2C pins
     P1SEL1 &= ~(BIT6 | BIT7);
 
-    // Disable the GPIO power-on default high-impedance mode to activate
-    // previously configured port settings
-    PM5CTL0 &= ~LOCKLPM5;
+
 
     // Set flag pins
     // MSP430FR5989 Pins 10 through 13 use GPIO_PORT_P5
@@ -455,8 +453,10 @@ static void I2C_Proc_RX_Data(uint8_t data)
 // Hardware initialization. Initializes MSP430 specific device modules for I2C, ADC, GPIO, Clock, and RTC
 static void initHardware()
 {
-    initClockTo16MHz();
     initGPIO();
+    initClockTo16MHz();
+    // Disable the GPIO power-on default high-impedance mode to activate
+    PMM_unlockLPM5();
     initRTC();
     initADCs();
 }
