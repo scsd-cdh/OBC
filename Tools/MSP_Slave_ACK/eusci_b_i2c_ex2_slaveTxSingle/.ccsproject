@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?ccsproject version="1.0"?>
+<projectOptions>
+	<ccsVariant value="50:Theia-based"/>
+	<ccsVersion value="70.3.0"/>
+	<deviceFamily value="MSP430"/>
+	<executableActions value=""/>
+	<createSlaveProjects value=""/>
+	<templateProperties value="id=eusci_b_i2c_ex2_slaveTxSingle.projectspec.eusci_b_i2c_ex2_slaveTxSingle"/>
+	<connection value="common/targetdb/connections/TIMSP430-USB.xml"/>
+	<activeTargetConfiguration value="targetConfigs/MSP430FR5969.ccxml"/>
+	<origin value="C:\ti\msp430ware_3_80_14_01\driverlib\examples\MSP430FR5xx_6xx\eusci_b_i2c\CCS\eusci_b_i2c_ex2_slaveTxSingle.projectspec"/>
+	<filesToOpen value=""/>
+</projectOptions>

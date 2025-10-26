@@ -183,6 +183,34 @@
         <NonsecureFilesInfo />
       </AcmeProjectConfig>
     </AcmeProjectConfig>
+    <avrtool>com.atmel.avrdbg.tool.edbg</avrtool>
+    <avrtoolserialnumber>ATML2407141800004177</avrtoolserialnumber>
+    <avrdeviceexpectedsignature>0xA1220E00</avrdeviceexpectedsignature>
+    <custom>
+      <ToolOptions>
+        <InterfaceProperties>
+        </InterfaceProperties>
+        <InterfaceName>
+        </InterfaceName>
+      </ToolOptions>
+      <ToolType>custom</ToolType>
+      <ToolNumber>
+      </ToolNumber>
+      <ToolName>Custom Programming Tool</ToolName>
+    </custom>
+    <avrtoolinterface>SWD</avrtoolinterface>
+    <com_atmel_avrdbg_tool_edbg>
+      <ToolOptions>
+        <InterfaceProperties>
+          <SwdClock>2000000</SwdClock>
+        </InterfaceProperties>
+        <InterfaceName>SWD</InterfaceName>
+      </ToolOptions>
+      <ToolType>com.atmel.avrdbg.tool.edbg</ToolType>
+      <ToolNumber>ATML2407141800004177</ToolNumber>
+      <ToolName>EDBG</ToolName>
+    </com_atmel_avrdbg_tool_edbg>
+    <avrtoolinterfaceclock>2000000</avrtoolinterfaceclock>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -305,6 +333,8 @@
       <Value>../../../DRIVERS/SAMV71/hpl/uart</Value>
       <Value>../../../DRIVERS/SAMV71/hpl/xdmac</Value>
       <Value>../../../DRIVERS/SAMV71/hri</Value>
+      <Value>../../../MIDDLEWARE/commsdrive</Value>
+      <Value>../../../MIDDLEWARE/tinyprotocol</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
@@ -384,6 +414,12 @@
     <None Include="..\..\APP\CDH_App\Device_Startup\samv71q21b_sram.ld">
       <SubType>compile</SubType>
       <Link>Device_Startup\samv71q21b_sram.ld</Link>
+    </None>
+    <None Include="Device_Startup\samv71q21b_flash.ld">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="Device_Startup\samv71q21b_sram.ld">
+      <SubType>compile</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -542,6 +578,22 @@
     <Compile Include="..\..\DRIVERS\SAMV71\hpl\xdmac\hpl_xdmac.c">
       <SubType>compile</SubType>
       <Link>hpl\hpl_xdmac.c</Link>
+    </Compile>
+    <Compile Include="..\..\MIDDLEWARE\commsdrive\commsdrive.c">
+      <SubType>compile</SubType>
+      <Link>commsdrive.c</Link>
+    </Compile>
+    <Compile Include="..\..\MIDDLEWARE\commsdrive\commsdrive.h">
+      <SubType>compile</SubType>
+      <Link>commsdrive.h</Link>
+    </Compile>
+    <Compile Include="..\..\MIDDLEWARE\tinyprotocol\tinyprotocol.c">
+      <SubType>compile</SubType>
+      <Link>tinyprotocol.c</Link>
+    </Compile>
+    <Compile Include="..\..\MIDDLEWARE\tinyprotocol\tinyprotocol.h">
+      <SubType>compile</SubType>
+      <Link>tinyprotocol.h</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
