@@ -13,7 +13,7 @@
 #include <utils.h>
 #include <hpl_spi_base.h>
 
-struct spi_m_sync_descriptor MRAM_SPI_0;
+#include "SPI0_wrapper.h"
 
 struct i2c_m_sync_desc Mas_I2C_0;
 
@@ -24,29 +24,6 @@ struct usart_sync_descriptor Debug_USART_0;
 struct usart_sync_descriptor LVDS_USART_1;
 
 struct usart_sync_descriptor LVDS2_USART_2;
-
-void MRAM_SPI_0_PORT_init(void)
-{
-
-	gpio_set_pin_function(PD20, MUX_PD20B_SPI0_MISO);
-
-	gpio_set_pin_function(PD21, MUX_PD21B_SPI0_MOSI);
-
-	gpio_set_pin_function(PD22, MUX_PD22B_SPI0_SPCK);
-}
-
-void MRAM_SPI_0_CLOCK_init(void)
-{
-	_pmc_enable_periph_clock(ID_SPI0);
-}
-
-void MRAM_SPI_0_init(void)
-{
-	MRAM_SPI_0_CLOCK_init();
-	spi_m_sync_set_func_ptr(&MRAM_SPI_0, _spi_get_spi_m_sync());
-	spi_m_sync_init(&MRAM_SPI_0, SPI0);
-	MRAM_SPI_0_PORT_init();
-}
 
 void Mas_I2C_0_PORT_init(void)
 {
@@ -194,8 +171,8 @@ void system_init(void)
 
 	gpio_set_pin_pull_mode(LED0, GPIO_PULL_UP);
 
-	MRAM_SPI_0_init();
-
+	SPI0_init();
+	
 	Mas_I2C_0_init();
 
 	Red_I2C_2_init();
