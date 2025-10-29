@@ -9,3 +9,5 @@ build/
 *.o
 ProjectFiles/CDH/.generated_files/*
 !/.idea/**
+/toolchain/
+node_modules/

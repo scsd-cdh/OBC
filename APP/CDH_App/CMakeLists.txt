@@ -34,7 +34,7 @@ add_custom_command(
 )
 
 add_custom_target(CDH_FLASH
-    COMMAND openocd -f ${PROJECT_SOURCE_DIR}/ProjectFiles/CDH/openocd.cfg -c "tcl_port disabled" -c "gdb_port disabled" -c "tcl_port disabled" -c "program CDH.elf verify" -c reset -c shutdown
+    COMMAND ${CMAKE_OPENOCD} -f ${PROJECT_SOURCE_DIR}/ProjectFiles/CDH/openocd.cfg -c "tcl port disabled" -c "gdb port disabled" -c "program CDH.elf verify" -c reset -c shutdown
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS CDH
 )
