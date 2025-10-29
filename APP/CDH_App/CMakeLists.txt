@@ -12,8 +12,8 @@ target_sources(CDH
     # Actual source code
     PRIVATE
         atmel_start.c
-        Device_Startup/startup_samv71q21b.c
-        Device_Startup/system_samv71q21b.c
+        Device_Startup/startup_${BOARD_NAME_LOWER}.c
+        Device_Startup/system_${BOARD_NAME_LOWER}.c
         driver_init.c
         examples/driver_examples.c
         main.c

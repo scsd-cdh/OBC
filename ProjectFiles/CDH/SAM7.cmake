@@ -57,8 +57,16 @@ find_program(CMAKE_OPENOCD openocd)
 execute_process(COMMAND ${CMAKE_C_COMPILER} -print-sysroot
         OUTPUT_VARIABLE ARM_GCC_SYSROOT OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-set(CMAKE_EXE_LINKER_FLAGS_INIT "LINKER:-Map='CDH.map' --specs=nano.specs LINKER:--gc-sections -L${CMAKE_CURRENT_LIST_DIR} -Tsamv71q21b_flash.ld")
-set(COMMON_FLAGS "-D__SAMV71Q21B__ -Wall -std=gnu99 -mthumb -mlong-calls -mcpu=cortex-m7 -mfloat-abi=softfp -mfpu=fpv4-sp-d16 -ffunction-sections")
+# Option: BOARD_NAME
+set(BOARD_NAME SAMV71Q21B CACHE STRING "Name of the board to use")
+set_property(CACHE BOARD_NAME PROPERTY STRINGS "SAMV71Q21B")
+
+string(TOUPPER ${BOARD_NAME} BOARD_NAME_UPPER)
+string(TOLOWER ${BOARD_NAME} BOARD_NAME_LOWER)
+
+# Set flags
+set(CMAKE_EXE_LINKER_FLAGS_INIT "LINKER:-Map='CDH.map' --specs=nano.specs LINKER:--gc-sections -L${CMAKE_CURRENT_LIST_DIR} -T${BOARD_NAME_LOWER}_flash.ld")
+set(COMMON_FLAGS "-D__${BOARD_NAME_UPPER}__ -Wall -std=gnu99 -mthumb -mlong-calls -mcpu=cortex-m7 -mfloat-abi=softfp -mfpu=fpv4-sp-d16 -ffunction-sections")
 
 # Default C compiler flags
 set(CMAKE_C_FLAGS_INIT ${COMMON_FLAGS})

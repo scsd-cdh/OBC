@@ -8,7 +8,9 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/DRIVERS/SAMV71_DFP/2.4.182")
 add_subdirectory("${PROJECT_SOURCE_DIR}/DRIVERS/SAMV71")
 
 # Link HAL driver
-link_libraries(DRIVER_SAMV71)
+if("${BOARD_NAME_UPPER}" STREQUAL "SAMV71Q21B")
+    link_libraries(DRIVER_SAMV71)
+endif ()
 
 # Load app
 add_subdirectory("${PROJECT_SOURCE_DIR}/APP/CDH_App")
