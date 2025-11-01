@@ -7,6 +7,8 @@
  */
 
 #include "driver_examples.h"
+
+#include "commsdrive.h"
 #include "driver_init.h"
 #include "utils.h"
 

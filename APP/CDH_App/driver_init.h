@@ -8,7 +8,7 @@
 #ifndef DRIVER_INIT_H_INCLUDED
 #define DRIVER_INIT_H_INCLUDED
 
-#include "atmel_start_pins.h"
+#include "../../DRIVERS/SAMV71/atmel_start_pins.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,9 +36,11 @@ extern "C" {
 #include <hal_usart_sync.h>
 #include <hpl_uart_base.h>
 
-extern struct spi_m_sync_descriptor MRAM_SPI_0;
-
+<<<<<<< Updated upstream
 extern struct i2c_m_sync_desc Mas_I2C_0;
+=======
+extern struct spi_m_sync_descriptor MRAM_SPI_0;
+>>>>>>> Stashed changes
 
 extern struct i2c_m_sync_desc Red_I2C_2;
 
@@ -48,13 +50,15 @@ extern struct usart_sync_descriptor LVDS_USART_1;
 
 extern struct usart_sync_descriptor LVDS2_USART_2;
 
-void MRAM_SPI_0_PORT_init(void);
-void MRAM_SPI_0_CLOCK_init(void);
-void MRAM_SPI_0_init(void);
-
+<<<<<<< Updated upstream
 void Mas_I2C_0_CLOCK_init(void);
 void Mas_I2C_0_init(void);
 void Mas_I2C_0_PORT_init(void);
+=======
+void MRAM_SPI_0_PORT_init(void);
+void MRAM_SPI_0_CLOCK_init(void);
+void MRAM_SPI_0_init(void);
+>>>>>>> Stashed changes
 
 void Red_I2C_2_CLOCK_init(void);
 void Red_I2C_2_init(void);
