@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "cli-progress": "^3.12.0"
+  },
+  "scripts": {
+    "build": "npx esbuild index.ts --bundle --platform=node --target=node24 --outfile=index.cjs"
+  },
+  "private": "true",
+  "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
+    "@types/node": "^24.9.2",
+    "esbuild": "0.25.11",
+    "typescript": "^5.9.3"
+  }
+}
