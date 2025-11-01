@@ -6,14 +6,15 @@
  * to avoid losing it when reconfiguring.
  */
 
-#include "driver_init.h"
+#include "CDH/driver_init.h"
+
 #include <hal_init.h>
 #include <hpl_pmc.h>
-#include <peripheral_clk_config.h>
-#include <utils.h>
-#include <hpl_spi_base.h>
+#include <hpl_uart_base.h>
+#include <CDH/pins.h>
+#include <CDH/SPI0_wrapper.h>
 
-#include "SPI0_wrapper.h"
+#include "driver_init_private.h"
 
 struct i2c_m_sync_desc Mas_I2C_0;
 

@@ -1,5 +1,7 @@
 add_executable(CDH)
 
+target_link_libraries(CDH PRIVATE DRIVER_CDH_COMMON)
+
 # Add new c files here
 target_sources(CDH
     # Headers, used by IDEs but doesn't really matter beyond that
@@ -7,15 +9,10 @@ target_sources(CDH
         FILE_SET HEADERS
         BASE_DIRS .
         FILES
-            examples/driver_examples.h
+            main.h
 
     # Actual source code
     PRIVATE
-        atmel_start.c
-        Device_Startup/startup_${BOARD_NAME_LOWER}.c
-        Device_Startup/system_${BOARD_NAME_LOWER}.c
-        driver_init.c
-        examples/driver_examples.c
         main.c
 )
 
