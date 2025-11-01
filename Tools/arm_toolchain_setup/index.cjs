@@ -982,7 +982,7 @@ var fs = __toESM(require("node:fs"));
   process.chdir(toolchainDir);
   console.log("--Downloading tools--");
   for (const [tool, definition] of Object.entries(tools)) {
-    const downloadedFileName = URL.parse(definition.url).pathname.match("[^/]+$")[0];
+    const downloadedFileName = new URL(definition.url).pathname.match("[^/]+$")[0];
     const downloadedFilePath = downloadedFileName;
     console.log(`Downloading ${tool}...`);
     {

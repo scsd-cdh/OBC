@@ -11,3 +11,4 @@ ProjectFiles/CDH/.generated_files/*
 !/.idea/**
 /toolchain/
 node_modules/
+!/.github/workflows/**

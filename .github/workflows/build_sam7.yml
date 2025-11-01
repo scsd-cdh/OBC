@@ -1,0 +1,93 @@
+name: build_sam7.yml
+on:
+  pull_request:
+    branches:
+      - "*_protected"
+  push:
+    branches:
+      - "*_protected"
+
+jobs:
+  build:
+    name: "Build (ubuntu22-gcc-${{ matrix.build_type }})"
+    runs-on: "ubuntu-22.04"
+
+    strategy:
+      fail-fast: true
+
+      matrix:
+        build_type: [Debug, Release, MinSizeRel, RelWithDebInfo]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set reusable strings
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          echo "job-id=build-ubuntu22-gcc-${{ matrix.build_type }}" >> "$GITHUB_OUTPUT"
+          echo "toolchain-version=${{ hashFiles('Tools/arm_toolchain_setup/**', '!Tools/arm_toolchain_setup/node_modules') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Disable man-db auto-update
+        run: sudo rm -f /var/lib/man-db/auto-update
+
+      - name: Setup dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+
+      - name: Setup cmake
+        # jwlawson/actions-setup-cmake@v2.0.2
+        uses: jwlawson/actions-setup-cmake@802fa1a2c4e212495c05bf94dba2704a92a472be
+        with:
+          cmake-version: '4.0.x'
+
+      - name: Setup ccache
+        # hendrikmuhs/ccache-action@v1.2.19
+        uses: hendrikmuhs/ccache-action@bfa03e1de4d7f7c3e80ad9109feedd05c4f5a716
+        with:
+          key: ${{ steps.strings.outputs.job-id }}
+          verbose: '2'
+
+      - name: Configure ccache
+        run: |
+          ccache -o compiler_check=string:${{steps.strings.outputs.toolchain-version}}
+
+      # ammaraskar/gcc-problem-matcher@0.3.0
+      - name: Setup GCC problem matcher
+        if: matrix.build_type == 'Debug'
+        uses: ammaraskar/gcc-problem-matcher@0f9c86f9e693db67dacf53986e1674de5f2e5f28
+
+
+      - name: Cache Toolchain
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: toolchain
+          key: toolchain-${{ runner.os }}-${{ steps.strings.outputs.toolchain-version }}
+
+      - name: Setup toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: ./setup_toolchain_linux.sh
+
+
+      - name: Configure CMake
+        run: >
+          cmake
+          -G Ninja
+          --toolchain ${{ github.workspace }}/ProjectFiles/CDH/SAM7.cmake
+          -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          -S ${{ github.workspace }}
+
+      - name: Build
+        run: >
+          cmake
+          --build ${{ steps.strings.outputs.build-output-dir }}
+          --config ${{ matrix.build_type }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.strings.outputs.job-id }}
+          path: ${{ steps.strings.outputs.build-output-dir }}/APP/CDH_App/CDH.*
