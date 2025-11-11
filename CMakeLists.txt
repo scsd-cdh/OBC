@@ -17,3 +17,4 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/APP/CDH_App")
 # Example module, don't actually include it in the build lol. Feel free to uncomment it if you wanna play around with
 # the example.
 #add_subdirectory("${PROJECT_SOURCE_DIR}/MIDDLEWARE/EXAMPLE")
+add_subdirectory("${PROJECT_SOURCE_DIR}/MIDDLEWARE/ULOG")
