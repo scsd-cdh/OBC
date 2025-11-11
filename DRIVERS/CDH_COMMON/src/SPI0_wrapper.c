@@ -1,11 +1,16 @@
-#include "SPI0_wrapper.h"
-#include <hpl_spi_base.h>
+#include "CDH/SPI0_wrapper.h"
+
+#include <hal_gpio.h>
+#include <hal_spi_m_sync.h>
 #include <hpl_pmc.h>
-#include <atmel_start_pins.h>
+#include <hpl_spi_base.h>
+#include <CDH/pins.h>
+
 
 struct spi_m_sync_descriptor SPI0_desc;
 
 #define SPI_DEACTIVATE_NEXT 0x8000
+#define SPI_BAUD_HZ 100000u
 
 static inline void SPI0_pinInit(void)
 {

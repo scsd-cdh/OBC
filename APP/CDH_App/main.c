@@ -1,11 +1,12 @@
-#include <atmel_start.h>
-#include "hal_delay.h"
-#include "atmel_start_pins.h"
+#include "main.h"
+
+#include <hal_delay.h>
+#include <CDH/driver_init.h>
+#include <CDH/pins.h>
 
 int main(void)
 {
-	/* Initializes MCU, drivers and middleware */
-	atmel_start_init();
+	system_init();
 
 	/* Replace with your application code */
 	while (1) {

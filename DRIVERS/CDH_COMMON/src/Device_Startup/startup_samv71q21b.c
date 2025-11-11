@@ -27,7 +27,7 @@
  *
  */
 
-#include "samv71q21b.h"
+#include <samv71q21b.h>
 
 /* Initialize segments */
 extern uint32_t _sfixed;
@@ -136,6 +136,10 @@ void GMAC_Q3_Handler      ( void ) __attribute__ ((weak, alias("Dummy_Handler"))
 void GMAC_Q4_Handler      ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
 void GMAC_Q5_Handler      ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
 
+// Suppress pedantic warnings as its technically UB to cast a fp to a void pointer, but this cant be fixed without
+//  editing the atmel drivers
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 /* Exception Table */
 __attribute__ ((section(".vectors")))
 const DeviceVectors exception_table = {
@@ -235,6 +239,7 @@ const DeviceVectors exception_table = {
         .pfnGMAC_Q4_Handler            = (void*) GMAC_Q4_Handler, /* 72 Gigabit Ethernet MAC */
         .pfnGMAC_Q5_Handler            = (void*) GMAC_Q5_Handler  /* 73 Gigabit Ethernet MAC */
 };
+#pragma GCC diagnostic pop
 
 /**
  * \brief This is the code that gets called on processor reset.
