@@ -1,6 +1,7 @@
 add_executable(CDH)
 
 target_link_libraries(CDH PRIVATE DRIVER_CDH_COMMON)
+target_link_libraries(CDH PRIVATE COMMSDRIVE)
 
 # Add new c files here
 target_sources(CDH

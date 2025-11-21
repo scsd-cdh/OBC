@@ -154,7 +154,7 @@ void system_init(void)
 	
 	Red_I2C_2_init();
 
-	Debug_USART_0_init();
+	// Debug_USART_0_init();
 
 	// LVDS_USART_1_init();
 

@@ -8,6 +8,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/DRIVERS/SAMV71")
 add_subdirectory("${PROJECT_SOURCE_DIR}/DRIVERS/CDH_COMMON")
 
 # Load middleware
+add_subdirectory("${PROJECT_SOURCE_DIR}/MIDDLEWARE/commsdrive")
 add_subdirectory("${PROJECT_SOURCE_DIR}/MIDDLEWARE/tinyprotocol")
 
 # Load app
