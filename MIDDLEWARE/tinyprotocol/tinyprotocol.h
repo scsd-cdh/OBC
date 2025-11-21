@@ -36,6 +36,7 @@ struct TINYPROTOCOL_Config{
     int16_t (*TINYPROTOCOL_ProcessTelecommand)(uint8_t command, const uint8_t* buffer, uint8_t size);
     int16_t (*TINYPROTOCOL_ProcessTelemetryRequest)(uint8_t command);
     int16_t (*TINYPROTOCOL_WriteBuffer)(const uint8_t* buffer, uint8_t size);
+    int16_t (*TINYPROTOCOL_WriteBufferToSlave)(uint16_t slave, const uint8_t* buffer, uint8_t size);
 };
 
 int16_t TINYPROTOCOL_Initialize();
@@ -48,9 +49,9 @@ int16_t TINYPROTOCOL_ReadNextTelemetryByte(uint8_t *byte);
 int16_t TINYPROTOCOL_TelemetryBytesLeft();
 
 // Master functions 
-int16_t TINYPROTOCOL_SendTelecommand(const struct TINYPROTOCOL_Config *cfg, uint8_t tlcmd, const uint8_t* buffer, uint8_t size);
-int16_t TINYPROTOCOL_SendEmptyTelecommand(const struct TINYPROTOCOL_Config *cfg, uint8_t tlcmd);
-int16_t TINYPROTOCOL_SendTelemetryRequest(const struct TINYPROTOCOL_Config *cfg, uint8_t tlm_req);
+int16_t TINYPROTOCOL_SendTelecommand(uint16_t slave, const struct TINYPROTOCOL_Config *cfg, uint8_t tlcmd, const uint8_t* buffer, uint8_t size);
+int16_t TINYPROTOCOL_SendEmptyTelecommand(uint16_t slave, const struct TINYPROTOCOL_Config *cfg, uint8_t tlcmd);
+int16_t TINYPROTOCOL_SendTelemetryRequest(uint16_t slave, const struct TINYPROTOCOL_Config *cfg, uint8_t tlm_req);
 
 uint8_t TINYPROTOCOL_CalculateCRC(const uint8_t* buffer, uint8_t buffer_size);
 
