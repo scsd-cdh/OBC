@@ -66,6 +66,7 @@
 
 #include "BMS.h"
 #include "ADC_Read.h"
+#include "include/pmm.h"
 #include "msp430.h"
 #include "gpio.h"
 #include "PWM.h"
@@ -236,41 +237,6 @@ static void initADCs()
     ADC12CTL1 |= ADC12CONSEQ_1;   // driverlib name: ADC12_B_SEQUENCEOFCHANNELS
 }
 
-// Initialize GPIO pins for flags, I2C, and PWM outputs
-// Uses GPIO driverlib
-static void initGPIO()
-{
-    WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
-    // Configure GPIO
-    P1DIR |= BIT0 | BIT1;
-    P1OUT &= ~(BIT0 | BIT1);         // P1 setup for LED & reset output
-
-    P1SEL0 |= BIT6 | BIT7;                    // I2C pins
-    P1SEL1 &= ~(BIT6 | BIT7);
-
-
-
-    // Set flag pins
-    // MSP430FR5989 Pins 10 through 13 use GPIO_PORT_P5
-    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 10 P5.0
-    GPIO_setAsInputPin(GPIO_PORT_P5, UVP_FLAG_1B_PIN); // MSP430FR5989 11
-    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 12
-    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 13
-    // MSP430FR5989 Pins 14, 25 through 29 use GPIO_PORT_P3 
-    GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_1_PIN);  // MSP430FR5989 14 P3.0
-    GPIO_setAsInputPin(GPIO_PORT_P3, OVP_FLAG_2A_PIN); // MSP430FR5989 25
-    GPIO_setAsInputPin(GPIO_PORT_P3, OVP_FLAG_2B_PIN); // MSP430FR5989 26
-    GPIO_setAsInputPin(GPIO_PORT_P3, UVP_FLAG_2A_PIN); // MSP430FR5989 27
-    GPIO_setAsInputPin(GPIO_PORT_P3, UVP_FLAG_2B_PIN); // MSP430FR5989 28
-    GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_2_PIN);  // MSP430FR5989 29
-
-    // Init PWM 
-    PWM_PinSelect(HEATER_PWM_PORT, HEATER1_PWM_PIN);
-    PWM_PinSelect(HEATER_PWM_PORT, HEATER2_PWM_PIN);
-    PWM_PinSelect(HEATER_PWM_PORT, HEATER3_PWM_PIN);
-    PWM_PinSelect(HEATER_PWM_PORT, HEATER4_PWM_PIN);
-}
-
 // Initialize clock to 16MHz
 // Uses direct register manipulation as per device datasheet
 static void initClockTo16MHz()
@@ -293,6 +259,56 @@ static void initClockTo16MHz()
     CSCTL3 = DIVA__1 | DIVS__1 | DIVM__1;   // Set all dividers to 1 for 16MHz operation
     CSCTL0_H = 0;                           // Lock CS registers
 }
+
+// Initialize GPIO pins for flags, I2C, and PWM outputs
+// Uses GPIO driverlib
+static void initGPIO()
+{
+    // Importing drivers is a pain and we only really need WDT_A_hold(), so just copy and paste it here for now.
+    // IMO it would be better to just have driverlib
+    uint8_t newWDTStatus = ((HWREG16(WDT_A_BASE + OFS_WDTCTL) & 0x00FF) | WDTHOLD);
+    HWREG16(WDT_A_BASE + OFS_WDTCTL) = WDTPW + newWDTStatus;
+
+    // Configure Pins for I2C
+    //Set P1.6 and P1.7 as Secondary Module Function Input.
+    /*
+    * Select Port 1
+    * Set Pin 6, 7 to input Secondary Module Function, (UCB0SIMO/UCB0SDA, UCB0SOMI/UCB0SCL).
+    */
+    GPIO_setAsPeripheralModuleFunctionInputPin(
+        GPIO_PORT_P1,
+        GPIO_PIN6 + GPIO_PIN7,
+        GPIO_SECONDARY_MODULE_FUNCTION
+    );
+
+    /*
+     * Disable the GPIO power-on default high-impedance mode to activate
+     * previously configured port settings
+     */
+    PMM_unlockLPM5();
+
+    // Set flag pins
+    // MSP430FR5989 Pins 10 through 13 use GPIO_PORT_P5
+    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 10 P5.0
+    GPIO_setAsInputPin(GPIO_PORT_P5, UVP_FLAG_1B_PIN); // MSP430FR5989 11
+    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 12
+    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 13
+    // MSP430FR5989 Pins 14, 25 through 29 use GPIO_PORT_P3 
+    GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_1_PIN);  // MSP430FR5989 14 P3.0
+    GPIO_setAsInputPin(GPIO_PORT_P3, OVP_FLAG_2A_PIN); // MSP430FR5989 25
+    GPIO_setAsInputPin(GPIO_PORT_P3, OVP_FLAG_2B_PIN); // MSP430FR5989 26
+    GPIO_setAsInputPin(GPIO_PORT_P3, UVP_FLAG_2A_PIN); // MSP430FR5989 27
+    GPIO_setAsInputPin(GPIO_PORT_P3, UVP_FLAG_2B_PIN); // MSP430FR5989 28
+    GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_2_PIN);  // MSP430FR5989 29
+
+    // Init PWM 
+    PWM_PinSelect(HEATER_PWM_PORT, HEATER1_PWM_PIN);
+    PWM_PinSelect(HEATER_PWM_PORT, HEATER2_PWM_PIN);
+    PWM_PinSelect(HEATER_PWM_PORT, HEATER3_PWM_PIN);
+    PWM_PinSelect(HEATER_PWM_PORT, HEATER4_PWM_PIN);
+}
+
+
 
 // Initialize the Real-Time Clock (RTC) for periodic interrupts
 // Uses RTC_C or RTC_B driverlib depending on device
@@ -455,8 +471,6 @@ static void initHardware()
 {
     initGPIO();
     initClockTo16MHz();
-    // Disable the GPIO power-on default high-impedance mode to activate
-    PMM_unlockLPM5();
     initRTC();
     initADCs();
 }
