@@ -16,8 +16,6 @@
 
 #include "driver_init_private.h"
 
-struct i2c_m_sync_desc Mas_I2C_0;
-
 struct i2c_m_sync_desc Red_I2C_2;
 
 struct usart_sync_descriptor Debug_USART_0;
@@ -26,27 +24,7 @@ struct usart_sync_descriptor LVDS_USART_1;
 
 struct usart_sync_descriptor LVDS2_USART_2;
 
-void Mas_I2C_0_PORT_init(void)
-{
 
-	gpio_set_pin_function(PA4, MUX_PA4A_TWIHS0_TWCK0);
-
-	gpio_set_pin_function(PA3, MUX_PA3A_TWIHS0_TWD0);
-}
-
-void Mas_I2C_0_CLOCK_init(void)
-{
-	_pmc_enable_periph_clock(ID_TWIHS0);
-}
-
-void Mas_I2C_0_init(void)
-{
-	Mas_I2C_0_CLOCK_init();
-
-	i2c_m_sync_init(&Mas_I2C_0, TWIHS0);
-
-	Mas_I2C_0_PORT_init();
-}
 
 void Red_I2C_2_PORT_init(void)
 {
@@ -174,8 +152,6 @@ void system_init(void)
 
 	SPI0_init();
 	
-	Mas_I2C_0_init();
-
 	Red_I2C_2_init();
 
 	Debug_USART_0_init();
