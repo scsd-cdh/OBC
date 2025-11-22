@@ -134,7 +134,7 @@ int16_t TINYPROTOCOL_RegisterTelecommand(uint8_t cmd, uint8_t size) {
     return ETINYPROTOCOL_SUCCESS;
 }
 
-int16_t TINYPROTOCOL_SendTelecommand(const struct TINYPROTOCOL_Config *cfg, uint8_t command, const uint8_t* buffer, uint8_t size) {
+int16_t TINYPROTOCOL_SendTelecommand(uint16_t slave, const struct TINYPROTOCOL_Config *cfg, uint8_t command, const uint8_t* buffer, uint8_t size) {
     if (size > TINYPROTOCOL_MAX_PAYLOAD_SIZE)
         return -ETINYPROTOCOL_INVALID_PAYLOAD_SIZE;
 
@@ -147,14 +147,14 @@ int16_t TINYPROTOCOL_SendTelecommand(const struct TINYPROTOCOL_Config *cfg, uint
     }
 
     tc_send_buffer_tmp[size + 2] = TINYPROTOCOL_CalculateCRC(&tc_send_buffer_tmp[1], size + 1);
-    return cfg->TINYPROTOCOL_WriteBuffer(tc_send_buffer_tmp, size + 3);
+    return cfg->TINYPROTOCOL_WriteBufferToSlave(slave, tc_send_buffer_tmp, size + 3);
 }
 
-int16_t TINYPROTOCOL_SendEmptyTelecommand(const struct TINYPROTOCOL_Config *cfg, uint8_t command) {
+int16_t TINYPROTOCOL_SendEmptyTelecommand(uint16_t slave, const struct TINYPROTOCOL_Config *cfg, uint8_t command) {
     tc_send_buffer_tmp[0] = TINYPROTOCOL_MAGIC;
     tc_send_buffer_tmp[1] = command;
     tc_send_buffer_tmp[2] = TINYPROTOCOL_CalculateCRC(&tc_send_buffer_tmp[1], 1);
-    return cfg->TINYPROTOCOL_WriteBuffer(tc_send_buffer_tmp, 3);
+    return cfg->TINYPROTOCOL_WriteBufferToSlave(slave, tc_send_buffer_tmp, 3);
 }
 
 int16_t TINYPROTOCOL_RegisterTelemetryChannel(uint8_t tlm_channel, const uint8_t* ptr, uint8_t size) {
@@ -173,7 +173,7 @@ int16_t TINYPROTOCOL_RegisterTelemetryChannel(uint8_t tlm_channel, const uint8_t
     return ETINYPROTOCOL_SUCCESS;
 }
 
-int16_t TINYPROTOCOL_SendTelemetryRequest(const struct TINYPROTOCOL_Config *cfg, uint8_t tlm_req) {
+int16_t TINYPROTOCOL_SendTelemetryRequest(uint16_t slave, const struct TINYPROTOCOL_Config *cfg, uint8_t tlm_req) {
     // Calculate crc and create buffer with proper content.
     uint8_t crc = TINYPROTOCOL_CalculateCRC(&tlm_req, 1);
 
@@ -181,7 +181,7 @@ int16_t TINYPROTOCOL_SendTelemetryRequest(const struct TINYPROTOCOL_Config *cfg,
     tlm_req |= 0x80;
     uint8_t buf[3] = {TINYPROTOCOL_MAGIC, tlm_req, crc};
 
-    return cfg->TINYPROTOCOL_WriteBuffer(buf, 3);
+    return cfg->TINYPROTOCOL_WriteBufferToSlave(slave, buf, 3);
 }
 
 int16_t TINYPROTOCOL_ReadNextTelemetryByte(uint8_t *byte) {

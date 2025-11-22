@@ -9,6 +9,9 @@ build/
 *.o
 ProjectFiles/CDH/.generated_files/*
 !/.idea/**
+.idea/copilot**
+.idea/editor.xml
+
 /toolchain/
 node_modules/
 !/.github/workflows/**

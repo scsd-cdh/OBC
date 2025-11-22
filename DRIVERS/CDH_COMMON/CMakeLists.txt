@@ -1,4 +1,5 @@
-add_library(DRIVER_CDH_COMMON)
+add_library(DRIVER_CDH_COMMON
+        src/I2C0_wrapper.c)
 target_sources(DRIVER_CDH_COMMON
     PUBLIC
         FILE_SET HEADERS
@@ -7,6 +8,7 @@ target_sources(DRIVER_CDH_COMMON
             include/CDH/SPI0_wrapper.h
             include/CDH/pins.h
             include/CDH/driver_init.h
+        include/CDH/I2C0_wrapper.h
 
     PRIVATE
         FILE_SET private_headers
@@ -21,6 +23,7 @@ target_sources(DRIVER_CDH_COMMON
         src/Device_Startup/startup_${BOARD_NAME_LOWER}.c
         src/Device_Startup/system_${BOARD_NAME_LOWER}.c
         src/driver_init.c
+        src/I2C0_wrapper.c
 )
 
 target_include_directories(DRIVER_CDH_COMMON PUBLIC include)

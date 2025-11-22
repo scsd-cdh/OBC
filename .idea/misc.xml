@@ -9,5 +9,5 @@
       <file path="$PROJECT_DIR$/toolchain" />
     </excludeRoots>
   </component>
-  <component name="WestSettings"><![CDATA[{}]]></component>
+  <component name="WestSettings">{}</component>
 </project>
