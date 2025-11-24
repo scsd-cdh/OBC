@@ -64,6 +64,8 @@ typedef enum {
     ADS7138_CHANNEL_SEL_REGISTER   = 0x11,
 } ADS7138_Register;
 
+#define ADS7138_I2C_ADDRESS 0x10
+
 /**
  * @brief Initialize the ADS7138 I²C context on top of SWI2C.
  *
@@ -92,7 +94,7 @@ int32_t ADS7138IRTER_Initialize(SWI2C_Descriptor *descriptor);
  *       but is useful on it's own for debugging I2C.
  *       If you prefer a dedicated API for reset, expose a wrapper that calls this.
  */
-int32_t ADS7138_WrGenCmd(SWI2C_Descriptor *descriptor);
+int32_t ADS7138IRTER_SW_Reset(SWI2C_Descriptor *descriptor);
 
 /**
  * @brief Read a 12-bit conversion result from the ADS7138.

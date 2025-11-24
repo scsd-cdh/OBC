@@ -512,6 +512,8 @@ static void InitAppComm()
     P1DIR |= BIT0 | BIT1; // ???
 #endif
     ADS7138IRTER_Initialize(&sADS7138_SWI2C_Descriptor);
+    ADS7138IRTER_SW_Reset(&sADS7138_SWI2C_Descriptor);
+    sADS7138_SWI2C_Descriptor.address = ADS7138_I2C_ADDRESS;
 
     TINYPROTOCOL_Initialize();
     TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, sSystemStatus.buffer , sizeof(sSystemStatus.buffer));

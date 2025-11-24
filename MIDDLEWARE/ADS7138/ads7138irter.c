@@ -5,13 +5,11 @@
 #define ADS7138_SW_RESET            0x06
 #define ADS7138_SNG_REG_WRITE       0x08
 #define ADS7138_SNG_REG_READ        0x10
-#define ADS7138_I2C_ADDRESS         0x10
 #define ADS7138_REG_CHANNEL_SEL     0x11
 #define ADS7138_SET_BIT             0x18
 #define ADS7138_CLEAR_BIT           0x20
 
 int32_t ADS7138IRTER_Initialize(SWI2C_Descriptor *descriptor) {
-    descriptor->address = ADS7138_I2C_ADDRESS;
     SWI2C_Init(descriptor);
 }
 
