@@ -486,6 +486,7 @@ static void InitAppComm()
     initI2C(&i2cConfig);  
 
     // SW I2C
+#ifdef __MSP430FR5989__
     sADS7138_SWI2C_Descriptor.sda_port_out =   &P4OUT;
     sADS7138_SWI2C_Descriptor.sda_port_in =    &P4IN;
     sADS7138_SWI2C_Descriptor.sda_port_dir =   &P4DIR;
@@ -497,7 +498,19 @@ static void InitAppComm()
     P4SEL0 &= ~(BIT0 | BIT1);
     P4SEL1 &= ~(BIT0 | BIT1); 
     P1DIR |= BIT0 | BIT1;
-
+#elif defined (__MSP430FR5969__)
+    sADS7138_SWI2C_Descriptor.sda_port_out =   &P1OUT;
+    sADS7138_SWI2C_Descriptor.sda_port_in =    &P1IN;
+    sADS7138_SWI2C_Descriptor.sda_port_dir =   &P1DIR;
+    sADS7138_SWI2C_Descriptor.sda_pin =        GPIO_PIN5;
+    sADS7138_SWI2C_Descriptor.scl_port_out =   &P1OUT;
+    sADS7138_SWI2C_Descriptor.scl_port_in =    &P1IN;
+    sADS7138_SWI2C_Descriptor.scl_port_dir =   &P1DIR;
+    sADS7138_SWI2C_Descriptor.scl_pin =        GPIO_PIN4;
+    P1SEL0 &= ~(BIT5 | BIT4); // Select general purpose IO for pins 5 and 6
+    P1SEL1 &= ~(BIT5 | BIT4); 
+    P1DIR |= BIT0 | BIT1; // ???
+#endif
     ADS7138IRTER_Initialize(&sADS7138_SWI2C_Descriptor);
 
     TINYPROTOCOL_Initialize();
