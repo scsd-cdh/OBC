@@ -25,6 +25,7 @@ target_sources(
         hpl/spi/hpl_spi.c
         hpl/twihs/hpl_twihs.c
         hpl/uart/hpl_uart.c
+        hpl/usart/hpl_usart.c
         hpl/xdmac/hpl_xdmac.c
 )
 
@@ -37,6 +38,7 @@ target_include_directories(DRIVER_SAMV71 PUBLIC
     hpl/spi
     hpl/twihs
     hpl/uart
+    hpl/usart
     hpl/xdmac
     hri
 )

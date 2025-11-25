@@ -2,6 +2,7 @@ add_executable(CDH)
 
 target_link_libraries(CDH PRIVATE DRIVER_CDH_COMMON)
 target_link_libraries(CDH PRIVATE COMMSDRIVE)
+target_link_libraries(CDH PRIVATE MIDDLEWARE_ULOG)
 
 # Add new c files here
 target_sources(CDH
@@ -11,10 +12,12 @@ target_sources(CDH
         BASE_DIRS .
         FILES
             main.h
+            logging.h
 
     # Actual source code
     PRIVATE
         main.c
+        logging.c
 )
 
 # Post compile preparation steps

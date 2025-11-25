@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef _HPL_UART_BASE_H_INCLUDED
-#define _HPL_UART_BASE_H_INCLUDED
+#ifndef _HPL_USART_USART_H_INCLUDED
+#define _HPL_USART_USART_H_INCLUDED
 
 #include <hpl_usart_sync.h>
 #include <hpl_usart_async.h>
@@ -64,7 +64,7 @@ extern "C" {
  *
  * \return Initialization status
  */
-int32_t _uart_usart_sync_init(struct _usart_sync_device *const device, void *const hw);
+int32_t _usart_usart_sync_init(struct _usart_sync_device *const device, void *const hw);
 
 /**
  * \brief De-initialize USART
@@ -73,7 +73,7 @@ int32_t _uart_usart_sync_init(struct _usart_sync_device *const device, void *con
  *
  * \param[in] device The pointer to USART device instance
  */
-void _uart_usart_sync_deinit(struct _usart_sync_device *const device);
+void _usart_usart_sync_deinit(struct _usart_sync_device *const device);
 
 /**
  * \brief Enable usart module
@@ -82,7 +82,7 @@ void _uart_usart_sync_deinit(struct _usart_sync_device *const device);
  *
  * \param[in] device The pointer to USART device instance
  */
-void _uart_usart_sync_enable(struct _usart_sync_device *const device);
+void _usart_usart_sync_enable(struct _usart_sync_device *const device);
 
 /**
  * \brief Disable usart module
@@ -91,7 +91,7 @@ void _uart_usart_sync_enable(struct _usart_sync_device *const device);
  *
  * \param[in] device The pointer to USART device instance
  */
-void _uart_usart_sync_disable(struct _usart_sync_device *const device);
+void _usart_usart_sync_disable(struct _usart_sync_device *const device);
 
 /**
  * \brief Calculate baud rate register value
@@ -104,8 +104,8 @@ void _uart_usart_sync_disable(struct _usart_sync_device *const device);
  *
  * \return Calculated baud rate register value
  */
-uint16_t _uart_usart_sync_calculate_baud_rate(const uint32_t baud, const uint32_t clock_rate, const uint8_t samples,
-                                              const enum usart_baud_rate_mode mode, const uint8_t fraction);
+uint16_t _usart_usart_sync_calculate_baud_rate(const uint32_t baud, const uint32_t clock_rate, const uint8_t samples,
+                                               const enum usart_baud_rate_mode mode, const uint8_t fraction);
 
 /**
  * \brief Set baud rate
@@ -113,7 +113,7 @@ uint16_t _uart_usart_sync_calculate_baud_rate(const uint32_t baud, const uint32_
  * \param[in] device The pointer to USART device instance
  * \param[in] baud_rate A baud rate to set
  */
-void _uart_usart_sync_set_baud_rate(struct _usart_sync_device *const device, const uint32_t baud_rate);
+void _usart_usart_sync_set_baud_rate(struct _usart_sync_device *const device, const uint32_t baud_rate);
 
 /**
  * \brief Set data order
@@ -121,7 +121,7 @@ void _uart_usart_sync_set_baud_rate(struct _usart_sync_device *const device, con
  * \param[in] device The pointer to USART device instance
  * \param[in] order A data order to set
  */
-void _uart_usart_sync_set_data_order(struct _usart_sync_device *const device, const enum usart_data_order order);
+void _usart_usart_sync_set_data_order(struct _usart_sync_device *const device, const enum usart_data_order order);
 
 /**
  * \brief Set mode
@@ -129,7 +129,7 @@ void _uart_usart_sync_set_data_order(struct _usart_sync_device *const device, co
  * \param[in] device The pointer to USART device instance
  * \param[in] mode A mode to set
  */
-void _uart_usart_sync_set_mode(struct _usart_sync_device *const device, const enum usart_mode mode);
+void _usart_usart_sync_set_mode(struct _usart_sync_device *const device, const enum usart_mode mode);
 
 /**
  * \brief Set parity
@@ -137,7 +137,7 @@ void _uart_usart_sync_set_mode(struct _usart_sync_device *const device, const en
  * \param[in] device The pointer to USART device instance
  * \param[in] parity A parity to set
  */
-void _uart_usart_sync_set_parity(struct _usart_sync_device *const device, const enum usart_parity parity);
+void _usart_usart_sync_set_parity(struct _usart_sync_device *const device, const enum usart_parity parity);
 
 /**
  * \brief Set stop bits mode
@@ -145,7 +145,7 @@ void _uart_usart_sync_set_parity(struct _usart_sync_device *const device, const 
  * \param[in] device The pointer to USART device instance
  * \param[in] stop_bits A stop bits mode to set
  */
-void _uart_usart_sync_set_stop_bits(struct _usart_sync_device *const device, const enum usart_stop_bits stop_bits);
+void _usart_usart_sync_set_stop_bits(struct _usart_sync_device *const device, const enum usart_stop_bits stop_bits);
 
 /**
  * \brief Set character size
@@ -153,14 +153,15 @@ void _uart_usart_sync_set_stop_bits(struct _usart_sync_device *const device, con
  * \param[in] device The pointer to USART device instance
  * \param[in] size A character size to set
  */
-void _uart_usart_sync_set_character_size(struct _usart_sync_device *const device, const enum usart_character_size size);
+void _usart_usart_sync_set_character_size(struct _usart_sync_device *const device,
+                                          const enum usart_character_size  size);
 
 /**
  * \brief Retrieve usart status
  *
  * \param[in] device The pointer to USART device instance
  */
-uint32_t _uart_usart_sync_get_status(const struct _usart_sync_device *const device);
+uint32_t _usart_usart_sync_get_status(const struct _usart_sync_device *const device);
 
 /**
  * \brief Write a byte to the given USART instance
@@ -168,7 +169,7 @@ uint32_t _uart_usart_sync_get_status(const struct _usart_sync_device *const devi
  * \param[in] device The pointer to USART device instance
  * \param[in] data Data to write
  */
-void _uart_usart_sync_write_byte(struct _usart_sync_device *const device, uint8_t data);
+void _usart_usart_sync_write_byte(struct _usart_sync_device *const device, uint8_t data);
 
 /**
  * \brief Read a byte from the given USART instance
@@ -178,7 +179,7 @@ void _uart_usart_sync_write_byte(struct _usart_sync_device *const device, uint8_
  *
  * \return Data received via USART interface.
  */
-uint8_t _uart_usart_sync_read_byte(const struct _usart_sync_device *const device);
+uint8_t _usart_usart_sync_read_byte(const struct _usart_sync_device *const device);
 
 /**
  * \brief Check if USART is ready to send next byte
@@ -189,7 +190,7 @@ uint8_t _uart_usart_sync_read_byte(const struct _usart_sync_device *const device
  * \retval true if the USART is ready to send next byte
  * \retval false if the USART is not ready to send next byte
  */
-bool _uart_usart_sync_is_ready_to_send(const struct _usart_sync_device *const device);
+bool _usart_usart_sync_is_ready_to_send(const struct _usart_sync_device *const device);
 
 /**
  * \brief Check if USART transmitter has sent the byte
@@ -200,7 +201,7 @@ bool _uart_usart_sync_is_ready_to_send(const struct _usart_sync_device *const de
  * \retval true if the USART transmitter has sent the byte
  * \retval false if the USART transmitter has not send the byte
  */
-bool _uart_usart_sync_is_transmit_done(const struct _usart_sync_device *const device);
+bool _usart_usart_sync_is_transmit_done(const struct _usart_sync_device *const device);
 
 /**
  * \brief Check if there is data received by USART
@@ -211,7 +212,7 @@ bool _uart_usart_sync_is_transmit_done(const struct _usart_sync_device *const de
  * \retval true if the USART has received a byte
  * \retval false if the USART has not received a byte
  */
-bool _uart_usart_sync_is_byte_received(const struct _usart_sync_device *const device);
+bool _usart_usart_sync_is_byte_received(const struct _usart_sync_device *const device);
 
 /**
  * \brief Set the state of flow control pins
@@ -219,8 +220,8 @@ bool _uart_usart_sync_is_byte_received(const struct _usart_sync_device *const de
  * \param[in] device The pointer to USART device instance
  * \param[in] state - A state of flow control pins to set
  */
-void _uart_usart_sync_set_flow_control_state(struct _usart_sync_device *const     device,
-                                             const union usart_flow_control_state state);
+void _usart_usart_sync_set_flow_control_state(struct _usart_sync_device *const     device,
+                                              const union usart_flow_control_state state);
 
 /**
  * \brief Retrieve the state of flow control pins
@@ -229,7 +230,7 @@ void _uart_usart_sync_set_flow_control_state(struct _usart_sync_device *const   
  *
  * \return USART_FLOW_CONTROL_STATE_UNAVAILABLE.
  */
-union usart_flow_control_state _uart_usart_sync_get_flow_control_state(const struct _usart_sync_device *const device);
+union usart_flow_control_state _usart_usart_sync_get_flow_control_state(const struct _usart_sync_device *const device);
 
 /**
  * \brief Retrieve ordinal number of the given USART hardware instance
@@ -238,21 +239,20 @@ union usart_flow_control_state _uart_usart_sync_get_flow_control_state(const str
  *
  * \return The ordinal number of the given USART hardware instance
  */
-uint8_t _uart_usart_sync_get_hardware_index(const struct _usart_sync_device *const device);
+uint8_t _usart_usart_sync_get_hardware_index(const struct _usart_sync_device *const device);
 
 /**
  * \brief Retrieve timer helper functions
  *
  * \return A pointer to set of timer helper functions
  */
-void *_uart_get_usart_sync(void);
-void *_uart_get_usart_async(void);
-void *_uart_get_usart_dma(void);
-
+void *_usart_get_usart_sync(void);
+void *_usart_get_usart_async(void);
+void *_usart_get_usart_dma(void);
 //@}
 
 #ifdef __cplusplus
 }
 #endif
 /**@}*/
-#endif /* _HPL_UART_BASE_H_INCLUDED */
+#endif /* _HPL_USART_USART_H_INCLUDED */

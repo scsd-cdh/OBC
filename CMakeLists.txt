@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 4.0.2)
 project(OBC)
 
+option(CDH_EVALBOARD "Setup project configuration for the eval board" ON)
+if(CDH_EVALBOARD)
+    add_compile_definitions(CDH_EVALBOARD)
+endif()
+
 # Load drivers
 add_subdirectory("${PROJECT_SOURCE_DIR}/DRIVERS/CMSIS/5.4.0")
 add_subdirectory("${PROJECT_SOURCE_DIR}/DRIVERS/SAMV71_DFP/2.4.182")
