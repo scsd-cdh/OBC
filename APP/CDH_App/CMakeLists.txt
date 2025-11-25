@@ -1,4 +1,6 @@
-add_executable(CDH)
+add_executable(CDH
+        temp_ctrl.h
+        temp_ctrl.c)
 
 target_link_libraries(CDH PRIVATE DRIVER_CDH_COMMON)
 target_link_libraries(CDH PRIVATE COMMSDRIVE)
