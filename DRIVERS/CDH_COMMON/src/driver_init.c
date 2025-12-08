@@ -11,6 +11,7 @@
 #include <hal_init.h>
 #include <hpl_pmc.h>
 #include <hpl_uart_base.h>
+#include <hpl_usart_base.h>
 #include <CDH/pins.h>
 #include <CDH/SPI0_wrapper.h>
 
@@ -20,9 +21,14 @@ struct i2c_m_sync_desc Red_I2C_2;
 
 struct usart_sync_descriptor Debug_USART_0;
 
-struct usart_sync_descriptor LVDS_USART_1;
+struct usart_sync_descriptor LVDS_UART_1;
 
-struct usart_sync_descriptor LVDS2_USART_2;
+struct usart_sync_descriptor LVDS2_UART_2;
+
+#ifdef CDH_EVALBOARD
+struct usart_sync_descriptor ULOG_USART_1;
+#endif
+
 
 
 
@@ -68,7 +74,7 @@ void Debug_USART_0_init(void)
 	Debug_USART_0_PORT_init();
 }
 
-void LVDS_USART_1_PORT_init(void)
+void LVDS_UART_1_PORT_init(void)
 {
 
 	gpio_set_pin_function(PA5, MUX_PA5C_UART1_URXD1);
@@ -76,19 +82,19 @@ void LVDS_USART_1_PORT_init(void)
 	gpio_set_pin_function(PA6, MUX_PA6C_UART1_UTXD1);
 }
 
-void LVDS_USART_1_CLOCK_init(void)
+void LVDS_UART_1_CLOCK_init(void)
 {
 	_pmc_enable_periph_clock(ID_UART1);
 }
 
-void LVDS_USART_1_init(void)
+void LVDS_UART_1_init(void)
 {
-	LVDS_USART_1_CLOCK_init();
-	usart_sync_init(&LVDS_USART_1, UART1, _uart_get_usart_sync());
-	LVDS_USART_1_PORT_init();
+	LVDS_UART_1_CLOCK_init();
+	usart_sync_init(&LVDS_UART_1, UART1, _uart_get_usart_sync());
+	LVDS_UART_1_PORT_init();
 }
 
-void LVDS2_USART_2_PORT_init(void)
+void LVDS2_UART_2_PORT_init(void)
 {
 
 	gpio_set_pin_function(PD25, MUX_PD25C_UART2_URXD2);
@@ -96,17 +102,39 @@ void LVDS2_USART_2_PORT_init(void)
 	gpio_set_pin_function(PD26, MUX_PD26C_UART2_UTXD2);
 }
 
-void LVDS2_USART_2_CLOCK_init(void)
+void LVDS2_UART_2_CLOCK_init(void)
 {
 	_pmc_enable_periph_clock(ID_UART2);
 }
 
-void LVDS2_USART_2_init(void)
+void LVDS2_UART_2_init(void)
 {
-	LVDS2_USART_2_CLOCK_init();
-	usart_sync_init(&LVDS2_USART_2, UART2, _uart_get_usart_sync());
-	LVDS2_USART_2_PORT_init();
+	LVDS2_UART_2_CLOCK_init();
+	usart_sync_init(&LVDS2_UART_2, UART2, _uart_get_usart_sync());
+	LVDS2_UART_2_PORT_init();
 }
+
+#ifdef CDH_EVALBOARD
+void ULOG_USART_1_PORT_init(void)
+{
+
+	gpio_set_pin_function(PA21, MUX_PA21A_USART1_RXD1);
+
+	gpio_set_pin_function(PB4, MUX_PB4D_USART1_TXD1);
+}
+
+void ULOG_USART_1_CLOCK_init(void)
+{
+	_pmc_enable_periph_clock(ID_USART1);
+}
+
+void ULOG_USART_1_init(void)
+{
+	ULOG_USART_1_CLOCK_init();
+	ULOG_USART_1_PORT_init();
+	usart_sync_init(&ULOG_USART_1, USART1, _usart_get_usart_sync());
+}
+#endif
 
 void system_init(void)
 {
@@ -156,7 +184,11 @@ void system_init(void)
 
 	// Debug_USART_0_init();
 
-	// LVDS_USART_1_init();
+	// LVDS_UART_1_init();
 
-	// LVDS2_USART_2_init();
+	// LVDS2_UART_2_init();
+
+#ifdef CDH_EVALBOARD
+	ULOG_USART_1_init();
+#endif
 }

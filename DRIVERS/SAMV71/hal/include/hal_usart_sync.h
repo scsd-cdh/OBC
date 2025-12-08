@@ -51,8 +51,9 @@ extern "C" {
  * \brief Synchronous USART descriptor
  */
 struct usart_sync_descriptor {
-	struct io_descriptor      io;
-	struct _usart_sync_device device;
+	struct _usart_sync_hpl_interface *func;
+	struct io_descriptor              io;
+	struct _usart_sync_device         device;
 };
 
 /**

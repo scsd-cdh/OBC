@@ -157,6 +157,36 @@
 #define CONF_UART2_FREQUENCY 150000000
 #endif
 
+// <h> USART Clock Settings
+// <o> USART Clock source
+
+// <0=> Master Clock (MCK)
+// <1=> MCK / 8 for USART
+// <2=> Programmable Clock Controller 4 (PMC_PCK4)
+// <3=> External Clock
+// <i> This defines the clock source for the USART
+// <id> usart_clock_source
+#ifndef CONF_USART1_CK_SRC
+#define CONF_USART1_CK_SRC 0
+#endif
+
+// <o> USART External Clock Input on SCK <1-4294967295>
+// <i> Inputs the external clock frequency on SCK
+// <id> usart_clock_freq
+#ifndef CONF_USART1_SCK_FREQ
+#define CONF_USART1_SCK_FREQ 10000000
+#endif
+
+// </h>
+
+/**
+ * \def USART FREQUENCY
+ * \brief USART's Clock frequency
+ */
+#ifndef CONF_USART1_FREQUENCY
+#define CONF_USART1_FREQUENCY 150000000
+#endif
+
 // <<< end of configuration section >>>
 
 #endif // PERIPHERAL_CLK_CONFIG_H

@@ -40,6 +40,7 @@ target_sources(DRIVER_SAMV71
             Config/peripheral_clk_config.h
             Config/hpl_xdmac_config.h
             Config/hpl_uart_config.h
+            Config/hpl_usart_config.h
             Config/hpl_twihs_config.h
             Config/hpl_spi_config.h
             Config/hpl_pmc_config.h
