@@ -36,4 +36,3 @@ int32_t commsdrive_process_telecommand(uint8_t slave_addr, uint8_t cmd_id, const
 	mas_i2c_0_set_slave_addr(slave_addr);
 	return TINYPROTOCOL_SendTelecommand(slave_addr, &s_protocol_config, cmd_id, p_buffer, size);
 }
-

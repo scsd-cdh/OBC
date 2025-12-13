@@ -1,6 +1,4 @@
-add_executable(CDH
-        temp_ctrl.h
-        temp_ctrl.c)
+add_executable(CDH)
 
 target_link_libraries(CDH PRIVATE DRIVER_CDH_COMMON)
 target_link_libraries(CDH PRIVATE COMMSDRIVE)
@@ -15,11 +13,13 @@ target_sources(CDH
         FILES
             main.h
             logging.h
+            temp_ctrl.h
 
     # Actual source code
     PRIVATE
         main.c
         logging.c
+        temp_ctrl.c
 )
 
 # Post compile preparation steps
