@@ -49,7 +49,7 @@ static inline uint8_t SPI0_transferByte(uint8_t tx)
 
 void SPI0_init(void)
 {
-	// Disable pullup on MISO MOSI and SPCK
+	// Disable pull up on MISO MOSI and SPCK
 	PIOD->PIO_PUDR = (PIO_PUDR_P20 | PIO_PUDR_P21 | PIO_PUDR_P22);
 	SPI0_clockInit();
 	// spi_m_sync_transfer uses this for something
@@ -66,6 +66,18 @@ void SPI0_transferCustom(const uint8_t* txbuf, uint8_t* rxbuf, size_t txsize, si
 	}
 	for (i = 0; i < rxsize; ++i) {
 		rxbuf[i] = SPI0_transferByte(0x00);
+	}
+	
+	// This ensures CS only goes high after we're done transferring (last transfer)
+	hri_spi_write_CR_reg(SPI0, SPI_CR_LASTXFER);
+}
+
+// Function to write starting at a specific index and end on a specific index
+void SPI0_sectionWrite(const uint8_t* txbuf, size_t startWrite, size_t endWrite)
+{
+	int i;
+	for (i = startWrite; i < endWrite; ++i) {
+		SPI0_transferByte(txbuf[i]);
 	}
 	
 	// This ensures CS only goes high after we're done transferring (last transfer)

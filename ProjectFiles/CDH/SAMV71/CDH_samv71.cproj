@@ -765,6 +765,9 @@
       <SubType>compile</SubType>
       <Link>Device_Startup\samv71q21b_sram.ld</Link>
     </None>
+    <None Include="Device_Startup\samv71q21b_sram.ld">
+      <SubType>compile</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
