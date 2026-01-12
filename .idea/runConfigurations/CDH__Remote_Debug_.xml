@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="CDH (Remote Debug)" type="CLion_Remote" version="1" remoteCommand="tcp:127.0.0.1:9992" symbolFile="$PROJECT_DIR$/cmake-build-debug/APP/CDH_App/CDH.elf" sysroot="">
+    <debugger kind="GDB" isBundled="true" />
+    <method v="2" />
+  </configuration>
+</component>
