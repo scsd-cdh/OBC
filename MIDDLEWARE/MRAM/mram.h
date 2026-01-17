@@ -1,6 +1,8 @@
 #ifndef MRAM_H
 #define MRAM_H
 
+#include <hpl_spi_base.h>
+
 // S3A3204V0M MRAM Command Definitions
 
 //Commands not needing ADDR or DATA

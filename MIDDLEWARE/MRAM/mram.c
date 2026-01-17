@@ -1,16 +1,14 @@
 #include "mram.h"
+#include "SPI0_wrapper.h"
 
+// Be advised that the CS pin is automatically switch HIGH and LOW 
 void MRAMwrite_cmd_addr_data(uint8_t cmd, uint32_t addr, const uint8_t data, int dataSize) 
 {
 	WREN_cmd();
 	spi_m_sync_enable(&SPI0_desc);
 	
 	// Retrieve the 24 bite address into array size of 3
-	uint8_t addr_byte[] = {(addr & 0xFF0000) >> 16, (addr & 0xFF00) >> 8, (addr & 0xFF)};
-		
-	
-// Pull the CS Pin Low
-	
+	uint8_t addr_byte[] = {(addr & 0xFF0000) >> 16, (addr & 0xFF00) >> 8, (addr & 0xFF)};	
 	
 	//Send the cmd
 	const uint8_t *cmd_buffer = &cmd;
@@ -23,10 +21,6 @@ void MRAMwrite_cmd_addr_data(uint8_t cmd, uint32_t addr, const uint8_t data, int
 	//Send the data
 	SPI0_transferCustom(data, NULL, dataSize, 0);
 	
-	
-// Pull the CS Pin High
-	
-	
 	spi_m_sync_disable(&SPI0_desc);
 	WRDI_cmd();
 }
@@ -35,8 +29,6 @@ void MRAMwrite_rollover_helper(uint8_t cmd, uint32_t addrStart1, uint32_t addrSt
 {
 	WREN_cmd();
 	spi_m_sync_enable(&SPI0_desc);
-	
-// Pull the CS Pin LOW
 	
 	uint8_t addr1_byte[] = {(addrStart1 & 0xFF0000) >> 16, (addrStart1 & 0xFF00) >> 8, (addrStart1 & 0xFF)};
 	uint8_t addr2_byte[] = {(addrStart2 & 0xFF0000) >> 16, (addrStart2 & 0xFF00) >> 8, (addrStart2 & 0xFF)};
@@ -51,10 +43,6 @@ void MRAMwrite_rollover_helper(uint8_t cmd, uint32_t addrStart1, uint32_t addrSt
 	
 	//Send the data
 	SPI0_transferCustom(data, NULL, sizeSplit, 0);
-	
-// Pull the CS Pin HIGH
-
-// Pull the Cs Pin LOW
 
 	//Send the cmd
 	const uint8_t *cmd_buffer = &cmd;
@@ -70,9 +58,27 @@ void MRAMwrite_rollover_helper(uint8_t cmd, uint32_t addrStart1, uint32_t addrSt
 	spi_m_sync_enable(&SPI0_desc);
 }
 
-void MRAMread_cmd_addr(uint8_t, uint32_t, void*, int) 
+void MRAMread_cmd_addr(uint8_t cmd, uint32_t addr, void* data, int dataSize) 
 {
+	/*
+	Read MRAM data where command does require a specified address
+	Retrieve 24 LSB
+	*/
+	uint8_t addr_byte[] = { (addr & 0xFF0000) >> 16, (addr & 0xFF00) >> 8, (addr & 0xFF) };
+		
+	spi_m_sync_enable(&SPI0_desc);
 	
+	const uint8_t *cmd_buffer = &cmd;
+	SPI0_transferCustom(cmd_buffer, NULL, 1, 0);
+	
+	//Send the address
+	const uint8_t *addr_byte_buffer = addr_byte;
+	SPI0_transferCustom(addr_byte, NULL, 3, 0);
+	
+	//Send the data
+	SPI0_transferCustom(data, NULL, dataSize, 0);
+	
+	spi_m_sync_enable(&SPI0_desc);
 }
 	
 // Configure Write Protect
@@ -97,11 +103,9 @@ void configWP(void)
 void WREN_cmd(void) 
 {
 	spi_m_sync_enable(&SPI0_desc);
-	//CS low
 	
-	SPI0_transferCustom(Write_EN)
+	SPI0_transferCustom(Write_EN, 0, sizeof(Write_EN));
 	
-	//CS High
 	spi_m_sync_disable(&SPI0_desc);
 }
 	
@@ -109,16 +113,16 @@ void WREN_cmd(void)
 void WRDI_cmd(void) 
 {
 	spi_m_sync_enable(&SPI0_desc);
-	//CS low
 	
-	SPI0_transferCustom(Write_DIS)
+	SPI0_transferCustom(Write_EN, 0, sizeof(Write_DIS));
 	
-	//CS High
 	spi_m_sync_disable(&SPI0_desc);
 }
 
-// To complete
+// No need because it should already be initialize on the SPI wrapper
+/*
 void initMRAM(void) 
 {
 	
 }
+*/

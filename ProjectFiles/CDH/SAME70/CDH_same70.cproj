@@ -175,14 +175,40 @@
       <SubType>compile</SubType>
     </Compile>
     <!-- All .h files directly in MIDDLEWARE -->
+	<!-- MRAM Start -->
     <Compile Include="..\..\..\MIDDLEWARE\MRAM\mram.h">
       <Link>MIDDLEWARE\MRAM\mram.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+	<Compile Include="..\..\..\MIDDLEWARE\MRAM\DynamicImageStorage.h">
+      <Link>MIDDLEWARE\MRAM\DynamicImageStorage.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+	<Compile Include="..\..\..\MIDDLEWARE\MRAM\FileStorage.h">
+      <Link>MIDDLEWARE\MRAM\FileStorage.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+	<Compile Include="..\..\..\MIDDLEWARE\MRAM\FileType.h">
+      <Link>MIDDLEWARE\MRAM\FileType.h</Link>
+      <SubType>compile</SubType>
+    </Compile>
+	<Compile Include="..\..\..\MIDDLEWARE\MRAM\TelemetryStorage.h">
+      <Link>MIDDLEWARE\MRAM\TelemetryStorage.h</Link>
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="..\..\..\MIDDLEWARE\MRAM\mram.c">
       <Link>MIDDLEWARE\MRAM\mram.c</Link>
       <SubType>compile</SubType>
     </Compile>
+	<Compile Include="..\..\..\MIDDLEWARE\MRAM\DynamicImageStorage.c">
+      <Link>MIDDLEWARE\MRAM\DynamicImageStorage.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+	<Compile Include="..\..\..\MIDDLEWARE\MRAM\TelemetryStorage.c">
+      <Link>MIDDLEWARE\MRAM\TelemetryStorage.c</Link>
+      <SubType>compile</SubType>
+    </Compile>
+	  <!-- MRAM End -->
     <Compile Include="..\..\..\DRIVERS\SAME70\hpl\core\hpl_init.c">
       <Link>hpl\hpl_init.c</Link>
       <SubType>compile</SubType>
