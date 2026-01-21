@@ -22,8 +22,7 @@ On windows, cmake will not be invoked unless it is in the PATH.
 
 On CLion, remote development should be used in the following manner:
 1. (Windows only) Select `CDH (CMake)` and click the hammer icon to build the firmware.
-2. Select `CDH (Remote Upload + GDB)` and click the run icon. This step sometimes fails and crashes. If this happens, 
-rerun this step. You will know this step was successful when you see `====Debug(READY)====`. Do not stop this process
+2. Select `CDH (Remote Upload + GDB)` and click the run icon. Do not stop this process
 until you are done debugging.
 3. Select `CDH (Remote Logs)` and click the run icon. This step will fail if another user is looking at the logs.
 4. Select `CDH (Remote Debug)` and clich the debug icon. You should be able to use the debugging features of the IDE as

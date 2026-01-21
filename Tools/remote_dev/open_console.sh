@@ -5,6 +5,7 @@ args=("$@")
 target=${args[0]:-none}
 
 source "$(dirname -- "$0")/config.sh"
+: "${ssh_host:?} ${ssh_port:?} ${ssh_user:?}"
 
 echo "Environment: Linux"
 echo "Target: $target"
