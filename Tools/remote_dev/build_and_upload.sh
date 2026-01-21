@@ -5,6 +5,8 @@ args=("$@")
 target=${args[0]:-none}
 
 source "$(dirname -- "$0")/config.sh"
+: "${ssh_host:?} ${ssh_port:?} ${ssh_user:?} ${tcl_port:?} ${gdb_port:?}"
+
 
 echo "Environment: Linux"
 echo "Target: $target"
@@ -45,19 +47,18 @@ EOF
   echo "====Upload(END)===="
 
   echo "====Flash(START)===="
+  # shellcheck disable=SC2087
   ssh -p "$ssh_port" "$ssh_user@$ssh_host" <<- EOF
-    cd remote_files
-    openocd -f cdh_openocd.cfg -c "telnet_port disabled" -c "tcl_port disabled" -c "gdb_port disabled" -c "program CDH.elf verify" -c reset -c shutdown
+    printf '%s\x1a' 'capture "program CDH.elf preverify verify reset"' | nc -q 1 127.0.0.1 $tcl_port | tr '\32' '\n'
+    echo "Done!"
 EOF
   echo "====Flash(END)===="
   echo
 
   echo "====Debug(START)===="
   # shellcheck disable=SC2087
-  ssh -L 127.0.0.1:$gdb_port:127.0.0.1:$gdb_port -p "$ssh_port" "$ssh_user@$ssh_host" <<- EOF
-    cd remote_files
-    openocd -f cdh_openocd.cfg -c "telnet_port disabled" -c "tcl_port disabled" -c "gdb_port $gdb_port" -c init -c "reset run" -c "echo ====Debug(READY)===="
-EOF
+  echo "Establishing background gdb tunnel (no further messages will be displayed)"
+  ssh -N -L "127.0.0.1:$gdb_port:127.0.0.1:$gdb_port" -p "$ssh_port" "$ssh_user@$ssh_host"
   echo "====Debug(END)===="
   echo
 }
