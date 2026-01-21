@@ -1,7 +1,5 @@
-SECTIONS
+.ulog 0 (INFO) :
 {
-  .ulog 0 (INFO) :
-  {
     _sulog = .;
     _sulog_level = .;
     . += 1;
@@ -33,7 +31,7 @@ SECTIONS
     _sulog_level_trace = .;
     KEEP(*(.ulog.level.trace))
     _eulog_level_trace = .;
-    
+
     _eulog_level = .;
 
     _sulog_string = .;
@@ -50,9 +48,6 @@ SECTIONS
     _eulog_meta = .;
 
     _eulog = .;
-  }
+    ASSERT(_eulog_level < 65534, ".ulog.level section cannot contain more than 65534 interned strings");
+    ASSERT((_eulog_string - _sulog_string) < 65534, ".ulog.string section cannot contain more than 65534 interned strings");
 }
-INSERT AFTER .bss;
-
-ASSERT(_eulog_level < 65534, ".ulog.level section cannot contain more than 65534 interned strings");
-ASSERT((_eulog_string - _sulog_string) < 65534, ".ulog.string section cannot contain more than 65534 interned strings");

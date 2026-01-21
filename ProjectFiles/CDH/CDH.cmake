@@ -65,7 +65,7 @@ string(TOUPPER ${BOARD_NAME} BOARD_NAME_UPPER)
 string(TOLOWER ${BOARD_NAME} BOARD_NAME_LOWER)
 
 # Set flags
-set(CMAKE_EXE_LINKER_FLAGS_INIT "LINKER:-Map='CDH.map' --specs=nano.specs LINKER:--gc-sections -L${CMAKE_CURRENT_LIST_DIR} -Tulog.ld -T${BOARD_NAME_LOWER}_flash.ld  ")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "LINKER:-Map='CDH.map' --specs=nano.specs LINKER:--gc-sections -L${CMAKE_CURRENT_LIST_DIR} -L${CMAKE_CURRENT_LIST_DIR}/../../MIDDLEWARE/ULOG -Tulog.ld -T${BOARD_NAME_LOWER}_flash.ld  ")
 set(COMMON_FLAGS "-D__${BOARD_NAME_UPPER}__ -Wall -std=gnu23 -mthumb -mlong-calls -mcpu=cortex-m7 -mfloat-abi=softfp -mfpu=fpv4-sp-d16 -ffunction-sections")
 
 # Default C compiler flags

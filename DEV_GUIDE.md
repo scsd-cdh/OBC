@@ -1,4 +1,4 @@
-# Setting up the project
+# Setting up the project (CDH)
 
 ## CLion (Recommended)
 1. Install [CLion](https://www.jetbrains.com/clion/download) (it is free for non-commercial use).
@@ -21,10 +21,36 @@
    1. On linux, you can and should get nodejs from your package manager instead.
 3. Clone this repo.
 4. Run once `setup_toolchain_windows.bat` or `setup_toolchain_linux.sh` depending on your OS.
-5. Run `cmake -B build --toolchain ProjectFiles/CDH/SAM7.cmake -G "Unix Makefiles"` once.
+5. Run `cmake -B build --toolchain ProjectFiles/CDH/CDH.cmake -G "Unix Makefiles"` once.
    1. You only need to run this step once.
 6. Run `cmake --build build` to compile the code.
 7. Run `cmake --build build -t CDH_FLASH` to compile the code and upload it to a connected boarc.
+
+# Setting up the project (COMMS)
+1. Install [CLion](https://www.jetbrains.com/clion/download) (it is free for non-commercial use).
+2. Follow the instructions in the "Installing dependencies" section at https://docs.zephyrproject.org/latest/develop/getting_started/index.html#install-dependencies. <br>
+**Do not follow the instructions for "Get Zephyr and install Python dependencies"**
+3. Create a folder in which the project will reside
+4. (Windows Only) Open `cmd.exe` and navigate using the `cd` command to the folder you have created. **Do not use PowerShell, it will not work.**
+5. Run `python -m venv venv` inside the folder you have created
+6. (Windows Only) Run `venv\Scripts\activate.bat`
+7. (Linux Only) Run `source venv/bin/activate`
+8. Run `pip install west` inside the folder that contains the `venv` folder
+9. (Windows Only) Run `cmd /c scripts\utils\west-packages-pip-install.cmd` inside the same folder
+10. (Linux Only) Run `west packages pip --install`
+11. Run `west zephyr-export`
+12. Run `west init -m https://github.com/scsd-cdh/OBC.git .` inside the same folder
+13. Run `west update` inside the same folder
+14. Run `west sdk install -t arm-zephyr-eabi` inside the same folder
+15. Open the `application` folder in CLion.
+16. Right click APP/COMMS_App/CMakeLists.txt and select `Load CMake Project`. If this option is not available, the project is already loaded.
+17. See [Configure the toolchain and CMake profile](https://docs.zephyrproject.org/latest/develop/tools/clion.html#configure-the-toolchain-and-cmake-profile) and [Enable RTOS integration](https://docs.zephyrproject.org/latest/develop/tools/clion.html#enable-rtos-integration) for details on configuring CLion. You will not
+need to setup a CMake Profile, but you will need to create a toolchain and then configure the Zephyr Profile to use it.
+18. At the top-right corner, select "COMMS (OpenOCD)" in the dropdown.
+    1. Click the hammer to compile the code.
+    2. Click the play button to compile, upload the code to a connected board.
+    3. Click the debug button to compile, upload the code to a connected board and start debugging.
+19. See Tools/remote_dev/readme.MD for information about remote development.
 
 # Repository  Structure 
 ```plaintext

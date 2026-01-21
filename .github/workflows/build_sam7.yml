@@ -75,7 +75,7 @@ jobs:
         run: >
           cmake
           -G Ninja
-          --toolchain ${{ github.workspace }}/ProjectFiles/CDH/SAM7.cmake
+          --toolchain ${{ github.workspace }}/ProjectFiles/CDH/CDH.cmake
           -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache

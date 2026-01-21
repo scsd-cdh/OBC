@@ -12,12 +12,14 @@ echo "Target: $target"
 
 cd "$(dirname -- "$0")/../.."
 
-obc() {
+samv71() {
+  binary=$1
+
   echo "====Console(START)===="
   # shellcheck disable=SC2087
   ssh -tt -p "$ssh_port" "$ssh_user@$ssh_host" <<- EOF
     cd remote_files
-    TERM=xterm ulog-decoder -s auto CDH.elf
+    FORCE_COLOR=1 TERM=xterm ulog-decoder -s auto -b 115200 "${binary}.elf" 2>&1 | sed -u -r 's/WEST_TOPDIR\/[^\/]+\///' | ts '[%H:%M:%S]'
     exit
 EOF
   echo "====Console(END)===="
@@ -25,12 +27,15 @@ EOF
 }
 
 case "$target" in
-    obc)
-        obc
+    cdh)
+        samv71 CDH
+        ;;
+    comms)
+        samv71 COMMS
         ;;
     *)
         echo
-        echo "Unknown target, valid targets: obc"
+        echo "Unknown target, valid targets: cdh, comms"
         exit 1
         ;;
 esac

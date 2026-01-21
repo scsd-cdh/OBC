@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 4.0.2)
+set(CMAKE_FOLDER "CMake")
+
 project(OBC)
 
 option(CDH_EVALBOARD "Setup project configuration for the eval board" ON)
