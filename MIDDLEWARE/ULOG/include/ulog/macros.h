@@ -4,33 +4,49 @@
 #error uLog is only compatible with GCC.
 #endif
 
+#if (__STDC_VERSION__ < 202311L)
+#define static_assert _Static_assert
+#endif
+
 // Different platforms name the file in different ways
 #if __has_include (<sys/endian.h>)
 #   include <sys/endian.h>
 #elif __has_include (<endian.h>)
 #   include <endian.h>
-#else
-#   error "cant find endian.h"
 #endif
 
 // Different platforms use a different amount of underscores
-#ifdef BYTE_ORDER
-#elifdef __BYTE_ORDER
+#if defined(BYTE_ORDER)
+#elif defined(__BYTE_ORDER)
 #   define BYTE_ORDER __BYTE_ORDER
-#elifdef _BYTE_ORDER
+#elif defined(_BYTE_ORDER)
 #   define BYTE_ORDER _BYTE_ORDER
+#elif defined(__BYTE_ORDER__)
+#   define BYTE_ORDER __BYTE_ORDER__
+#else
+#   error Cant find BYTE_ORDER!
 #endif
-#ifdef BIG_ENDIAN
-#elifdef __BIG_ENDIAN
+
+#if defined(BIG_ENDIAN)
+#elif defined(__BIG_ENDIAN)
 #   define BIG_ENDIAN __BIG_ENDIAN
-#elifdef _BIG_ENDIAN
+#elif defined(_BIG_ENDIAN)
 #   define BIG_ENDIAN _BIG_ENDIAN
+#elif defined(__ORDER_BIG_ENDIAN__)
+#   define BIG_ENDIAN __ORDER_BIG_ENDIAN__
+#else
+#   error Cant find BIG_ENDIAN!
 #endif
-#ifdef LITTLE_ENDIAN
-#elifdef __LITTLE_ENDIAN
+
+#if defined(LITTLE_ENDIAN)
+#elif defined(__LITTLE_ENDIAN)
 #   define LITTLE_ENDIAN __LITTLE_ENDIAN
-#elifdef _LITTLE_ENDIAN
+#elif defined(_LITTLE_ENDIAN)
 #   define LITTLE_ENDIAN _LITTLE_ENDIAN
+#elif defined(__ORDER_LITTLE_ENDIAN__)
+#   define LITTLE_ENDIAN __ORDER_LITTLE_ENDIAN__
+#else
+#   error Cant find LITTLE_ENDIAN!
 #endif
 
 

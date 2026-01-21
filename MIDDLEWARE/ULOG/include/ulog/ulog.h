@@ -131,7 +131,7 @@ struct ulog_slice {
     /* Slices need special handling */\
     struct ulog_slice: ulog__write_slice, \
     struct ulog_slice *: ulog__write_slice \
-)(&X, sizeof(typeof(X)));
+)(&X, sizeof(X));
 
 // Validate that we aren't blowing through the id cap
 static_assert(sizeof(unsigned long long) <= 8, "unsigned long long is larger than 8 bytes");
@@ -262,20 +262,20 @@ const uint16_t ulog__system_id = X;
 
 /* Log levels to be used with ulog_*_level() */
 
-constexpr int ULOG_LEVEL_EMERGENCY = 0;
-constexpr int ULOG_LEVEL_EMERG = ULOG_LEVEL_EMERGENCY;
-constexpr int ULOG_LEVEL_ALERT = 1 + ULOG_LEVEL_EMERGENCY;
-constexpr int ULOG_LEVEL_CRITICAL = 1 + ULOG_LEVEL_ALERT;
-constexpr int ULOG_LEVEL_CRIT = ULOG_LEVEL_CRITICAL;
-constexpr int ULOG_LEVEL_ERROR = 1 + ULOG_LEVEL_CRITICAL;
-constexpr int ULOG_LEVEL_ERR = ULOG_LEVEL_ERROR;
-constexpr int ULOG_LEVEL_WARNING = 1 + ULOG_LEVEL_ERROR;
-constexpr int ULOG_LEVEL_WARN = ULOG_LEVEL_WARNING;
-constexpr int ULOG_LEVEL_NOTICE = 1 + ULOG_LEVEL_WARNING;
-constexpr int ULOG_LEVEL_INFO = 1 + ULOG_LEVEL_NOTICE;
-constexpr int ULOG_LEVEL_DEBUG = 1 + ULOG_LEVEL_INFO;
-constexpr int ULOG_LEVEL_DBG = ULOG_LEVEL_DEBUG;
-constexpr int ULOG_LEVEL_TRACE = 1 + ULOG_LEVEL_DEBUG;
+#define ULOG_LEVEL_EMERGENCY (0)
+#define ULOG_LEVEL_EMERG (ULOG_LEVEL_EMERGENCY)
+#define ULOG_LEVEL_ALERT (1 + ULOG_LEVEL_EMERGENCY)
+#define ULOG_LEVEL_CRITICAL (1 + ULOG_LEVEL_ALERT)
+#define ULOG_LEVEL_CRIT (ULOG_LEVEL_CRITICAL)
+#define ULOG_LEVEL_ERROR (1 + ULOG_LEVEL_CRITICAL)
+#define ULOG_LEVEL_ERR (ULOG_LEVEL_ERROR)
+#define ULOG_LEVEL_WARNING (1 + ULOG_LEVEL_ERROR)
+#define ULOG_LEVEL_WARN (ULOG_LEVEL_WARNING)
+#define ULOG_LEVEL_NOTICE (1 + ULOG_LEVEL_WARNING)
+#define ULOG_LEVEL_INFO (1 + ULOG_LEVEL_NOTICE)
+#define ULOG_LEVEL_DEBUG (1 + ULOG_LEVEL_INFO)
+#define ULOG_LEVEL_DBG (ULOG_LEVEL_DEBUG)
+#define ULOG_LEVEL_TRACE (1 + ULOG_LEVEL_DEBUG)
 
 
 // Set the maximum log level to be actually logged
