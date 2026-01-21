@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20.0)
 include("../../settings.cmake")
 
 find_package(Zephyr)
-project(CDH)
+project(COMMS)
 
 target_sources(app
         PRIVATE FILE_SET HEADERS BASE_DIRS src FILES
@@ -12,4 +12,3 @@ target_sources(app
         PRIVATE
         src/main.c
 )
-

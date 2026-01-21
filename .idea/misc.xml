@@ -3,11 +3,23 @@
   <component name="CMakePythonSetting">
     <option name="pythonIntegrationState" value="YES" />
   </component>
-  <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
+  <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$/APP/COMMS_App">
+    <contentRoot DIR="$PROJECT_DIR$/.." />
+  </component>
   <component name="CidrRootsConfiguration">
+    <libraryRoots>
+      <file path="$PROJECT_DIR$/../bootloader" />
+      <file path="$PROJECT_DIR$/../modules" />
+      <file path="$PROJECT_DIR$/../tools" />
+      <file path="$PROJECT_DIR$/../zephyr" />
+    </libraryRoots>
     <excludeRoots>
-      <file path="$PROJECT_DIR$/toolchain" />
+      <file path="$PROJECT_DIR$/APP/CDH_App/build" />
+      <file path="$PROJECT_DIR$/APP/COMMS_App/build" />
     </excludeRoots>
   </component>
-  <component name="WestSettings">{}</component>
+  <component name="WestSettings"><![CDATA[{
+  "toolchainName": "Zephyr",
+  "buildOptions": "-- -GNinja -DZEPHYR_SCA_VARIANT=dtdoctor"
+}]]></component>
 </project>

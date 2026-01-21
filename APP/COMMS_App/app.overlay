@@ -1,0 +1,5 @@
+/ {
+	chosen {
+		ulog,usart = &usart1;
+	};
+};
