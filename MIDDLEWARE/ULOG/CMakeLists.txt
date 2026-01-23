@@ -1,4 +1,4 @@
-add_library(MIDDLEWARE_ULOG OBJECT)
+add_library(MIDDLEWARE_ULOG)
 
 target_sources(MIDDLEWARE_ULOG
     PUBLIC
@@ -22,5 +22,3 @@ target_sources(MIDDLEWARE_ULOG
 )
 
 target_include_directories(MIDDLEWARE_ULOG PUBLIC include)
-#target_link_libraries(MIDDLEWARE_ULOG PRIVATE DRIVER_CDH_COMMON)
-target_compile_options(MIDDLEWARE_ULOG PRIVATE "-save-temps")

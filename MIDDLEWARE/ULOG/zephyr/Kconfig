@@ -1,0 +1,11 @@
+config ULOG
+    bool "Enable uLog"
+
+config ULOG_LOG_BACKEND
+    bool "Enable uLog logging backend"
+    depends on ULOG
+
+config ULOG_LOG_BACKEND_BUFFER_SIZE
+    int "uLog logging backend output buffer size"
+    depends on ULOG_LOG_BACKEND && LOG_OUTPUT
+    default 512

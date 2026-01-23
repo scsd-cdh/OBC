@@ -16,7 +16,7 @@ jobs:
       fail-fast: true
 
       matrix:
-        app: [COMMS]
+        app: [COMMS, CDH]
     steps:
       - uses: actions/checkout@v4
         with:

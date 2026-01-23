@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="COMMS (Remote Debug)" type="CLion_Remote" version="1" remoteCommand="tcp:127.0.0.1:9992" symbolFile="$PROJECT_DIR$/APP/COMMS_App/cmake-build-samv71-zephyr-debug/zephyr/zephyr.elf" sysroot="">
+  <configuration default="false" name="COMMS (Remote Debug)" type="CLion_Remote" version="1" remoteCommand="tcp:127.0.0.1:9992" symbolFile="$PROJECT_DIR$/APP/COMMS_App/build/zephyr/zephyr.elf" sysroot="">
     <debugger kind="GDB" isBundled="true" />
     <method v="2" />
   </configuration>
