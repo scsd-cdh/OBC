@@ -36,11 +36,11 @@
 6. (Windows Only) Run `venv\Scripts\activate.bat`
 7. (Linux Only) Run `source venv/bin/activate`
 8. Run `pip install west` inside the folder that contains the `venv` folder
-9. (Windows Only) Run `cmd /c scripts\utils\west-packages-pip-install.cmd` inside the same folder
-10. (Linux Only) Run `west packages pip --install`
-11. Run `west zephyr-export`
-12. Run `west init -m https://github.com/scsd-cdh/OBC.git .` inside the same folder
-13. Run `west update` inside the same folder
+9. Run `west init -m https://github.com/scsd-cdh/OBC.git .` inside the same folder
+10. Run `west update` inside the same folder
+11. (Windows Only) Run `cmd /c scripts\utils\west-packages-pip-install.cmd` inside the same folder
+12. (Linux Only) Run `west packages pip --install`
+13. Run `west zephyr-export`
 14. Run `west sdk install -t arm-zephyr-eabi` inside the same folder
 15. Open the `application` folder in CLion.
 16. Right click APP/COMMS_App/CMakeLists.txt and select `Load CMake Project`. If this option is not available, the project is already loaded.
