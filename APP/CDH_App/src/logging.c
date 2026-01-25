@@ -43,7 +43,7 @@ void ulog_external_release(void)
 }
 void ulog_external_write(const uint8_t byte)
 {
-    uart_poll_out(p_logging_uart_dev, byte);
+    // uart_poll_out(p_logging_uart_dev, byte);
 }
 void ulog_external_flush(void)
 {
