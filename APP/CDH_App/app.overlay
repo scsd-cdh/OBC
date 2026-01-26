@@ -5,7 +5,15 @@
 };
 
 &ext1_i2c {
-	i2c_test: test@9 {
+	demo_i2c: demo@9 {
 		reg = < 9 >;
 	};
+};
+
+demo_serial: &ext1_serial {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
 };
