@@ -46,7 +46,7 @@ build_zephyr() {
   echo "Old file hash: $current_hash"
   echo "New file hash: $new_hash"
   if [ "$current_hash" != "$new_hash" ]; then
-    sftp -b - -P "$ssh_port" "$ssh_user@$ssh_host" <<- EOF
+    sftp -C -b - -P "$ssh_port" "$ssh_user@$ssh_host" <<- EOF
       progress
       put "$elf_path" remote_files/${binary}.elf
 EOF
