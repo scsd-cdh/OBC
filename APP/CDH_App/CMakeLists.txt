@@ -11,10 +11,10 @@ target_sources(app
         BASE_DIRS src
         FILES
         src/main.h
-        src/logging.h
+#        src/logging.h
 
         PRIVATE
         src/main.c
-        src/logging.c
+#        src/logging.c
 )
 

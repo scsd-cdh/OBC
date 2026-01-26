@@ -3,3 +3,9 @@
 		usart-ulog = &usart1;
 	};
 };
+
+&ext1_i2c {
+	i2c_test: test@9 {
+		reg = < 9 >;
+	};
+};
