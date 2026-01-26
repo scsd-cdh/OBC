@@ -2,10 +2,12 @@ manifest:
   remotes:
     - name: zephyrproject-rtos
       url-base: https://github.com/zephyrproject-rtos
+    - name: alexkar598
+      url-base: https://github.com/alexkar598
   projects:
     - name: zephyr
-      remote: zephyrproject-rtos
-      revision: v4.3.0
+      remote: alexkar598
+      revision: v4.3.0-patch1
       import: true
   self:
     path: application
