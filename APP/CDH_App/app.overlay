@@ -6,6 +6,8 @@
 
 &ext1_i2c {
 	demo_i2c: demo@9 {
+		compatible = "vnd,i2c-device";
+
 		reg = < 9 >;
 	};
 };
@@ -16,4 +18,14 @@ demo_serial: &ext1_serial {
 
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
+};
+
+&ext1_spi {
+	demo_spi: demo_spi@0 {
+		compatible = "vnd,spi-device";
+
+		reg = <0>;
+		spi-max-frequency = <100000>;
+		spi-cpha;
+	};
 };

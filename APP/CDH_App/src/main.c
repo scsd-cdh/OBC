@@ -5,6 +5,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/uart.h>
 
 static const struct i2c_dt_spec dev_test = I2C_DT_SPEC_GET(DT_NODELABEL(demo_i2c));
@@ -76,6 +77,45 @@ void demo_uart(void)
     printk("UART Demo: Done\n");
 }
 
+void demo_spi()
+{
+    printk("SPI Demo: Start\n");
+
+    char * msg = "Hey SPI!.";
+    const size_t len = strlen(msg);
+
+    // Setup SPI device
+    const struct device *const dev = DEVICE_DT_GET(DT_BUS(DT_NODELABEL(demo_spi)));
+    const struct spi_config config = {
+        .cs = SPI_CS_CONTROL_INIT(DT_NODELABEL(demo_spi)),
+        .frequency = 100000,
+        .operation = SPI_MODE_CPHA | SPI_OP_MODE_MASTER | SPI_WORD_SET(8),
+    };
+
+    // Setup transmit buffers
+    const struct spi_buf tx_buf = { .buf = msg, .len = len };
+    const struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
+
+    // Send the message out
+    spi_write(dev, &config, &tx_bufs);
+
+    // Allocate buffer for response
+    uint8_t buf[64];
+    buf[len] = 0;
+
+    // Setup rx buffers
+    const struct spi_buf rx_buf = { .buf = buf, .len = len };
+    const struct spi_buf_set rx_bufs = { .buffers = &rx_buf, .count = 1 };
+
+    // Perform the read
+    spi_read(dev, &config, &rx_bufs);
+
+    // Check if we got back what we sent
+    printk("SPI Demo: Sent \"%s\", got back \"%s\"\n", msg, (char *)buf);
+    __ASSERT(strcmp(buf, msg) == 0, "SPI demo mismatch");
+
+    printk("SPI Demo: Done\n");
+}
 
 int main(void)
 {
@@ -83,5 +123,5 @@ int main(void)
 
     demo_uart();
     demo_i2c();
-
+    demo_spi();
 }
