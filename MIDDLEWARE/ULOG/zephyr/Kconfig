@@ -8,6 +8,12 @@ config ULOG_USE_UART
     bool "Enable uLog auto init over uart (via chosen/ulog,usart)"
     depends on ULOG
 
+config ULOG_SYSTEM_ID
+    hex "uLog system ID. Should be a unique u16 for every board"
+    range 0x0000 0xFFFF
+    default 0x0000
+    depends on ULOG && ULOG_AUTO_MANAGED
+
 config ULOG_LOG_BACKEND
     bool "Enable uLog logging backend"
     depends on ULOG && ULOG_AUTO_MANAGED && LOG_OUTPUT

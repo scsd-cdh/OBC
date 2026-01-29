@@ -5,6 +5,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 
+ULOG_SYSTEM_ID(CONFIG_ULOG_SYSTEM_ID);
 
 // Protects the device handle
 static K_MUTEX_DEFINE(logging_uart_dev_mutex);

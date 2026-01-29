@@ -5,8 +5,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
-ULOG_SYSTEM_ID(0x3399)
-
 int main(void) {
     int test = 5;
 

@@ -8,8 +8,6 @@
 
 static const struct led_dt_spec dev_led = LED_DT_SPEC_GET(DT_ALIAS(led0));
 
-ULOG_SYSTEM_ID(0x1234)
-
 int main(void)
 {
     int value = 0;
