@@ -1,0 +1,60 @@
+name: build_zephyr.yml
+on:
+  pull_request:
+    branches:
+      - "*_protected"
+  push:
+    branches:
+      - "*_protected"
+
+jobs:
+  build:
+    name: "${{ matrix.app }} (ubuntu22-gcc)"
+    runs-on: "ubuntu-22.04"
+
+    strategy:
+      fail-fast: true
+
+      matrix:
+        app: [COMMS, CDH]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: application
+
+      - name: Set reusable strings
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          echo "job-id=zephyr-${{ matrix.app }}-ubuntu22-gcc" >> "$GITHUB_OUTPUT"
+
+      - name: Disable man-db auto-update
+        run: sudo rm -f /var/lib/man-db/auto-update
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@v1
+        with:
+          app-path: application
+          toolchains: arm-zephyr-eabi
+          ccache-cache-key: zephyr-${{ matrix.app }}
+
+      # ammaraskar/gcc-problem-matcher@0.3.0
+      - name: Setup GCC problem matcher
+        uses: ammaraskar/gcc-problem-matcher@0f9c86f9e693db67dacf53986e1674de5f2e5f28
+
+      - name: Build
+        working-directory: application/APP/${{ matrix.app }}_App
+        run: |
+          west zephyr-export 
+          west build -d ${{ steps.strings.outputs.build-output-dir }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.strings.outputs.job-id }}
+          path: ${{ steps.strings.outputs.build-output-dir }}/zephyr/zephyr.elf
