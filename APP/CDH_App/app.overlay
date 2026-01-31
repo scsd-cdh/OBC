@@ -3,3 +3,11 @@
 		ulog,usart = &usart1;
 	};
 };
+
+&ext1_i2c {
+	demo_i2c: demo@9 {
+		compatible = "vnd,i2c-device";
+
+		reg = < 0x48 >;
+	};
+};
