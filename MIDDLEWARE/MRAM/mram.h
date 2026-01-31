@@ -40,9 +40,9 @@ const uint32_t UNIQUE_ID_REG = 0x000040;
 const uint32_t SERIAL_NUM_REG = 0x000080;
 const uint32_t NON_AUGMENTED_REG = 0x000200;
 
-void MRAMwrite_cmd_addr_data(uint8_t, uint32_t, const void*, int);
-void MRAMwrite_rollover_helper(uint8_t, uint32_t, uint32_t, const void*, int, int); //For telemetry
-void MRAMread_cmd_addr(uint8_t, uint32_t, void*, int);
+void MRAM_write_cmd_addr_data(uint8_t, uint32_t, const void*, int);
+void MRAM_write_rollover_helper(uint8_t, uint32_t, uint32_t, const void*, int, int); //For telemetry
+void MRAM_read_cmd_addr(uint8_t, uint32_t, void*, int);
 void configWP(void);
 void WREN_cmd(void);
 void WRDI_cmd(void);
