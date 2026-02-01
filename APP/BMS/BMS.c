@@ -6,63 +6,8 @@
  *  including ADC setup for current and voltage sensing, GPIO configuration for protection flags,
  *  PWM control for battery heaters, and I2C communications for telemetry and telecommand.
  *
- *  ADC channels are assigned to specific pins and memory buffers for multi-channel sweeps.
- *  GPIO pins are configured for over-voltage, under-voltage, and over-current protection flags.
- *  PWM outputs control battery heaters, with flexible duty cycle settings.
- *  Real-Time Clock (RTC) is used for periodic wakeup and routine execution.
- *  Telemetry and telecommand are handled via a custom protocol (tinyprotocol) over I2C.
- *
- *  * --- BMS.c Code Walkthrough ---
- *
- * This file implements the Battery Management System (BMS) logic for the MSP430.
- * 
- * Key sections:
- * 
- * 1. Hardware Definitions:
- *    - ADC pin assignments: Each *_PIN macro maps a physical pin to an ADC input channel.
- *    - ADC memory buffers: Each *_MEM macro maps an ADC channel to a memory buffer. These buffers store the results of ADC conversions.
- *    - GPIO pin assignments: Unique macros for each protection flag (over-voltage, under-voltage, over-current) mapped to specific pins.
- *    - PWM heater pins: Defines which pins are used for heater PWM outputs.
- *    - External ADC and I2C addresses.
- *
- * 2. Static Data Buffers:
- *    - Buffers for system status, current, voltage, flags, and external ADC readings.
- *    - These are used for telemetry responses and protocol communication.
- *
- * 3. Initialization Functions:
- *    - initADCs(): Sets up all ADC channels and memory buffers for multi-channel sweeps.
- *    - initGPIO(): Configures all GPIO pins for flags, I2C, and PWM outputs.
- *    - initClockTo16MHz(): Sets the MSP430 clock to 16MHz for fast operation.
- *    - initRTC(): Initializes the Real-Time Clock for periodic interrupts.
- *    - initBSP(): Calls all hardware initialization routines.
- *
- * 4. Communication Setup:
- *    - InitAppComm(): Initializes I2C and the custom tinyprotocol for telemetry/telecommand.
- *    - Registers all telemetry channels and telecommands.
- *
- * 5. Main Periodic Routine:
- *    - RoutineCycle_Process(): Called by RTC interrupt. Sweeps ADCs, reads GPIO flags, collects external ADC data, and updates buffers.
- *
- * 6. Interrupt Service Routine:
- *    - RTC_ISR(): Handles RTC interrupts, triggers periodic routine, and blinks LED for events.
- *
- * 7. Telemetry and Telecommand Handlers:
- *    - SendTelemetryResponse(): Responds to telemetry requests.
- *    - ProcessTelemetryRequest(): Dispatches telemetry responses.
- *    - SendPWM(): Sets heater PWM duty cycles.
- *    - ProcessTelecommand(): Handles incoming telecommands (e.g., heater control).
- *
- * --- Notes for Reviewers ---
- * - ADC memory buffers are crucial for storing conversion results; each sensor channel has a dedicated buffer.
- * - GPIO flag assignments should be unique and clearly mapped to physical pins.
- * - All hardware initialization is grouped for clarity and maintainability.
- * - Telemetry/telecommand protocol is modular and easily extendable.
- * - RoutineCycle_Process is the main data acquisition and update loop, triggered by RTC.
- * - Comments throughout the file explain hardware mapping and logic flow.
  *  Author: Brendan Kelly
  */
-
-#include <stdint.h>
 
 #include "BMS.h"
 #include "ADC_Read.h"
@@ -72,6 +17,10 @@
 #include "PWM.h"
 #include "swi2c.h"
 #include "ads7138irter.h"
+#include "tinyprotocol.h"
+#include "i2c.h"
+#include "bms_types.h"
+
 #if defined (__MSP430FR5989__)
 #include "rtc_c.h"
 #elif defined (__MSP430FR5969__)
@@ -150,7 +99,7 @@
 #define HEATER4_CCR TIMER_B_CAPTURECOMPARE_REGISTER_6
 #endif  
 
-#define SLAVE_ADDR 0x08
+#define BMS_SLAVE_ADDR 0x09
 
 // Static data buffers to be sent back to CDH via tinyprotocol
 static const SystemStatusResp_t sSystemStatus = {
@@ -481,7 +430,7 @@ static void InitAppComm()
 {
     sI2cConfigCb_t i2cConfig = {
       .Rx_Proc_Data = I2C_Proc_RX_Data,
-        .slave_addr = SLAVE_ADDR,
+        .slave_addr = BMS_SLAVE_ADDR,
     };
     initI2C(&i2cConfig);  
 

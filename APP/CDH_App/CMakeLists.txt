@@ -16,5 +16,5 @@ target_sources(app
 
 target_include_directories(app PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE/tinyprotocol
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE/shared_types
 )
-add_library(tinyprotocol ../../MIDDLEWARE/tinyprotocol/tinyprotocol.c)

@@ -81,6 +81,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>MIDDLEWARE/shared_types</name>
+			<type>2</type>
+			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/shared_types</location>
+		</link>
+		<link>
 			<name>MIDDLEWARE/tinyprotocol</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
