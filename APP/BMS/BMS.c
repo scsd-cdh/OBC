@@ -528,7 +528,7 @@ void BMS_init()
  * NOTE: inlining functions is entirely up to the compiler, therefore logic for different buffers (i.e. ADC, GPIO, etc) is kept in one function
  *  due to paranoia that the compiler might not inline it. This is subject to refactor. It is possible to force inline or use macros.
  */  
-extern void BMS_collectData()
+void BMS_collectData()
 {
     /* MSP430xxxx ON DEVICE ADCs */
     // Collect ADC data and put it into buffers

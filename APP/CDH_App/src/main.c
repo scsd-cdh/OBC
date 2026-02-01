@@ -5,39 +5,57 @@
 #include <ulog/ulog.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/led.h>
 #include <zephyr/drivers/i2c.h>
+#include <tinyprotocol.h>
 
-static const struct i2c_dt_spec dev_test = I2C_DT_SPEC_GET(DT_NODELABEL(demo_i2c));
-void demo_i2c(void)
+#define SLAVE_ADDR 0x08
+
+#define SYSTEM_STATUS_RESP_LEN   5
+
+enum BMS_TelemetryRequestCmdId {
+    BMS_SYSTEM_STATUS_ID        = 1,  /**< System status telemetry */
+    BMS_HEALTH_CHECK_ID         = 2,  /**< Health check telemetry */
+    BMS_FLAG_ID                 = 3,  /**< Protection flags telemetry */
+    BMS_CURRENT_DRAW_ID         = 4,  /**< Discharge current telemetry */
+    BMS_CURRENT_CHARGE_ID       = 5,  /**< Charge current telemetry */
+    BMS_VOLTAGE_BATTERY1_ID     = 6,  /**< Battery 1 voltage telemetry */
+    BMS_VOLTAGE_BATTERY2_ID     = 7,  /**< Battery 2 voltage telemetry */
+    BMS_VOLTAGE_COMBINED_ID     = 8,  /**< Combined battery voltage telemetry */
+    BMS_HEATERS_CONTROLLER_ID   = 9,  /**< Heater controller telecommand */
+    BMS_THERMISTOR03_DATA_ID    = 10, /**< Thermistor 0-3 external ADC telemetry */
+    BMS_THERMISTOR47_DATA_ID    = 11, /**< Thermistor 4-7 external ADC telemetry */
+};
+
+struct i2c_dt_spec dev = I2C_DT_SPEC_GET(DT_NODELABEL(bms));
+int16_t TINYPROTOCOL_WriteBufferToSlave(uint16_t slave_addr, const uint8_t* p_buffer, uint8_t length)
 {
-    char * msg = "Hello!";
-
-    // Write out message via i2c
-    i2c_write_dt(&dev_test, (uint8_t *)msg, strlen(msg) + 1);
-    (void)dev_test.addr;
-
-    // Allocate buffer for response
-    uint8_t buf[128];
-
-    // Read the response into the buffer
-    i2c_read_dt(&dev_test, buf, strlen(msg));
-
-    __ASSERT(strcmp(buf, msg) == 0, "I2C demo mismatch");
+    dev.addr = slave_addr;
+    return (int16_t)i2c_write_dt(&dev, p_buffer, length);
 }
-static const struct led_dt_spec dev_led = LED_DT_SPEC_GET(DT_ALIAS(led0));
+
+const struct TINYPROTOCOL_Config cfg = {
+    .TINYPROTOCOL_WriteBufferToSlave = TINYPROTOCOL_WriteBufferToSlave
+};
+
+typedef union SystemStatusResp {
+    struct {
+        uint32_t runtime;    /**< System runtime in seconds */
+        uint8_t fw_version;  /**< Firmware version */
+    };
+    uint8_t buffer[SYSTEM_STATUS_RESP_LEN]; /**< Raw buffer for protocol transmission */
+} SystemStatusResp_t;
+
 
 int main(void)
 {
-    int value = 0;
-    bool status = false;
+    TINYPROTOCOL_Initialize();
+    SystemStatusResp_t p_buf;
 
-    // ReSharper disable once CppDFAEndlessLoop
+    // k_msleep(2000);
     while (1) {
-        demo_i2c();
-        status = !status;
-        led_set_brightness_dt(&dev_led, status ? LED_BRIGHTNESS_MAX : 0);
-        ULOG_INFO("Blink number {}", value++);
+        k_msleep(3000);
+        TINYPROTOCOL_SendTelemetryRequest(SLAVE_ADDR, &cfg, BMS_SYSTEM_STATUS_ID);
         k_msleep(2000);
+        i2c_read_dt(&dev, p_buf.buffer, SYSTEM_STATUS_RESP_LEN);
     }
 }
