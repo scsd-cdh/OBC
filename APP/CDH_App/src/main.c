@@ -28,7 +28,7 @@ const float BETA_COEFFICIENT = 3950;
 const float SERIES_RESISTOR = 10000;
 
 // --- Helper: Convert ADC Value back to Temperature ---
-float adcToTemperature(uint16_t adcVal) {
+float adc_to_temperature(uint16_t adcVal) {
     // 1. Handle edge cases to prevent division by zero
     // If ADC is 4095, resistance is infinite (open circuit), temp is essentially absolute zero
     if (adcVal >= 4095) return -273.15;
@@ -54,22 +54,46 @@ float adcToTemperature(uint16_t adcVal) {
     return tempC;
 }
 
+void get_adc_vals(uint16_t* adc_vals) {
+    uint8_t sExtADCBuffer03[8] = {};
+    uint8_t sExtADCBuffer47[8] = {};
+    TINYPROTOCOL_SendTelemetryRequest(BMS_SLAVE_ADDR, &cfg, BMS_THERMISTOR03_DATA_ID);
+    k_msleep(100);
+    i2c_read_dt(&dev, sExtADCBuffer03, 8);
+    k_msleep(100);
+    TINYPROTOCOL_SendTelemetryRequest(BMS_SLAVE_ADDR, &cfg, BMS_THERMISTOR47_DATA_ID);
+    k_msleep(100);
+    i2c_read_dt(&dev, sExtADCBuffer47, 8);
+    k_msleep(100);
+    int j=0;
+    for (int i = 0; i < 8; i+=2) {
+        adc_vals[j++] = ((uint16_t)sExtADCBuffer03[i] << 8) | (uint16_t)sExtADCBuffer03[i + 1];
+    }
+    for (int i = 0; i < 8; i+=2) {
+        adc_vals[j++] = ((uint16_t)sExtADCBuffer47[i] << 8) | (uint16_t)sExtADCBuffer47[i + 1];
+    }
+}
+
 int main(void)
 {
     TINYPROTOCOL_Initialize();
     SystemStatusResp_t p_buf;
-    uint8_t sExtADCBuffer03[8] = {};
-    uint8_t sExtADCBuffer47[8] = {};
     uint16_t adc_vals[8] = {};
-    while (1) {
-        k_msleep(3000);
-        TINYPROTOCOL_SendTelemetryRequest(BMS_SLAVE_ADDR, &cfg, BMS_THERMISTOR03_DATA_ID);
-        k_msleep(2000);
-        i2c_read_dt(&dev, sExtADCBuffer03, 8);
-        for (int i = 0; i < 4; ++i) {
-            adc_vals[i] = (uint16_t)sExtADCBuffer03[i] << 4 | (uint16_t)sExtADCBuffer03[i + 1];
-        }
-//        k_msleep(3000);
+    float temperatures[8] = {};
+    const uint8_t pwm_heater_on[4] = {90, 90, 90, 90};
+    const uint8_t pwm_heater_off[4] = {0,0,0,0};
 
+    while (1) {
+        k_msleep(50);
+        get_adc_vals(adc_vals);
+        for (int i = 0; i < 8; ++i) {
+            temperatures[i] = adc_to_temperature(adc_vals[i]);
+        }
+        // naive but for now since all the values are guarenteed to be the same we'll just take the first one. IRL we will have to do this smartly
+        if (temperatures[0] < 20.f) {
+            TINYPROTOCOL_SendTelecommand(BMS_SLAVE_ADDR, &cfg, BMS_HEATERS_CONTROLLER_ID, pwm_heater_on, 4);
+        } else {
+            TINYPROTOCOL_SendTelecommand(BMS_SLAVE_ADDR, &cfg, BMS_HEATERS_CONTROLLER_ID, pwm_heater_off, 4);
+        }
     }
 }

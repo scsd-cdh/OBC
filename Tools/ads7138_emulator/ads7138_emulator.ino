@@ -35,6 +35,8 @@ volatile bool   nextIsRegRead = false;
 volatile uint8_t currentReg   = 0;
 volatile uint8_t currentChan  = 0;  // 0–7, manual mode
 
+struct repeating_timer timer;
+
 // Dummy ADC values per channel (12-bit)
 uint16_t dummyValueForChannel(uint8_t ch) {
   ch &= 0x07;
@@ -111,7 +113,9 @@ void onRequestHandler() {
     uint8_t val = readRegister(currentReg);
     Wire.write(val);
   } else {
-    uint16_t val = channels[currentChannel];
+    uint16_t val = channels[currentChan];
+    // uint16_t val = dummyValueForChannel(currentChan); 
+
     // 12-bit value left-aligned into two bytes: D11..D4, D3..D0 xxxx
     uint8_t msb = (val >> 4) & 0xFF;
     uint8_t lsb = (val << 4) & 0xF0;
@@ -156,6 +160,7 @@ bool timer_callback(struct repeating_timer *t) {
     // Simple simulation: HIGH = Heating, LOW = Cooling
     if (digitalRead(PWM_IN_PIN) == HIGH) {
         temperature += 0.1; 
+        // Serial.println("Got pwm data");
     } else {
         temperature -= 0.05; 
     }
@@ -209,6 +214,9 @@ void loop() {
         for (int i = 0; i < 8; i++) {
           channels[i] = simulatedADC;
         }
+
+        Serial.println(temperature);
+      
       
         // Visual heartbeat
         digitalWrite(LED_PIN, !digitalRead(LED_PIN));
