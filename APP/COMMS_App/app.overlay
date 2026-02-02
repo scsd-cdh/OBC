@@ -2,4 +2,16 @@
 	chosen {
 		ulog,usart = &usart1;
 	};
+
+	aliases {
+		transmitter = &uart4;
+	};
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <500000>;
+
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
 };
