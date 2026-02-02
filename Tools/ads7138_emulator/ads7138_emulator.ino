@@ -1,4 +1,6 @@
 #include <Wire.h>
+#include "pico/stdlib.h"
+#include "hardware/timer.h"
 
 #define ADS7138_ADDR      0x10
 #define REG_SYSTEM_STATUS 0x00
@@ -11,6 +13,22 @@
 
 // Simple register map (0x00–0x1F is enough for this stub)
 uint8_t regs[0x20];
+uint16_t channels[8];
+
+// --- Configuration ---
+const uint8_t PWM_IN_PIN = 15; // GP15
+const uint8_t LED_PIN = 25;    // Built-in LED
+const int INTERVAL_MS = 50;    // Run simulation every 50ms
+
+// --- Thermistor Simulation Constants ---
+// Adjust these to match the hardware you will eventually install
+const float THERMISTOR_NOMINAL = 10000; // Resistance at 25 degrees C (10k)
+const float TEMPERATURE_NOMINAL = 25;   // Temp. for nominal resistance (almost always 25 C)
+const float BETA_COEFFICIENT = 3950;    // The beta coefficient of the thermistor
+const float SERIES_RESISTOR = 10000;    // The value of the 'other' resistor in the divider (10k)
+
+// --- Global Simulation Variables ---
+volatile float temperature = 20.0; 
 
 // State for next I2C read
 volatile bool   nextIsRegRead = false;
@@ -93,8 +111,7 @@ void onRequestHandler() {
     uint8_t val = readRegister(currentReg);
     Wire.write(val);
   } else {
-    // Conversion read in manual mode: return dummy ADC value for currentChan
-    uint16_t val = dummyValueForChannel(currentChan);
+    uint16_t val = channels[currentChannel];
     // 12-bit value left-aligned into two bytes: D11..D4, D3..D0 xxxx
     uint8_t msb = (val >> 4) & 0xFF;
     uint8_t lsb = (val << 4) & 0xF0;
@@ -103,9 +120,62 @@ void onRequestHandler() {
   }
 }
 
+bool isHeatingActive() {
+  return digitalRead(PWM_IN_PIN) == HIGH;
+}
+
+// --- Helper: Convert Temp to Simulated ADC Value ---
+// This reverses the standard thermistor reading logic.
+// Returns a value 0-4095 (12-bit ADC)
+uint16_t temperatureToADC(float tempC) {
+    // 1. Convert Celsius to Kelvin
+    float tempK = tempC + 273.15;
+    float tempRefK = TEMPERATURE_NOMINAL + 273.15;
+
+    // 2. Calculate Thermistor Resistance (Steinhart-Hart / Beta equation)
+    // R = R0 * exp(B * (1/T - 1/T0))
+    float resistance = THERMISTOR_NOMINAL * exp(BETA_COEFFICIENT * (1.0/tempK - 1.0/tempRefK));
+
+    // 3. Simulate Voltage Divider (Vcc -> SeriesR -> [ADC] -> Thermistor -> GND)
+    // This is the most common config. 
+    // Voltage Fraction = R_therm / (R_series + R_therm)
+    float voltageFraction = resistance / (SERIES_RESISTOR + resistance);
+
+    // 4. Convert to 12-bit ADC value (0-4095)
+    float adcVal = voltageFraction * 4095.0;
+
+    // Clamp values
+    if (adcVal > 4095) return 4095;
+    if (adcVal < 0) return 0;
+    return (uint16_t)adcVal;
+}
+
+// --- Timer Interrupt Service Routine (ISR) ---
+bool timer_callback(struct repeating_timer *t) {
+    // Determine heating vs cooling
+    // Simple simulation: HIGH = Heating, LOW = Cooling
+    if (digitalRead(PWM_IN_PIN) == HIGH) {
+        temperature += 0.1; 
+    } else {
+        temperature -= 0.05; 
+    }
+
+    // Safety bounds for simulation physics
+    if (temperature < -200) temperature = -200;
+    if (temperature > 500) temperature = 500;
+
+    return true; 
+}
+
 void setup() {
+  pinMode(PWM_IN_PIN, INPUT);
+
+  add_repeating_timer_ms(-INTERVAL_MS, timer_callback, NULL, &timer);
+
   // Initialize minimal register defaults
-  for (uint8_t i = 0; i < sizeof(regs); ++i) regs[i] = 0x00;
+  for (uint8_t i = 0; i < sizeof(regs); ++i) {
+    regs[i] = 0x00;
+  } 
   regs[REG_SYSTEM_STATUS] = 0x81;
   regs[REG_CHANNEL_SEL]   = 0x00;
   currentChan             = 0;
@@ -123,5 +193,24 @@ void setup() {
 }
 
 void loop() {
-  // Nothing to do; all logic in I2C callbacks
+  static unsigned long lastPrint = 0;
+    
+    // Update data output every 100ms
+    if (millis() - lastPrint > 100) {
+        lastPrint = millis();
+        
+        // Grab a snapshot of the current physics state
+        float currentTemp = temperature; 
+        
+        // Calculate the simulated ADC value
+        // (This is the value you would send to your master board)
+        uint16_t simulatedADC = temperatureToADC(currentTemp);
+        // For now we'll just assume the temperature of all the batteries is the same everywhere
+        for (int i = 0; i < 8; i++) {
+          channels[i] = simulatedADC;
+        }
+      
+        // Visual heartbeat
+        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+    }
 }
