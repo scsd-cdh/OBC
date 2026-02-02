@@ -438,15 +438,21 @@ static void InitAppComm()
     sADS7138_SWI2C_Descriptor.sda_port_out =   &P4OUT;
     sADS7138_SWI2C_Descriptor.sda_port_in =    &P4IN;
     sADS7138_SWI2C_Descriptor.sda_port_dir =   &P4DIR;
-    sADS7138_SWI2C_Descriptor.sda_pin =        GPIO_PIN1;
     sADS7138_SWI2C_Descriptor.scl_port_out =   &P4OUT;
     sADS7138_SWI2C_Descriptor.scl_port_in =    &P4IN;
     sADS7138_SWI2C_Descriptor.scl_port_dir =   &P4DIR;
+#if defined (__MSP430FR5989__)
+    sADS7138_SWI2C_Descriptor.sda_pin =        GPIO_PIN1;
     sADS7138_SWI2C_Descriptor.scl_pin =        GPIO_PIN0;
+#elif defined (__MSP430FR5969__)
+    sADS7138_SWI2C_Descriptor.sda_pin =        GPIO_PIN2;
+    sADS7138_SWI2C_Descriptor.scl_pin =        GPIO_PIN3;
+#endif
+    P1DIR |= BIT0 | BIT1; // Set 1.0 and 1.1 direction to "output". I have no idea why this is here
+    // Select general purpose IO for port 4
     P4SEL0 &= ~(BIT0 | BIT1);
-    P4SEL1 &= ~(BIT0 | BIT1); 
-    P1DIR |= BIT0 | BIT1;
-
+    P4SEL1 &= ~(BIT0 | BIT1);
+    
     ADS7138IRTER_Initialize(&sADS7138_SWI2C_Descriptor);
 
     TINYPROTOCOL_Initialize();

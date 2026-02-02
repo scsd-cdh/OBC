@@ -24,11 +24,12 @@ int main(void)
 {
     TINYPROTOCOL_Initialize();
     SystemStatusResp_t p_buf;
-
+    uint8_t sExtADCBuffer03[8] = {};
+    uint8_t sExtADCBuffer47[8] = {};
     while (1) {
         k_msleep(3000);
-        TINYPROTOCOL_SendTelemetryRequest(BMS_SLAVE_ADDR, &cfg, BMS_SYSTEM_STATUS_ID);
+        TINYPROTOCOL_SendTelemetryRequest(BMS_SLAVE_ADDR, &cfg, BMS_THERMISTOR03_DATA_ID);
         k_msleep(2000);
-        i2c_read_dt(&dev, p_buf.buffer, SYSTEM_STATUS_RESP_LEN);
+        i2c_read_dt(&dev, sExtADCBuffer03, 8);
     }
 }
