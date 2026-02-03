@@ -1,0 +1,7 @@
+SYSTEMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+groundSystemId INTEGER ::= 0
+cdhSystemId INTEGER ::= 1
+bmsSystemId INTEGER ::= 2
+
+END

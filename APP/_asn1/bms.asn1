@@ -1,0 +1,28 @@
+BMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+lfpIdBMSSystemStatusRequest INTEGER ::= 0
+BMSSystemStatusRequest ::= SEQUENCE {
+}
+
+lfpIdBMSSystemStatusResponse INTEGER ::= 1
+BMSSystemStatusResponse ::= SEQUENCE {
+    -- Version of the firmware running on BMS.
+    version INTEGER(0..255),
+    -- Number of seconds since processor start-up.
+    uptime INTEGER(0..4294967295)
+}
+
+------
+------
+
+lfpIdBMSHealthCheckRequest INTEGER ::= 2
+BMSHealthCheckRequest ::= SEQUENCE {
+}
+
+lfpIdBMSHealthCheckResponse INTEGER ::= 3
+BMSHealthCheckResponse ::= SEQUENCE {
+    -- The Hash of the Source Code
+    hash OCTET STRING (SIZE(16))
+}
+
+END
