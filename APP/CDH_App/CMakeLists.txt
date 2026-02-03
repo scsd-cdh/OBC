@@ -13,3 +13,7 @@ target_sources(app
         src/main.c
 )
 
+
+include("../../MIDDLEWARE/ASN1SCC/asn1scc.cmake")
+
+asn1scc_generate_c(app bms.asn1)

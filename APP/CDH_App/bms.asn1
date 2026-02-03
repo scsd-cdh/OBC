@@ -1,0 +1,29 @@
+BMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+System-status-request ::= SEQUENCE {
+}
+System-status-response ::= SEQUENCE {
+    -- Version of the firmware running on BMS.
+    version INTEGER(0..255),
+    -- Number of seconds since processor start-up.
+    uptime INTEGER(0..4294967295)
+}
+Health-check-request ::= SEQUENCE {
+}
+Health-check-response ::= SEQUENCE {
+    -- The Hash of the Source Code
+    hash OCTET STRING (SIZE(16))
+}
+
+
+PDU ::= CHOICE {
+    request CHOICE {
+        system-status System-status-request,
+        health-check Health-check-request
+    },
+    response CHOICE {
+        system-status System-status-response,
+        health-check Health-check-response
+    }
+}
+END
