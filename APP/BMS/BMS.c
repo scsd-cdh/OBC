@@ -140,7 +140,6 @@ static Flag_t sFlags = {
 static uint8_t sExtADCBuffer03[8] = {};
 static uint8_t sExtADCBuffer47[8] = {};
 
-
 // Global SWI2C config "descriptor"
 static SWI2C_Descriptor sADS7138_SWI2C_Descriptor;
 
@@ -257,8 +256,6 @@ static void initGPIO()
     PWM_PinSelect(HEATER_PWM_PORT, HEATER4_PWM_PIN);
 }
 
-
-
 // Initialize the Real-Time Clock (RTC) for periodic interrupts
 // Uses RTC_C or RTC_B driverlib depending on device
 #if defined (__MSP430FR5989__)
@@ -347,7 +344,6 @@ static void initRTC()
     RTC_B_startClock(RTC_B_BASE);
 }
 #endif
-
 
 // Private helper functions for telemetry and telecommand processing
 static void I2C_Proc_RX_Data(uint8_t data);

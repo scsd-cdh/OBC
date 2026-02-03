@@ -5,9 +5,8 @@
 };
 
 &ext1_i2c {
-	bms: bms@8 {
+	bms: bms@9 {
 		compatible = "vnd,i2c-device";
-		reg = <0x08>;
-//		status = "okay";
+		reg = <0x09>;
 	};
 };
