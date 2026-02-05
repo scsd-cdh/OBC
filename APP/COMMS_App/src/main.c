@@ -41,6 +41,8 @@ int main(void) {
 
 	ULOG_INFO("Initialising CSP");
 
+	csp_conf.version = 1;
+
 	/* Init CSP */
 	csp_init();
 
