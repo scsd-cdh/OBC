@@ -3,7 +3,7 @@
   <component name="CMakePythonSetting">
     <option name="pythonIntegrationState" value="YES" />
   </component>
-  <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$/APP/COMMS_App">
+  <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$/APP/CDH_App">
     <contentRoot DIR="$PROJECT_DIR$/.." />
   </component>
   <component name="CidrRootsConfiguration">
