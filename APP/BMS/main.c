@@ -22,6 +22,7 @@
 
 #include "BMS.h"
 #include "i2c.h"
+#include "tinyprotocol.h"
 
 int main(void)
 {
@@ -31,6 +32,21 @@ int main(void)
     while (1) {
         if (BMS_ISRTriggered()) {
             BMS_collectData();
+        }
+
+        if (I2C_CLOCK_HANG) {
+            I2C_CLOCK_HANG = 0;
+            BMS_init();
+            // __delay_cycles(10);
+        }
+
+        if (I2C_RECEIVED_BYTE_FLAG) {
+            I2C_RECEIVED_BYTE_FLAG = 0;
+            if (!TINYPROTOCOL_ParseByte(&protocolConfig, last_received_byte())) {
+                // FIXME;
+                BMS_init();
+                __delay_cycles(10);
+            }
         }
     }
     return 0;

@@ -27,16 +27,21 @@ uint8_t ReceiveIndex = 0;
 uint8_t TransmitBuffer[MAX_BUFFER_SIZE] = {0};
 uint8_t TransmitIndex = 0;
 
+uint8_t I2C_CLOCK_HANG = 0;
+uint8_t I2C_RECEIVED_BYTE_FLAG = 0;
+
 void initI2C(sI2cConfigCb_t* cb_config)
 {
     UCB0CTLW0 = UCSWRST;                      // Software reset enabled
     UCB0CTLW0 |= UCMODE_3 | UCSYNC;           // I2C mode, sync mode
     UCB0I2COA0 = cb_config->slave_addr | UCOAEN; // Own Address and enable
+    UCB0CTLW1 |= UCCLTO0;                      // Clock low timeout at 28ms
     UCB0CTLW0 &= ~UCSWRST;                    // clear reset register
 
     UCB0IE |= UCSTPIE;                         // Enable STOP interrupt
     UCB0IE |= UCRXIE;                          // Enable RX interrupt
     UCB0IE |= UCTXIE;                          // Enable TX interrupt
+    UCB0IE |= UCCLTOIE;                          // Enable clock low timeout
     
     i2cSlaveCtx.Rx_Proc_Data = cb_config->Rx_Proc_Data;
     i2cSlaveCtx.i2c_mode = I2C_IDLE_MODE;
@@ -52,6 +57,12 @@ int16_t transmitI2C(const uint8_t* data, uint8_t size)
     return 0; // TODO switch to project defined error flags
 }
 
+uint8_t last_received_byte()
+{
+    return ReceiveBuffer[ReceiveIndex];
+}
+
+volatile uint8_t buf[1] = {};
 //******************************************************************************
 // I2C Interrupt ***************************************************************
 //******************************************************************************
@@ -93,8 +104,9 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
     case USCI_I2C_UCTXIFG1:  break;         // Vector 20: TXIFG1
     case USCI_I2C_UCRXIFG0:                 // Vector 22: RXIFG0  -> Receive one byte from MASTER (SAMV71)
         ReceiveBuffer[ReceiveIndex] = UCB0RXBUF;         // -> Get the single byte
-        i2cSlaveCtx.Rx_Proc_Data(ReceiveBuffer[ReceiveIndex]);
-
+        I2C_RECEIVED_BYTE_FLAG = 1;
+        // i2cSlaveCtx.Rx_Proc_Data(ReceiveBuffer[ReceiveIndex]);
+        // buf[0] = UCB0RXBUF;
         ReceiveIndex = (ReceiveIndex + 1) % MAX_BUFFER_SIZE;
         i2cSlaveCtx.i2c_mode = I2C_RX_MODE;
         break;
@@ -104,6 +116,11 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
         TransmitIndex = (TransmitIndex + 1) % MAX_BUFFER_SIZE;
         i2cSlaveCtx.i2c_mode = I2C_TX_MODE;
         break;                      // Interrupt Vector: I2C Mode: UCTXIFG
+    case USCI_I2C_UCCLTOIFG:
+        // Set a flag 
+        I2C_CLOCK_HANG = 1;
+        // UCB0TXBUF = 0xAA;
+        break;
     default: 
         break;
   }

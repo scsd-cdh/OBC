@@ -28,6 +28,9 @@ typedef struct sI2cConfigCb
     uint8_t slave_addr;
 } sI2cConfigCb_t;
 
+extern uint8_t I2C_CLOCK_HANG;
+extern uint8_t I2C_RECEIVED_BYTE_FLAG;
+
 /**
  * @brief Initializes the I2C module in slave mode with the specified slave address.
  */
@@ -37,5 +40,6 @@ void initI2C(sI2cConfigCb_t* cb_config);
 * @brief Write 
 */
 int16_t transmitI2C(const uint8_t* data, uint8_t size) ;
+uint8_t last_received_byte(void);
 
 #endif /* I2C */

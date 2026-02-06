@@ -10,6 +10,8 @@
 
 #include <stdbool.h>
 
+extern const struct TINYPROTOCOL_Config protocolConfig;
+
 /**
  * @brief Initializes the Battery Management System hardware and communication.
  *

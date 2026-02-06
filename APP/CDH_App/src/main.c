@@ -76,24 +76,30 @@ void get_adc_vals(uint16_t* adc_vals) {
 
 int main(void)
 {
-    TINYPROTOCOL_Initialize();
-    SystemStatusResp_t p_buf;
+//    TINYPROTOCOL_Initialize();
+//    SystemStatusResp_t p_buf;
     uint16_t adc_vals[8] = {};
-    float temperatures[8] = {};
-    const uint8_t pwm_heater_on[4] = {90, 90, 90, 90};
-    const uint8_t pwm_heater_off[4] = {0,0,0,0};
+//    float temperatures[8] = {};
+//    const uint8_t pwm_heater_on[4] = {90, 90, 90, 90};
+//    const uint8_t pwm_heater_off[4] = {0,0,0,0};
+
+    const uint8_t txdata[1] = {0xA0};
+    uint8_t rxdata[1] = {};
 
     while (1) {
-        k_msleep(50);
+        k_msleep(1000);
+//        i2c_write_dt(&dev, txdata, 1);
+//        k_msleep(500);
+//        i2c_read_dt(&dev, rxdata, 1);
         get_adc_vals(adc_vals);
-        for (int i = 0; i < 8; ++i) {
-            temperatures[i] = adc_to_temperature(adc_vals[i]);
-        }
-        // naive but for now since all the values are guarenteed to be the same we'll just take the first one. IRL we will have to do this smartly
-        if (temperatures[0] < 20.f) {
-            TINYPROTOCOL_SendTelecommand(BMS_SLAVE_ADDR, &cfg, BMS_HEATERS_CONTROLLER_ID, pwm_heater_on, 4);
-        } else {
-            TINYPROTOCOL_SendTelecommand(BMS_SLAVE_ADDR, &cfg, BMS_HEATERS_CONTROLLER_ID, pwm_heater_off, 4);
-        }
+//        for (int i = 0; i < 8; ++i) {
+//            temperatures[i] = adc_to_temperature(adc_vals[i]);
+//        }
+//        // naive but for now since all the values are guarenteed to be the same we'll just take the first one. IRL we will have to do this smartly
+//        if (temperatures[0] < 20.f) {
+//            TINYPROTOCOL_SendTelecommand(BMS_SLAVE_ADDR, &cfg, BMS_HEATERS_CONTROLLER_ID, pwm_heater_on, 4);
+//        } else {
+//            TINYPROTOCOL_SendTelecommand(BMS_SLAVE_ADDR, &cfg, BMS_HEATERS_CONTROLLER_ID, pwm_heater_off, 4);
+//        }
     }
 }
