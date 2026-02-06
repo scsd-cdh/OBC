@@ -76,15 +76,15 @@ void get_adc_vals(uint16_t* adc_vals) {
 
 int main(void)
 {
-//    TINYPROTOCOL_Initialize();
-//    SystemStatusResp_t p_buf;
+    TINYPROTOCOL_Initialize();
     uint16_t adc_vals[8] = {};
-//    float temperatures[8] = {};
-//    const uint8_t pwm_heater_on[4] = {90, 90, 90, 90};
-//    const uint8_t pwm_heater_off[4] = {0,0,0,0};
+    float temperatures[8] = {};
+    const uint8_t pwm_heater_on[4] = {90, 90, 90, 90};
+    const uint8_t pwm_heater_off[4] = {0,0,0,0};
 
-    const uint8_t txdata[1] = {0xA0};
-    uint8_t rxdata[1] = {};
+    // If you uncomment this line this will break it???? MSP will hold SCL and SDA down forever??????????????
+//    const uint8_t txdata[1] = {0xA0};
+//    uint8_t rxdata[1] = {};
 
     while (1) {
         k_msleep(1000);
