@@ -4,10 +4,16 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: alexkar598
       url-base: https://github.com/alexkar598
+    - name: scsd-cdh
+      url-base: https://github.com/scsd-cdh
   projects:
     - name: zephyr
       remote: alexkar598
       revision: v4.3.0-patch1
       import: true
+    - name: libcsp
+      remote: scsd-cdh
+      revision: v2.1.1
+      path: modules/lib/libcsp
   self:
     path: application
