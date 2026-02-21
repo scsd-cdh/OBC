@@ -1,0 +1,130 @@
+Lightweight Framing Protocol (LFP) Specification
+Version 1.0.0
+Alex Kar
+
+
+Unless mentioned otherwise, all data types are assumed to be big endian.
+
+==================
+= Header Segment =
+==================
+
+11111111
+iiiitttt eeeeeeed llllllll llllllll
+00000000 00000000 cccccccc cccccccc
+
+i: Initiator System (u4)
+t: Target System (u4)
+d: Direction (b1)
+e: Endpoint (u7)
+l: Encoded Length (u16)
+c: Header Checksum (crc16 & 0xFEFE)
+
+A preamble 0xFF byte is located right before the header. This preamble byte may
+be repeated more than once to serve as padding if no message is available.
+
+The "initiator system" is the system that initiated the transaction (which sent
+the request).
+
+The "target system" is the system targeted by the transactions
+(which will send the response).
+
+The "direction" is a single bit that represents whether the PDU is directed
+towards the "target system" (0) or the "initiator system" (1).
+
+The "endpoint" is used to distinguish between different types of PDUs a "target
+system" may respond to. This is similar but not equivalent to a port number in
+TCP/IP.
+
+The "encoded length" is the length in bytes of the full encoded body segment.
+
+The "header checksum" is a crc16(poly=0x1021, init=0xFFFF, xor=0x0000, true,
+true) of the message header from the first byte following the preamble(0xFF) to
+the checksum field, excluding it from the calculation. The resulting crc16 is
+then bitwise anded with the value 0xFEFE to ensure the framing byte does not
+occur in the header. This reduces the strength of the checksum to be
+effectively a crc14, but this is acceptable as the entire header is merely
+48 bits.
+
+The "composite ID" is formed by 0000tttt eeeeeeed and represents the type for a
+message and its structure. It is unique on the network. The "initiator system"
+is not included in the composite ID as multiple systems could send a request to
+a given peripheral without it affecting the message structure expected by the
+peripheral.
+
+The "logical route ID" is formed by iiiitttt and represents all the information
+required to know which two devices are communicating. Note that this does not
+include the direction bit.
+
+
+Constraints:
+- The "initiator system" and the "target system" may not be the same system. As
+  a result, this reserves 16 "logical route ID"s for special purposes.
+  - "logical route ID" FF is reserved for framing purposes.
+- The "endpoint" 0xFE is reserved for framing purposes.
+- The encoded length is limited to 0xFFFE = 65534.
+  - By consequence, the maximum safe unencoded user data length is
+    0xFFFE - ceil(0xFEFD/0xFE) - 5 = 0xFEF8 = 65272.
+  - It is possible to encode more data than this, but it is not guaranteed to
+    fit inside the PDU.
+
+Limitations:
+- The maximum safe user data length is 65,273 bytes. Fragmentation is out of
+  scope for this protocol.
+- The maximum number of devices on the same network is 16.
+- The maximum number of endpoints per device is 128.
+
+================
+= Body segment =
+================
+
+(COBS start)
+DDDDDDDD DDDDDDDD DDDDDDDD DDDDDDDD
+DDDDDDDD DDDDDDDD DDDDDDDD DDDDDDDD
+DDDDDDDD DDDDDDDD DDDDDDDD DDDDDDDD
+...
+DDDDDDDD DDDDDDDD DDDDDDDD DDDDDDDD
+(COBS end)
+0ccccccc 0ccccccc 0ccccccc 0ccccccc
+0000cccc
+
+D: User data (u8[*])
+c: Data Checksum (crc32)
+
+The body segment is encoded using a variant of COBS where every encoded byte is
+decremented by 0x01 and 0xFF is used as the delimiter byte.
+
+The "data checksum" is a crc32(poly=0x9960034c, init=0xFFFFFFFF, xor=0x00000000,
+true, true) of the "user data" (this excludes the "data checksum" itself!!).
+
+To avoid having 0xFF bytes in the message, the "data checksum" is split over 5
+bytes. It can be reconstructed by removing all the MSB of the first 4 bytes,
+then removing the first 4 MSBs of byte 5, or using the following formula:
+byte1 << 25 | byte2 << 18 | byte3 << 11 | byte4 << 4 | byte5 << 0
+
+===========
+= Message =
+===========
+
+HHHHHHHH HHHHHHHH HHHHHHHH HHHHHHHH
+HHHHHHHH HHHHHHHH HHHHHHHH HHHHHHHH
+BBBBBBBB BBBBBBBB BBBBBBBB BBBBBBBB
+BBBBBBBB BBBBBBBB BBBBBBBB BBBBBBBB
+...
+BBBBBBBB BBBBBBBB BBBBBBBB BBBBBBBB
+
+H: Header segment
+B: Body segment
+
+The "header segment" and the "body segment" are the segments described
+previously.
+
+Changelog:
+- 0.0.1: Initial Version
+- 0.1.0: Moved checksum to the end of the body segment
+- 0.1.1: The header crc16 no longer contains 2 null bytes
+- 0.2.0: Clarify details
+- 0.3.0: Define the parameters for the checksums, introduce a 5 byte
+         splitting scheme for the data checksum, and move the delimiter to
+         instead be a preamble
+- 1.0.0: Stable version, cleaned up terminology
