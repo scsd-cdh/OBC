@@ -1,7 +1,14 @@
 BMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
 
+-- Convert to voltage with ((float)val * 3.3) / (1 << 12)
+BMSADCValue ::= INTEGER(0..65535)
+
+
+
+
 lfpIdBMSSystemStatusRequest INTEGER ::= 0
 BMSSystemStatusRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
 }
 
 lfpIdBMSSystemStatusResponse INTEGER ::= 1
@@ -12,17 +19,85 @@ BMSSystemStatusResponse ::= SEQUENCE {
     uptime INTEGER(0..4294967295)
 }
 
-------
-------
 
-lfpIdBMSHealthCheckRequest INTEGER ::= 2
-BMSHealthCheckRequest ::= SEQUENCE {
+
+
+-- Status of an individual cell
+BMSCellStatus ::= SEQUENCE {
+    -- Cell Over Voltage
+    overvoltage BOOLEAN,
+    -- Cell Under Voltage
+    undervoltage BOOLEAN,
+    -- Cell Over Current
+    overcurrent BOOLEAN,
+    -- Cell Under Current
+    undercurrent BOOLEAN,
+    -- Direct Reading Voltage
+    voltage BMSADCValue
 }
 
-lfpIdBMSHealthCheckResponse INTEGER ::= 3
-BMSHealthCheckResponse ::= SEQUENCE {
-    -- The Hash of the Source Code
-    hash OCTET STRING (SIZE(16))
+-- Status of a battery pack
+BMSBatteryPackStatus ::= SEQUENCE {
+    -- Status of cell A
+    cellA BMSCellStatus,
+    -- Status of cell B
+    cellB BMSCellStatus,
+    -- Direct Reading of Current Sensor VUR
+    currentDraw BMSADCValue,
+    -- Direct Reading of Current Current Sensor CHR
+    currentCharge BMSADCValue,
+    -- Direct Reading of Combined Voltage
+    voltage BMSADCValue
 }
+
+
+lfpIdBMSPowerStatusRequest INTEGER ::= 2
+BMSPowerStatusRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdBMSPowerStatusResponse INTEGER ::= 3
+BMSPowerStatusResponse ::= SEQUENCE {
+    -- Status of battery pack 1
+    batteryPack1 BMSBatteryPackStatus,
+    -- Status of battery pack 2
+    batteryPack2 BMSBatteryPackStatus
+}
+
+
+
+
+lfpIdBMSSetHeaterDutyRequest INTEGER ::= 4
+BMSSetHeaterDutyRequest ::= SEQUENCE {
+    -- Duty Cycle of PWM Wave for Heater 1
+    heater1 INTEGER(0..99) OPTIONAL,
+    -- Duty Cycle of PWM Wave for Heater 2
+    heater2 INTEGER(0..99) OPTIONAL,
+    -- Duty Cycle of PWM Wave for Heater 3
+    heater3 INTEGER(0..99) OPTIONAL,
+    -- Duty Cycle of PWM Wave for Heater 4
+    heater4 INTEGER(0..99) OPTIONAL
+}
+
+lfpIdBMSSetHeaterDutyResponse INTEGER ::= 5
+BMSSetHeaterDutyResponse ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+
+
+
+lfpIdBMSTemperatureStatusRequest INTEGER ::= 6
+BMSTemperatureStatusRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdBMSTemperatureStatusResponse INTEGER ::= 7
+BMSTemperatureStatusResponse ::= SEQUENCE {
+    -- Direct Reading of Thermistors
+    thermistors SEQUENCE SIZE(8) OF BMSADCValue
+}
+
+
 
 END

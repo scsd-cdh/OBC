@@ -15,3 +15,6 @@ ProjectFiles/CDH/.generated_files/*
 /toolchain/
 node_modules/
 !/.github/workflows/**
+
+/APP/_asn1/icd.html
+/APP/_asn1/icd.css
