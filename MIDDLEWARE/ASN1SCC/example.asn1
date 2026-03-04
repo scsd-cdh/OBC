@@ -1,0 +1,35 @@
+BMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+-- This is a special name, it needs to be lfpId + the name of the actual message. This is the LFP endpoint id,
+-- so requests should be even and responses should be odd. The ID is scoped to the system id, you can reuse them across
+-- boards.
+lfpIdBMSSystemStatusRequest INTEGER ::= 0
+-- Then we have the actual message, here its empty, but the response has content.
+BMSSystemStatusRequest ::= SEQUENCE {
+}
+
+-- The response should be the same ID as the request but + 1.
+lfpIdBMSSystemStatusResponse INTEGER ::= 1
+-- See https://www.oss.com/asn1/resources/asn1-made-simple/asn1-quick-reference.html for an overview of the syntax
+BMSSystemStatusResponse ::= SEQUENCE {
+    -- Version of the firmware running on BMS.
+    version INTEGER(0..255),
+    doesThing BOOLEAN,
+    -- Number of seconds since processor start-up.
+    uptime INTEGER(0..4294967295) OPTIONAL
+}
+
+------
+------
+
+lfpIdBMSHealthCheckRequest INTEGER ::= 2
+BMSHealthCheckRequest ::= SEQUENCE {
+}
+
+lfpIdBMSHealthCheckResponse INTEGER ::= 3
+BMSHealthCheckResponse ::= SEQUENCE {
+    -- The Hash of the Source Code
+    hash OCTET STRING (SIZE(16))
+}
+
+END
