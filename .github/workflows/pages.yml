@@ -1,0 +1,103 @@
+name: pages.yml
+on:
+  push:
+    branches:
+      - "main_protected"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: "Generate pages"
+    runs-on: "ubuntu-22.04"
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Disable man-db auto-update
+        run: sudo rm -f /var/lib/man-db/auto-update
+
+      - name: Generate skeleton
+        run: |
+          mkdir -p _site
+          cat << EOF > _site/index.html
+            <!DOCTYPE html>
+            <meta charset=utf-8>
+            <title>Redirecting...</title>
+            <link rel=canonical href="./icd/">
+            <meta http-equiv=refresh content="0; url=./icd/">
+          EOF
+          
+          mkdir -p _site/icd
+
+      - name: Download & install xidel
+        working-directory: ${{ runner.temp }}
+        run: |
+          wget "https://sourceforge.net/projects/videlibri/files/Xidel/Xidel%20development/xidel_0.9.9-1_amd64.deb/download" -O xidel.deb
+          sudo apt install ./xidel.deb
+
+      - name: Download & install asn1scc
+        working-directory: ${{ runner.temp }}
+        run: |
+          wget "https://github.com/scsd-cdh/asn1scc/releases/latest/download/asn1scc.linux.x86_64.zip" -O asn1scc.zip
+          unzip -d asn1scc asn1scc.zip
+
+      - name: Generate ICDs
+        run: |
+          cat << EOF > _site/icd/index.html
+            <html>
+              <head>
+                <title>CDH ICDs</title>
+              </head>
+              <body>
+                <ul>
+          EOF
+          
+          for file in APP/_asn1/*.asn1; do
+            echo "${file}"
+            file_html="$(basename "${file%.asn1}.html")"
+          
+            cat << EOF >> _site/icd/index.html
+              <li><a href="./${file_html}">${file}</a></li>
+          EOF
+          
+            ${{ runner.temp }}/asn1scc/asn1scc --icdacn "_site/icd/${file_html}" "${file}"
+          
+            selector='//table[.//css(".typeRow")][.//i[text()="anonymous "]]'
+            timeout 5s bash -c "until xidel --html \"_site/icd/${file_html}\" -e 'x:replace-nodes(${selector}"'/following-sibling::br | '"${selector}"', ())'"' --output-format=html > ~/temp_xidel.html; do sleep 0.1; done"
+            if [[ -f ~/temp_xidel.html && -s ~/temp_xidel.html ]]; then
+              mv ~/temp_xidel.html "_site/icd/${file_html}"
+            fi
+            
+          done
+          
+          cat << EOF >> _site/icd/index.html
+                </ul>
+              </body>
+            </html>
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
