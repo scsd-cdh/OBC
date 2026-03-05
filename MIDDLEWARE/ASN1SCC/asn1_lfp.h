@@ -72,19 +72,21 @@ static struct {
  * @return true on success, false on error (see ASN1_LFP_ERROR_CODE)
  */
 #define ASN1_LFP_SERIALIZE_BUF(INITIATOR, TARGET, TYPE, P_WRITE_CB, P_CTX, ...)                                        \
-    ({                                                                                                               \
+    ({                                                                                                                 \
         /*Reset last error*/                                                                                           \
         asn1_lfp_last_error.lfp = 0;                                                                                   \
         asn1_lfp_last_error.asn1 = 0;                                                                                  \
                                                                                                                        \
         /*Setup serialized but unencoded buffer*/                                                                      \
         const TYPE payload = __VA_ARGS__;                                                                              \
+        const uint16_t asn1_size = TYPE ## _REQUIRED_BYTES_FOR_ENCODING;                                               \
         unsigned char payload_buffer[                                                                                  \
-            LFP_HEADER_SIZE + LFP_ENCODED_BODY_LENGTH_APPROX(TYPE ## _REQUIRED_BYTES_FOR_ENCODING)                    \
+            LFP_HEADER_SIZE + LFP_ENCODED_BODY_LENGTH_APPROX(asn1_size)                                                \
         ];                                                                                                             \
+        unsigned char * p_asn1_payload = payload_buffer + sizeof(payload_buffer) - asn1_size;                          \
         /*Prepare encoder*/                                                                                            \
         BitStream encoder;                                                                                             \
-        BitStream_Init(&encoder, payload_buffer, sizeof(payload_buffer));                                              \
+        BitStream_Init(&encoder, p_asn1_payload, asn1_size);                                                           \
                                                                                                                        \
         const uint8_t endpoint = (lfpId ## TYPE);                                                                      \
                                                                                                                        \
@@ -95,7 +97,7 @@ static struct {
                 TARGET,                                                                                                \
                 endpoint & 0xFE,                                                                                       \
                 endpoint & 0x01,                                                                                       \
-                payload_buffer,                                                                                        \
+                p_asn1_payload,                                                                                        \
                 BitStream_GetLength(&encoder),                                                                         \
                 payload_buffer,                                                                                        \
                 sizeof(payload_buffer)                                                                                 \
