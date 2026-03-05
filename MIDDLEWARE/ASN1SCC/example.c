@@ -4,12 +4,10 @@ void asn1_example_cb(uint8_t chr, void * p_ctx) {
 }
 
 void asn1_example(void) {
-    ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusResponse, asn1_example_cb, NULL, {
+    if (!ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusResponse, asn1_example_cb, NULL, {
         .uptime = 0xDEADBEEF,
         .version = 12
-    });
-
-    if (!ASN1_LFP_SUCCESS()) {
+    })) {
         ULOG_ERROR("LFP encoding failed! {} {}", ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
     }
 }
@@ -39,9 +37,12 @@ void asn1_example_on_msg(const lfp_header_t * p_header, const uint8_t * p_body, 
         .p_on_error_cb = asn1_example_error_handler
     };
 
-    ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusRequest, asn1_example_bms_system_status_req)
-    else ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse, asn1_example_bms_system_status_res)
-    else {
-        ULOG_WARN("Received unknown message {}", ULOG_SLICE_PTR((lfp_header_t *)p_header));
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusRequest, asn1_example_bms_system_status_req)) {
+        return;
     }
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse, asn1_example_bms_system_status_res)) {
+        return;
+    }
+
+    ULOG_WARN("Received unknown message {}", ULOG_SLICE_PTR((lfp_header_t *)p_header));
 }
