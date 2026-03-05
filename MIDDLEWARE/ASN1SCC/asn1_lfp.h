@@ -28,9 +28,10 @@ static struct {
  * @param P_WRITE_CB callback passed to lfp_encode()
  * @param P_CTX user context pointer passed to lfp_encode()
  * @param ... the struct value to serialize. Passed as the last argument
+ * @return true on success, false on error (see ASN1_LFP_ERROR_CODE)
  */
 #define ASN1_LFP_SERIALIZE(INITIATOR, TARGET, TYPE, P_WRITE_CB, P_CTX, ...)                                            \
-    do {                                                                                                               \
+    ({                                                                                                                 \
         /*Reset last error*/                                                                                           \
         asn1_lfp_last_error.lfp = 0;                                                                                   \
         asn1_lfp_last_error.asn1 = 0;                                                                                  \
@@ -57,7 +58,8 @@ static struct {
                 P_CTX                                                                                                  \
             );                                                                                                         \
         }                                                                                                              \
-    } while(0)
+        ASN1_LFP_SUCCESS();                                                                                            \
+    })
 
 /**
  * Macro to serialize a struct to an LFP target in one shot. Use ASN1_LFP_SUCCESS() to check for success
@@ -67,9 +69,10 @@ static struct {
  * @param P_WRITE_CB callback called with the encoded buffer, the length and P_CTX
  * @param P_CTX user context pointer passed to P_WRITE_CB
  * @param ... the struct value to serialize. Passed as the last argument
+ * @return true on success, false on error (see ASN1_LFP_ERROR_CODE)
  */
 #define ASN1_LFP_SERIALIZE_BUF(INITIATOR, TARGET, TYPE, P_WRITE_CB, P_CTX, ...)                                        \
-    do {                                                                                                               \
+    ({                                                                                                               \
         /*Reset last error*/                                                                                           \
         asn1_lfp_last_error.lfp = 0;                                                                                   \
         asn1_lfp_last_error.asn1 = 0;                                                                                  \
@@ -103,7 +106,8 @@ static struct {
                 P_WRITE_CB(payload_buffer, ret, P_CTX);                                                                \
             }                                                                                                          \
         }                                                                                                              \
-    } while(0)
+        ASN1_LFP_SUCCESS();                                                                                            \
+    })
 
 // Forward decl for the struct to break the cycle
 struct asn1_lfp_decode_data_t;
@@ -139,17 +143,22 @@ typedef struct asn1_lfp_decode_data_t asn1_lfp_decode_data_t;
  * @param HANDLER
  */
 #define ASN1_LFP_HANDLE_MSG(DATA, TARGET_SYSTEMID, TYPE, HANDLER)                                                      \
-    if (lfp_composite_id(DATA.p_header) == ((TARGET_SYSTEMID << 8) | (lfpId ## TYPE))) {                               \
-        BitStream decoder;                                                                                             \
-        BitStream_Init(&decoder, (void *)DATA.p_body, DATA.body_length);                                               \
-        int errCode;                                                                                                   \
-        TYPE payload;                                                                                                  \
+    ({                                                                                                                 \
+        bool condition = lfp_composite_id(DATA.p_header) == ((TARGET_SYSTEMID << 8) | (lfpId ## TYPE));                \
+        if (condition) {                                                                                               \
+            BitStream decoder;                                                                                         \
+            BitStream_Init(&decoder, (void *)DATA.p_body, DATA.body_length);                                           \
+            int errCode;                                                                                               \
+            TYPE payload;                                                                                              \
                                                                                                                        \
-        /*Attempt to decode*/                                                                                          \
-        if ((TYPE ## _Decode)(&payload, &decoder, &errCode)) {                                                         \
-            (HANDLER)(&payload, &DATA);                                                                                \
-        } else if (DATA.p_on_error_cb != NULL) {                                                                       \
-            DATA.p_on_error_cb(errCode, &DATA);                                                                        \
+            /*Attempt to decode*/                                                                                      \
+            if ((TYPE ## _Decode)(&payload, &decoder, &errCode)) {                                                     \
+                (HANDLER)(&payload, &DATA);                                                                            \
+            } else if (DATA.p_on_error_cb != NULL) {                                                                   \
+                DATA.p_on_error_cb(errCode, &DATA);                                                                    \
+            }                                                                                                          \
+                                                                                                                       \
         }                                                                                                              \
-    }
+        condition;                                                                                                     \
+    })
 
