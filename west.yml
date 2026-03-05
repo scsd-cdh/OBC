@@ -2,14 +2,12 @@ manifest:
   remotes:
     - name: zephyrproject-rtos
       url-base: https://github.com/zephyrproject-rtos
-    - name: alexkar598
-      url-base: https://github.com/alexkar598
     - name: scsd-cdh
       url-base: https://github.com/scsd-cdh
   projects:
     - name: zephyr
-      remote: alexkar598
-      revision: v4.3.0-patch1
+      remote: scsd-cdh
+      revision: v4.3.0-patch2
       import: true
     - name: libcsp
       remote: scsd-cdh

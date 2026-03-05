@@ -104,8 +104,8 @@ struct ulog_slice {
 
 // Internal macro to write out an arbitrary value
 #define ULOG__WRITE(X) _Generic(X, \
-    float: ulog__write, \
-    double: ulog__write, \
+    float: ulog__write_htobe, \
+    double: ulog__write_htobe, \
     /* Strings need special handling */\
     char *: ulog__write_string_helper, \
     const char *: ulog__write_string_helper, \

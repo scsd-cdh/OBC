@@ -1,5 +1,6 @@
 #pragma once
 #include <lfp.h>
+#include <lfp/body.h>
 #include <lfp/header.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -58,6 +59,52 @@ static struct {
         }                                                                                                              \
     } while(0)
 
+/**
+ * Macro to serialize a struct to an LFP target in one shot. Use ASN1_LFP_SUCCESS() to check for success
+ * @param INITIATOR System ID of the transaction initiator
+ * @param TARGET System ID of the transaction target
+ * @param TYPE type name of the asn1 generated struct, pass directly, do not quote.
+ * @param P_WRITE_CB callback called with the encoded buffer, the length and P_CTX
+ * @param P_CTX user context pointer passed to P_WRITE_CB
+ * @param ... the struct value to serialize. Passed as the last argument
+ */
+#define ASN1_LFP_SERIALIZE_BUF(INITIATOR, TARGET, TYPE, P_WRITE_CB, P_CTX, ...)                                        \
+    do {                                                                                                               \
+        /*Reset last error*/                                                                                           \
+        asn1_lfp_last_error.lfp = 0;                                                                                   \
+        asn1_lfp_last_error.asn1 = 0;                                                                                  \
+                                                                                                                       \
+        /*Setup serialized but unencoded buffer*/                                                                      \
+        const TYPE payload = __VA_ARGS__;                                                                              \
+        unsigned char payload_buffer[                                                                                  \
+            LFP_HEADER_SIZE + LFP_ENCODED_BODY_LENGTH_APPROX(TYPE ## _REQUIRED_BYTES_FOR_ENCODING)                    \
+        ];                                                                                                             \
+        /*Prepare encoder*/                                                                                            \
+        BitStream encoder;                                                                                             \
+        BitStream_Init(&encoder, payload_buffer, sizeof(payload_buffer));                                              \
+                                                                                                                       \
+        const uint8_t endpoint = (lfpId ## TYPE);                                                                      \
+                                                                                                                       \
+        /*Do encoding*/                                                                                                \
+        if ((TYPE ## _Encode)(&payload, &encoder, &asn1_lfp_last_error.asn1, true)) {                                  \
+            lfp_size_or_code_t ret = lfp_encode_to_buf(                                                                \
+                INITIATOR,                                                                                             \
+                TARGET,                                                                                                \
+                endpoint & 0xFE,                                                                                       \
+                endpoint & 0x01,                                                                                       \
+                payload_buffer,                                                                                        \
+                BitStream_GetLength(&encoder),                                                                         \
+                payload_buffer,                                                                                        \
+                sizeof(payload_buffer)                                                                                 \
+            );                                                                                                         \
+            if(ret < 0) {                                                                                              \
+                asn1_lfp_last_error.lfp = ret;                                                                         \
+            } else {                                                                                                   \
+                P_WRITE_CB(payload_buffer, ret, P_CTX);                                                                \
+            }                                                                                                          \
+        }                                                                                                              \
+    } while(0)
+
 // Forward decl for the struct to break the cycle
 struct asn1_lfp_decode_data_t;
 
@@ -71,7 +118,7 @@ struct asn1_lfp_decode_data_t{
     /// Pointer to the decoded LFP message body
     const uint8_t * p_body;
     /// Length of p_body
-    const uint16_t body_length;
+    uint16_t body_length;
     /// Pointer to user context
     void * p_ctx;
     /// Error handler callback, see :asn1_lfp_error_handler_t
@@ -105,3 +152,4 @@ typedef struct asn1_lfp_decode_data_t asn1_lfp_decode_data_t;
             DATA.p_on_error_cb(errCode, &DATA);                                                                        \
         }                                                                                                              \
     }
+
