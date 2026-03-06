@@ -68,12 +68,12 @@
 		<link>
 			<name>MIDDLEWARE/ASN1SCC</name>
 			<type>2</type>
-			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/ASN1SCC</location>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/ASN1SCC</locationURI>
 		</link>
 		<link>
 			<name>MIDDLEWARE/LFP</name>
 			<type>2</type>
-			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/LFP</location>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP</locationURI>
 		</link>
 		<link>
 			<name>MIDDLEWARE/MRAM</name>
@@ -93,12 +93,12 @@
 		<link>
 			<name>MIDDLEWARE/asn1</name>
 			<type>2</type>
-			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/asn1</location>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1</locationURI>
 		</link>
 		<link>
 			<name>MIDDLEWARE/shared_types</name>
 			<type>2</type>
-			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/shared_types</location>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/shared_types</locationURI>
 		</link>
 		<link>
 			<name>MIDDLEWARE/tinyprotocol</name>
