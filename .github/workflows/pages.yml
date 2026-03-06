@@ -80,7 +80,7 @@ jobs:
             ${{ runner.temp }}/asn1scc/asn1scc --icdacn "_site/icd/${file_html}" "${file}"
           
             selector='//table[.//css(".typeRow")][.//i[text()="anonymous "]]'
-            timeout 5s bash -c "until xidel --html \"_site/icd/${file_html}\" -e 'x:replace-nodes(${selector}"'/following-sibling::br | '"${selector}"', ())'"' --output-format=html > ~/temp_xidel.html; do sleep 0.1; done"
+            timeout 5s bash -c "until xidel --html \"_site/icd/${file_html}\" -e '"'let $x:=(x:replace-nodes('"${selector}"'/following-sibling::br | '"${selector}"', ())) return if(empty($x)) then . else $x'"' --output-format=html > ~/temp_xidel.html; do sleep 0.1; done"
             if [[ -f ~/temp_xidel.html && -s ~/temp_xidel.html ]]; then
               mv ~/temp_xidel.html "_site/icd/${file_html}"
             fi
