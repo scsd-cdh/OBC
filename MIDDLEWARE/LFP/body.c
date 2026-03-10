@@ -110,9 +110,6 @@ lfp_size_or_fail_t lfp_body_decoder(
     return output_size;
 }
 
-uint16_t lfp_encoded_body_length(
-    const uint8_t *p_data,
-    const uint16_t length
-) {
-    return lfp_cobs_encode(p_data, length, NULL, NULL) + LFP_DATA_CRC32_SIZE;
+uint16_t lfp_encoded_body_length(const uint8_t *p_data, const uint16_t length) {
+    return lfp_cobs_encode_size(p_data, length) + LFP_DATA_CRC32_SIZE;
 }

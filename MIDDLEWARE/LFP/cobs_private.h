@@ -7,41 +7,34 @@
 
 
 /**
- * Callback when a COBS byte is available
- * @param chr Newly available COBS byte
- * @param p_ctx Pointer to the user context provided via lfp_cobs_encode() or lfp_cobs_decode()
- */
-typedef void (*lfp_cobs_write_cb_t)(uint8_t chr, void * p_ctx);
-
-/**
- * COBS encodes a buffer of data
+ * Gets the encoded size of the data if it were to be COBS encoded
  * @param p_buf Pointer to the buffer containing the data to encode
  * @param length Length of p_buf
- * @param p_write_cb Callback for when a new encoded byte is available. Can be NULL to only compute size
- * @param p_ctx User context, provided to p_write_cb
- * @return The size of the encoded data, this value is undefined if the encoded data exceeds a u16
+ * @return The size of the encoded data, this value is undefined if the encoded data exceeds an u16
  */
-uint16_t lfp_cobs_encode(
-    const uint8_t * p_buf,
-    uint16_t length,
-    lfp_cobs_write_cb_t p_write_cb,
-    void * p_ctx
-);
+uint16_t lfp_cobs_encode_size(const uint8_t * p_buf, uint16_t length);
 
 /**
- * COBS decodes a buffer of data
- * @param p_buf Pointer to the buffer containing the data to decode
- * @param length Length of p_buf
- * @param p_write_cb Callback for when a new decoded byte is available. Can be NULL to only compute size
- * @param p_ctx User context, provided to p_write_cb
- * @return The size of the decoded data
+ * Starts the COBS encoding process for an unencoded buffer
+ * @param p_ctx Pointer to the opaque context
+ * @param p_buf Pointer to the unencoded data buffer
+ * @param length Length of the unencoded data buffer
  */
-lfp_size_or_fail_t lfp_cobs_decode(
-    const uint8_t * p_buf,
-    uint16_t length,
-    lfp_cobs_write_cb_t p_write_cb,
-    void * p_ctx
-);
+void lfp_cobs_encode_init(lfp_cobs_encode_ctx_t * p_ctx, const uint8_t * p_buf, uint16_t length);
+/**
+ * Gets the next encoded byte
+ * @param p_ctx Pointer to the opaque context
+ * @return The next encoded byte, or LFP_PREAMBLE if complete
+ */
+uint8_t lfp_cobs_encode_next_byte(lfp_cobs_encode_ctx_t * p_ctx);
+/**
+ * Checks if the encoder is in a valid final state
+ * @param p_ctx Pointer to the opaque context
+ * @return LFP_EOK if the encoding process was successful, or an error code otherwise
+ */
+lfp_code_t lfp_cobs_encode_finish(const lfp_cobs_encode_ctx_t * p_ctx);
+
+
 
 /**
  * Starts the decoding process for a COBS encoded buffer

@@ -19,7 +19,7 @@ samv71() {
   # shellcheck disable=SC2087
   ssh -tt -p "$ssh_port" "$ssh_user@$ssh_host" <<- EOF
     cd remote_files
-    FORCE_COLOR=1 TERM=xterm ulog-decoder -s /dev/serial/by-id/usb-Atmel_Corp._EDBG_CMSIS-DAP_* -b 115200 "${binary}.elf" 2>&1 | sed -u -r 's/WEST_TOPDIR\/[^\/]+\///' | ts '[%H:%M:%S]'
+    echo "${binary}.elf" | FORCE_COLOR=1 TERM=xterm entr -r -n ulog-decoder -s /dev/serial/by-id/usb-Atmel_Corp._EDBG_CMSIS-DAP_* -b 115200 "${binary}.elf" 2>&1 | sed -u -r 's/WEST_TOPDIR\/[^\/]+\///' | ts '[%H:%M:%S]'
     exit
 EOF
   echo "====Console(END)===="
