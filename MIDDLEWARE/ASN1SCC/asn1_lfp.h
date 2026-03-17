@@ -20,95 +20,65 @@ static struct {
 /// Bool value for success or failure of the last ASN1_LFP operation
 #define ASN1_LFP_SUCCESS() (ASN1_LFP_ERROR_CODE.lfp == LFP_EOK && ASN1_LFP_ERROR_CODE.asn1 == 0)
 
-/**
- * Macro to serialize a struct to an LFP target. Use ASN1_LFP_SUCCESS() to check for success
- * @param INITIATOR System ID of the transaction initiator
- * @param TARGET System ID of the transaction target
- * @param TYPE type name of the asn1 generated struct, pass directly, do not quote.
- * @param P_WRITE_CB callback passed to lfp_encode()
- * @param P_CTX user context pointer passed to lfp_encode()
- * @param ... the struct value to serialize. Passed as the last argument
- * @return true on success, false on error (see ASN1_LFP_ERROR_CODE)
- */
-#define ASN1_LFP_SERIALIZE(INITIATOR, TARGET, TYPE, P_WRITE_CB, P_CTX, ...)                                            \
-    ({                                                                                                                 \
-        /*Reset last error*/                                                                                           \
-        asn1_lfp_last_error.lfp = 0;                                                                                   \
-        asn1_lfp_last_error.asn1 = 0;                                                                                  \
-                                                                                                                       \
-        /*Setup serialized but unencoded buffer*/                                                                      \
-        const TYPE payload = __VA_ARGS__;                                                                              \
-        unsigned char payload_buffer[TYPE ## _REQUIRED_BYTES_FOR_ENCODING];                                            \
-        /*Prepare encoder*/                                                                                            \
-        BitStream encoder;                                                                                             \
-        BitStream_Init(&encoder, payload_buffer, sizeof(payload_buffer));                                              \
-                                                                                                                       \
-        const uint8_t endpoint = (lfpId ## TYPE);                                                                      \
-                                                                                                                       \
-        /*Do encoding*/                                                                                                \
-        if ((TYPE ## _Encode)(&payload, &encoder, &asn1_lfp_last_error.asn1, true)) {                                  \
-            asn1_lfp_last_error.lfp = lfp_encode(                                                                      \
-                INITIATOR,                                                                                             \
-                TARGET,                                                                                                \
-                endpoint & 0xFE,                                                                                       \
-                endpoint & 0x01,                                                                                       \
-                payload_buffer,                                                                                        \
-                BitStream_GetLength(&encoder),                                                                         \
-                P_WRITE_CB,                                                                                            \
-                P_CTX                                                                                                  \
-            );                                                                                                         \
-        }                                                                                                              \
-        ASN1_LFP_SUCCESS();                                                                                            \
-    })
+/// Size of the buffer required by ASN1_LFP_SERIALIZE() for a given message type
+#define ASN1_LFP_SEND_BUF_SIZE(TYPE) (LFP_HEADER_SIZE + LFP_ENCODED_BODY_LENGTH_APPROX(TYPE ## _REQUIRED_BYTES_FOR_ENCODING))
+/// Size of the buffer required by lfp_stream for a given message type
+// We dont need to hold the crc in the recv buffer, the stream parser consumes it
+#define ASN1_LFP_RECV_BUF_SIZE(TYPE) (LFP_ENCODED_BODY_LENGTH_APPROX(TYPE ## _REQUIRED_BYTES_FOR_ENCODING) - LFP_DATA_CRC32_SIZE)
 
 /**
  * Macro to serialize a struct to an LFP target in one shot. Use ASN1_LFP_SUCCESS() to check for success
  * @param INITIATOR System ID of the transaction initiator
  * @param TARGET System ID of the transaction target
  * @param TYPE type name of the asn1 generated struct, pass directly, do not quote.
+ * @param P_BUFFER buffer that will contain the encoded message, use ASN1_LFP_BUF_SIZE() to determine the maximal size for a given message
+ * @param BUFFER_LEN length P_BUFFER
  * @param P_WRITE_CB callback called with the encoded buffer, the length and P_CTX
  * @param P_CTX user context pointer passed to P_WRITE_CB
  * @param ... the struct value to serialize. Passed as the last argument
- * @return true on success, false on error (see ASN1_LFP_ERROR_CODE)
+ * @return encoded length on success, 0 on error (see ASN1_LFP_ERROR_CODE)
  */
-#define ASN1_LFP_SERIALIZE_BUF(INITIATOR, TARGET, TYPE, P_WRITE_CB, P_CTX, ...)                                        \
+#define ASN1_LFP_SERIALIZE(INITIATOR, TARGET, TYPE, P_BUFFER, BUFFER_LEN, ...)                                         \
     ({                                                                                                                 \
+        uint32_t asn1_lfp__ret = 0;                                                                                    \
         /*Reset last error*/                                                                                           \
         asn1_lfp_last_error.lfp = 0;                                                                                   \
         asn1_lfp_last_error.asn1 = 0;                                                                                  \
                                                                                                                        \
-        /*Setup serialized but unencoded buffer*/                                                                      \
-        const TYPE payload = __VA_ARGS__;                                                                              \
-        const uint16_t asn1_size = TYPE ## _REQUIRED_BYTES_FOR_ENCODING;                                               \
-        unsigned char payload_buffer[                                                                                  \
-            LFP_HEADER_SIZE + LFP_ENCODED_BODY_LENGTH_APPROX(asn1_size)                                                \
-        ];                                                                                                             \
-        unsigned char * p_asn1_payload = payload_buffer + sizeof(payload_buffer) - asn1_size;                          \
-        /*Prepare encoder*/                                                                                            \
-        BitStream encoder;                                                                                             \
-        BitStream_Init(&encoder, p_asn1_payload, asn1_size);                                                           \
+        /*Validate that the buffer is big enough, otherwise abort*/                                                    \
+        if ((BUFFER_LEN) < ASN1_LFP_RECV_BUF_SIZE(TYPE)) {                                                             \
+            asn1_lfp_last_error.lfp = LFP_EOVERFLOW;                                                                   \
+        } else {                                                                                                       \
+            /*Setup serialized but unencoded buffer*/                                                                  \
+            const TYPE asn1_lfp__payload = __VA_ARGS__;                                                                \
+            const uint16_t asn1_lfp__asn1_size = TYPE ## _REQUIRED_BYTES_FOR_ENCODING;                                 \
+            unsigned char * asn1_lfp__p_asn1_payload = (P_BUFFER) + (BUFFER_LEN) - asn1_lfp__asn1_size;                \
+            /*Prepare encoder*/                                                                                        \
+            BitStream asn1_lfp__encoder;                                                                               \
+            BitStream_Init(&asn1_lfp__encoder, asn1_lfp__p_asn1_payload, asn1_lfp__asn1_size);                         \
                                                                                                                        \
-        const uint8_t endpoint = (lfpId ## TYPE);                                                                      \
+            const uint8_t asn1_lfp__endpoint = (lfpId ## TYPE);                                                        \
                                                                                                                        \
-        /*Do encoding*/                                                                                                \
-        if ((TYPE ## _Encode)(&payload, &encoder, &asn1_lfp_last_error.asn1, true)) {                                  \
-            lfp_size_or_code_t ret = lfp_encode_to_buf(                                                                \
-                INITIATOR,                                                                                             \
-                TARGET,                                                                                                \
-                endpoint & 0xFE,                                                                                       \
-                endpoint & 0x01,                                                                                       \
-                p_asn1_payload,                                                                                        \
-                BitStream_GetLength(&encoder),                                                                         \
-                payload_buffer,                                                                                        \
-                sizeof(payload_buffer)                                                                                 \
-            );                                                                                                         \
-            if(ret < 0) {                                                                                              \
-                asn1_lfp_last_error.lfp = ret;                                                                         \
-            } else {                                                                                                   \
-                P_WRITE_CB(payload_buffer, ret, P_CTX);                                                                \
+            /*Do encoding*/                                                                                            \
+            if ((TYPE ## _Encode)(&asn1_lfp__payload, &asn1_lfp__encoder, &asn1_lfp_last_error.asn1, true)) {          \
+                 const lfp_size_or_code_t asn1_lfp__lfp_ret = lfp_encode(                                              \
+                    (INITIATOR),                                                                                       \
+                    (TARGET),                                                                                          \
+                    asn1_lfp__endpoint & 0xFE,                                                                         \
+                    asn1_lfp__endpoint & 0x01,                                                                         \
+                    asn1_lfp__p_asn1_payload,                                                                          \
+                    BitStream_GetLength(&asn1_lfp__encoder),                                                           \
+                    (P_BUFFER),                                                                                        \
+                    (BUFFER_LEN)                                                                                       \
+                );                                                                                                     \
+                if(asn1_lfp__lfp_ret < 0) {                                                                            \
+                    asn1_lfp_last_error.lfp = (lfp_code_t)asn1_lfp__lfp_ret;                                           \
+                } else {                                                                                               \
+                    asn1_lfp__ret = asn1_lfp__lfp_ret;                                                                 \
+                }                                                                                                      \
             }                                                                                                          \
         }                                                                                                              \
-        ASN1_LFP_SUCCESS();                                                                                            \
+        asn1_lfp__ret;                                                                                                 \
     })
 
 // Forward decl for the struct to break the cycle
@@ -149,7 +119,7 @@ typedef struct asn1_lfp_decode_data_t asn1_lfp_decode_data_t;
         bool condition = lfp_composite_id(DATA.p_header) == ((TARGET_SYSTEMID << 8) | (lfpId ## TYPE));                \
         if (condition) {                                                                                               \
             BitStream decoder;                                                                                         \
-            BitStream_Init(&decoder, (void *)DATA.p_body, DATA.body_length);                                           \
+            BitStream_AttachBuffer(&decoder, (void *)DATA.p_body, DATA.body_length);                                   \
             int errCode;                                                                                               \
             TYPE payload;                                                                                              \
                                                                                                                        \

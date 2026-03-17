@@ -70,11 +70,11 @@ uint16_t lfp_encoded_body_length(
  * @param encoded_length Size of the encoded body buffer
  * @return Upper bound size required to hold the buffer after decoding
  */
-#define LFP_DECODED_BODY_LENGTH_APPROX(encoded_length) (encoded_length - (encoded_length / 254) - LFP_DATA_CRC32_SIZE)
+#define LFP_DECODED_BODY_LENGTH_APPROX(encoded_length) ((encoded_length) - LFP_DATA_CRC32_SIZE - (((encoded_length) - LFP_DATA_CRC32_SIZE) / 254))
 
 /**
  * Computes an upper bound for the number of bytes required to hold a body after encoding
  * @param encoded_length Size of the body buffer
  * @return Upper bound size required to hold the buffer after encoding
  */
-#define LFP_ENCODED_BODY_LENGTH_APPROX(length) (LFP_DATA_CRC32_SIZE + length + (((LFP_DATA_CRC32_SIZE + length) / 254) + 1))
+#define LFP_ENCODED_BODY_LENGTH_APPROX(length) (LFP_DATA_CRC32_SIZE + (length) + (((length) / 254) + 1))
