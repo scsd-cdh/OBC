@@ -1,2 +1,11 @@
 / {
 };
+
+
+&ext1_i2c {
+	bms_i2c: bms@9 {
+		compatible = "vnd,i2c-device";
+
+		reg = < 0x09 >;
+	};
+};

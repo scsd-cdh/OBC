@@ -79,5 +79,6 @@ void asn1_example(void) {
 
 int main(void)
 {
-    asn1_example();
+    k_sleep(K_FOREVER);
+    // asn1_example();
 }
