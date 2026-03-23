@@ -1,8 +1,4 @@
 / {
-	chosen {
-		ulog,usart = &usart1;
-	};
-
 	aliases {
 		transmitter = &uart4;
 	};
