@@ -158,10 +158,9 @@ static bool on_header(const lfp_header_t* p_header, void* p_ctx)
     return true;
 }
 
-static void on_error(lfp_code_t reason, void* p_ctx)
+static void on_error(int error_code, const struct asn1_lfp_decode_data_t * p_data)
 {
-    user_ctx_t* _p_ctx = p_ctx;
-    _p_ctx->reason = reason; 
+    
 }
 
 // NOTE!! If we don't copy buffers into a seperate i2c transfer buffer, idk if it's possible for buffers to be updated mid transfer or not
