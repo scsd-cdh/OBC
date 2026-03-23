@@ -21,7 +21,10 @@
 //******************************************************************************
 
 #include "BMS.h"
+#include "bms_types.h"
 #include "i2c.h"
+#include "tinyprotocol.h"
+
 
 int main(void)
 {
