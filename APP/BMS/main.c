@@ -21,7 +21,6 @@
 //******************************************************************************
 
 #include "BMS.h"
-#include "bms_types.h"
 #include "i2c.h"
 #include "tinyprotocol.h"
 
@@ -32,7 +31,8 @@ int main(void)
 
     __bis_SR_register(GIE);
     while (1) {
-        if (BMS_ISRTriggered()) {
+        // Probably, I don't know if we can get here while transmitting i2c data or not
+        if (BMS_ISRTriggered() && !I2C_IS_TRANSMITTING) {
             BMS_collectData();
         }
     }

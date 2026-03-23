@@ -35,12 +35,47 @@
                         {
                             "name": "MSP430",
                             "debuggerSettings": {
-                                "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues>\n\n  <property id=\"ModuleClockControl0\">\n    <curValue>1</curValue>\n  </property>\n\n  <property id=\"ModuleClockControl1\">\n    <curValue>1</curValue>\n  </property>\n\n  <property id=\"ModuleClockControl2\">\n    <curValue>1</curValue>\n  </property>\n\n  <property id=\"ModuleClockControl3\">\n    <curValue>1</curValue>\n  </property>\n\n  <property id=\"ModuleClockControl4\">\n    <curValue>1</curValue>\n  </property>\n\n  <property id=\"ModuleClockControl5\">\n    <curValue>1</curValue>\n  </property>\n\n  <property id=\"ModuleClockControl6\">\n    <curValue>0</curValue>\n  </property>\n\n  <property id=\"ModuleClockControl7\">\n    <curValue>0</curValue>\n  </property>\n\n  <property id=\"ModuleClockControl8\">\n    <curValue>0</curValue>\n  </property>\n\n  <property id=\"ModuleClockControlA\">\n    <curValue>1</curValue>\n  </property>\n\n  <property id=\"ModuleClockControlB\">\n    <curValue>0</curValue>\n  </property>\n\n  <property id=\"ModuleClockControlC\">\n    <curValue>0</curValue>\n  </property>\n\n  <property id=\"MSP430EraseStartAddress\">\n    <curValue>4400</curValue>\n  </property>\n\n  <property id=\"MSP430EraseEndAddress\">\n    <curValue>13fff</curValue>\n  </property>\n\n</PropertyValues>\n"
+                                "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues/>\n"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "TI MSP430 USB1",
+                    "cores": [
+                        {
+                            "name": "MSP430",
+                            "debuggerSettings": {
+                                "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues/>\n"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "TI MSP430 USB2_0",
+                    "cores": [
+                        {
+                            "name": "MSP430",
+                            "debuggerSettings": {
+                                "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues/>\n"
                             }
                         }
                     ]
                 }
-            ]
+            ],
+            "debuggerSettings": {
+                "targetConfigs/MSP430FR5969.ccxml": {
+                    "TI MSP430 USB1_0/MSP430": {
+                        "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues/>\n"
+                    },
+                    "TI MSP430 USB2_0/MSP430": {
+                        "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues/>\n"
+                    },
+                    "TI MSP430 USB3_0/MSP430": {
+                        "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues/>\n"
+                    }
+                }
+            }
         }
     ]
 }

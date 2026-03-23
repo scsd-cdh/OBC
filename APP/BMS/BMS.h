@@ -24,7 +24,7 @@ void BMS_init();
  * @brief Synchronous data-acquisition pass that refreshes telemetry buffers.
  *
  * @pre ::BMS_init() has been called.
- * @post Telemetry buffers registered with tinyprotocol contain fresh data.
+ * @post Collect temperature data over i2c
  */
 void BMS_collectData();
 

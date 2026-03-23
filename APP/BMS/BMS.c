@@ -21,7 +21,13 @@
 #include "ads7138irter.h"
 #include "tinyprotocol.h"
 #include "i2c.h"
-#include "bms_types.h"
+#include "lfp.h"
+#include "lfp/stream.h"
+#include "asn1/bms.h"
+#include "ASN1SCC/asn1_lfp.h"
+#include "asn1/_systems.h"
+#include "asn1/bms.h"
+#include "i2c.h"
 
 #if defined (__MSP430FR5989__)
 #include "rtc_c.h"
@@ -101,50 +107,162 @@
 #define HEATER4_CCR TIMER_B_CAPTURECOMPARE_REGISTER_6
 #endif  
 
-#define SLAVE_ADDR 0x08
+#define BMS_SLAVE_ADDR 0x09
 
-// Static data buffers to be sent back to CDH via tinyprotocol
-static const SystemStatusResp_t sSystemStatus = {
-    .runtime = 0x12,
-    .fw_version = 0xA, 
+// Static serialized structs to be populated periodically from sensor data etc...
+static const BMSSystemStatusResponse s_systemstatus = {
+    .uptime = 0xDEADBEEF,
+    .version = 12    
 };
+static volatile BMSPowerStatusResponse s_powerstatus;
+static volatile BMSTemperatureStatusResponse s_temperature_status;
+static BMSSetHeaterDutyResponse s_heaterduty_response; // this 
 
-static CurrentResp_t sCurrentDraw = {
-    .isense1 = 0,
-    .isense2 = 0,
-};
-
-static CurrentResp_t sCurrentCharge = {
-    .isense1 = 0,
-    .isense2 = 0,
-};
-
-static VoltageResp_t sVoltageBattery1 = {
-    .vcell_a = 0,
-    .vcell_b = 0,
-};
-
-static VoltageResp_t sVoltageBattery2 = {
-    .vcell_a = 0,
-    .vcell_b = 0,
-};
-
-static CombinedVoltageResp_t sCombinedBatteryVoltage = {
-    .vbatt1 = 0,
-    .vbatt2 = 0,
-};
-
-static Flag_t sFlags = {
-    .val = 0x00,
-};
-
-// Need 2 buffers since max buffer size for tinyprotocol is 11 and we have 8 16 bit 
-static uint8_t sExtADCBuffer03[8] = {};
-static uint8_t sExtADCBuffer47[8] = {};
+// Static asn1 encoded data buffers to be sent back to CDH on request
+static volatile uint8_t s_systemstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
+static volatile uint16_t s_powerstatus_size = 0;
+static volatile uint8_t s_powerstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
+static volatile uint16_t s_temperature_status_size = 0;
+static volatile uint8_t s_temperature_status_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusResponse)];
+static uint16_t s_heaterduty_response_size = 0;
+static uint8_t s_heaterduty_response_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyResponse)];
 
 
 // Global SWI2C config "descriptor"
 static SWI2C_Descriptor sADS7138_SWI2C_Descriptor;
+
+// LFP 
+typedef struct {
+    const lfp_header_t* p_header;
+    const uint8_t* p_body;
+    uint16_t body_length;
+    lfp_code_t reason;
+} user_ctx_t;
+
+static lfp_stream_ctx_t s_lfp_ctx;
+
+// FIXME: arbitrary temporary size
+#define RX_BODY_BUFFER_SIZE 16
+
+static uint8_t s_rx_body_buffer[RX_BODY_BUFFER_SIZE];
+static user_ctx_t s_user_ctx;
+
+static void collect_power_status();
+static void collect_power_status_mock(); 
+
+static bool on_header(const lfp_header_t* p_header, void* p_ctx) 
+{
+    if (i2c_slave_current_state() == I2C_SLAVE_STATE_RESPONSE) {
+        i2c_transition(I2C_SLAVE_STATE_REQUEST);
+    }
+    return true;
+}
+
+static void on_error(lfp_code_t reason, void* p_ctx)
+{
+    user_ctx_t* _p_ctx = p_ctx;
+    _p_ctx->reason = reason; 
+}
+
+// NOTE!! If we don't copy buffers into a seperate i2c transfer buffer, idk if it's possible for buffers to be updated mid transfer or not
+// I don't think so, but wouldn't hurt testing this just in casee
+// NOTE2: these callbacks are technically doing work in the isr, but on_msg only ever gets called on the last byte of the write
+// TODO: Make put them in helper function
+static void bms_system_status_req_cb(const BMSSystemStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+    (void)p_payload;
+    i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    // GIE -- this is technically in the i2c isr, we don't want getting stuck here to stall BMS
+    __enable_interrupt(); 
+
+    uint16_t size = ASN1_LFP_SERIALIZE(
+        p_data->p_header->initiator, bmsSystemId, 
+        BMSSystemStatusResponse, 
+        s_systemstatus_tx_buf, sizeof(s_systemstatus_tx_buf), 
+        s_systemstatus
+    );
+    __disable_interrupt();
+    i2c_reassign_txbuf(s_systemstatus_tx_buf, size);
+}
+
+static void bms_power_status_req_cb(const BMSPowerStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+    (void)p_payload;
+    i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    __enable_interrupt();
+    uint16_t size = ASN1_LFP_SERIALIZE(
+        p_data->p_header->initiator, bmsSystemId, 
+        BMSPowerStatusResponse, 
+        s_powerstatus_tx_buf, sizeof(s_powerstatus_tx_buf), 
+        s_powerstatus
+    );
+    __disable_interrupt();
+    i2c_reassign_txbuf(s_powerstatus_tx_buf, size);    
+}
+
+static void bms_temperature_status_req_cb(const BMSTemperatureStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+    (void)p_payload;
+    i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    __enable_interrupt();
+    uint16_t size = ASN1_LFP_SERIALIZE(
+        p_data->p_header->initiator, bmsSystemId, 
+        BMSTemperatureStatusResponse, 
+        s_temperature_status_tx_buf, 
+        sizeof(s_temperature_status_tx_buf), 
+        s_temperature_status
+    );
+    __disable_interrupt();
+    i2c_reassign_txbuf(s_temperature_status_tx_buf, size);   
+}
+
+static void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+    // It's 100-1 and not 99 because that's what they do in the TI examples for PWM, IDK why the do that but best to stick to a standard if it exists
+    i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    if (p_payload->exist.heater1) {
+        PWM_Generate(100-1, p_payload->heater1, HEATER1_CCR);
+    }
+    if (p_payload->exist.heater2) {
+        PWM_Generate(100-1, p_payload->heater2, HEATER2_CCR);
+    }
+    if (p_payload->exist.heater3) {
+        PWM_Generate(100-1, p_payload->heater3, HEATER3_CCR);
+    }
+    if (p_payload->exist.heater4) {
+        PWM_Generate(100-1, p_payload->heater4, HEATER4_CCR);
+    }
+
+    // Send response (Empty body basically an ACK)
+    i2c_reassign_txbuf(s_temperature_status_tx_buf, s_temperature_status_size);   
+}
+
+static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16_t body_length, void * p_ctx) 
+{
+    // if we get a valid message while responding to something else, forget what we were doing before respond to the new request
+    if (i2c_slave_current_state() == I2C_SLAVE_STATE_RESPONSE) {
+        i2c_transition(I2C_SLAVE_STATE_REQUEST);
+    }
+    const asn1_lfp_decode_data_t data = {
+        .p_header = p_header,
+        .p_body = p_body,
+        .p_ctx = p_ctx,
+        .body_length = body_length,
+        .p_on_error_cb = on_error,
+    };
+
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusRequest, bms_system_status_req_cb)) {
+        return;
+    }
+
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusRequest, bms_power_status_req_cb)) {
+        return;
+    }
+
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSTemperatureStatusRequest, bms_temperature_status_req_cb)) {
+        return;
+    }
+
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSetHeaterDutyRequest, bms_set_heater_duty_cb)) {
+        return;
+    }
+}
 
 static volatile bool sISRTriggered = false;
 
@@ -294,70 +412,9 @@ static void initRTC()
 #endif
 }
 
-// Private helper functions for telemetry and telecommand processing
-static void I2C_Proc_RX_Data(uint8_t data);
-
-static uint16_t SendTelemetryResponse(uint8_t request)
+static void i2c_rx_cb(uint8_t data)
 {
-    uint8_t bytes[TINYPROTOCOL_MAX_PACKET_SIZE];
-    uint8_t count = 0;
-    uint8_t* pbyte = bytes;
-
-    while(TINYPROTOCOL_TelemetryBytesLeft() > 0) {
-        int16_t result = TINYPROTOCOL_ReadNextTelemetryByte(pbyte);
-        volatile uint8_t byte = *pbyte;
-        if (result == ETINYPROTOCOL_SUCCESS) {
-            pbyte++;
-            count++;
-        } else {
-            return result;
-        }
-    }
-    
-    transmitI2C(bytes, count);
-
-    return ETINYPROTOCOL_SUCCESS;
-} 
-
-static int16_t ProcessTelemetryRequest(uint8_t request)
-{
-    return SendTelemetryResponse(request);
-}
-
-// NOTE: Likely just going to be turning heaters all the way on and all the way off, but for now the API is flexible
-// NOTE: Once PWM generate is set, it goes on forever. Those pins are set to generate that PWM signal until we tell them not to
-static void SendPWM(const uint8_t* buffer, uint8_t size)
-{
-    // It's 100-1 and not 99 because that's what they do in the TI examples for PWM, IDK why the do that but best to stick to a standard if it exists
-    PWM_Generate(100-1, buffer[0], HEATER1_CCR);
-    PWM_Generate(100-1, buffer[1], HEATER2_CCR);
-    PWM_Generate(100-1, buffer[2], HEATER3_CCR);
-    PWM_Generate(100-1, buffer[3], HEATER4_CCR);
-}
-
-static int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size)
-{
-    switch (command) {
-        case BMS_HEATERS_CONTROLLER_ID:
-            SendPWM(buffer, size);
-            break;
-        
-        default: 
-            return ETINYPROTOCOL_INVALID_CMD_ID;
-    }
-    return ETINYPROTOCOL_SUCCESS;
-}
-
-const struct TINYPROTOCOL_Config protocolConfig =
-{
-    .TINYPROTOCOL_ProcessTelecommand = ProcessTelecommand,
-    .TINYPROTOCOL_ProcessTelemetryRequest = ProcessTelemetryRequest,
-    .TINYPROTOCOL_WriteBuffer = transmitI2C
-};
-
-static void I2C_Proc_RX_Data(uint8_t data)
-{
-    TINYPROTOCOL_ParseByte(&protocolConfig, data);
+    lfp_stream_update(&s_lfp_ctx, data);
 }
 
 // Hardware initialization. Initializes MSP430 specific device modules for I2C, ADC, GPIO, Clock, and RTC
@@ -373,11 +430,11 @@ static void initHardware()
 // NOTE: Must be called after initBSP since it uses I2C pins
 static void InitAppComm()
 {
-    sI2cConfigCb_t i2cConfig = {
-      .Rx_Proc_Data = I2C_Proc_RX_Data,
-        .slave_addr = SLAVE_ADDR,
+    i2c_ctx_t i2c_ctx = {
+        .i2c_rx_cb = i2c_rx_cb,
+        .slave_addr = BMS_SLAVE_ADDR,
     };
-    initI2C(&i2cConfig);  
+    i2c_init(&i2c_ctx);  
 
     // SW I2C
     sADS7138_SWI2C_Descriptor.sda_port_out =   &P4OUT;
@@ -400,18 +457,13 @@ static void InitAppComm()
     
     ADS7138IRTER_Initialize(&sADS7138_SWI2C_Descriptor);
 
-    TINYPROTOCOL_Initialize();
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, sSystemStatus.buffer , sizeof(sSystemStatus.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_FLAG_ID, sFlags.buffer, sizeof(sFlags.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_DRAW_ID, sCurrentDraw.buffer, sizeof(sCurrentDraw.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_CHARGE_ID, sCurrentCharge.buffer, sizeof(sCurrentCharge.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sVoltageBattery1.buffer, sizeof(sVoltageBattery1.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY2_ID, sVoltageBattery2.buffer, sizeof(sVoltageBattery2.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_COMBINED_ID, sCombinedBatteryVoltage.buffer, sizeof(sCombinedBatteryVoltage.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_THERMISTOR03_DATA_ID, sExtADCBuffer03, sizeof(sExtADCBuffer03));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_THERMISTOR47_DATA_ID, sExtADCBuffer47, sizeof(sExtADCBuffer47));
+    // We only every have to do this once since it's just an empty body used as an ACK. 
+    s_heaterduty_response_size = ASN1_LFP_SERIALIZE(bmsSystemId, cdhSystemId, BMSSetHeaterDutyResponse, s_heaterduty_response_tx_buf, sizeof(s_heaterduty_response_tx_buf), s_heaterduty_response);
+    if (!s_heaterduty_response_size) {
+        __no_operation();
+    }
 
-    TINYPROTOCOL_RegisterTelecommand(BMS_HEATERS_CONTROLLER_ID, 4);
+    lfp_stream_init(&s_lfp_ctx, s_rx_body_buffer, sizeof(s_rx_body_buffer), on_header, on_msg, on_error, &s_user_ctx);
 }
 
 // Public BMS initialization. Calls initBSP and InitAppComm
@@ -424,89 +476,102 @@ void BMS_init()
 
 /* 
  * RTC ISR and main program logic. 
- * This is where data is collected and stored into static buffers as per tinyprotocol 
- * NOTE: inlining functions is entirely up to the compiler, therefore logic for different buffers (i.e. ADC, GPIO, etc) is kept in one function
- *  due to paranoia that the compiler might not inline it. This is subject to refactor. It is possible to force inline or use macros.
  */  
-void BMS_collectData()
+
+static void collect_power_status() 
 {
-    /* MSP430xxxx ON DEVICE ADCs */
-    // Collect ADC data and put it into buffers
+    // Collect voltage and current ADC values 
     // Must do this this way (all at once) if using SEQOFCHANNELS mode
-    /* trigger the ten‑channel sweep */
+    // trigger the ten‑channel sweep 
     ADC12_B_startConversion(ADC12_B_BASE,
         ADC12_B_START_AT_ADC12MEM0,
-        ADC12_B_SEQOFCHANNELS);        // ENC+SC, walk MEM0→MEM9
+        ADC12_B_SEQOFCHANNELS);        // ENC+SC, walk MEM0->MEM9
 
-    while (ADC12_B_isBusy(ADC12_B_BASE));
+    // Profile this irl... can probably get away with having this in callback so we can get most accurate data immediately on asking
+    // I'm not sure how possible it is for this to spin forever if at all. 
+    uint16_t counter = 0;
+    while (ADC12_B_isBusy(ADC12_B_BASE)) {
+        counter++;
+    }
+    
+    // Current
+    s_powerstatus.batteryPack1.currentDraw        = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_1_CP_MEM);
+    s_powerstatus.batteryPack2.currentDraw        = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_2_CP_MEM);
+    s_powerstatus.batteryPack1.currentCharge      = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_1_CP_MEM);
+    s_powerstatus.batteryPack2.currentCharge      = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_2_CP_MEM);
+    
+    // Voltage per cell   
+    s_powerstatus.batteryPack1.cellA.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1A_CP_MEM);
+    s_powerstatus.batteryPack1.cellB.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1B_CP_MEM);
+    s_powerstatus.batteryPack2.cellA.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2A_CP_MEM);
+    s_powerstatus.batteryPack2.cellB.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2B_CP_MEM);
+    
+    // Combined voltage per battery   
+    s_powerstatus.batteryPack1.voltage            = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
+    s_powerstatus.batteryPack2.voltage            = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
+        
+    // Collect voltage and current flags
+    s_powerstatus.batteryPack1.cellA.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
+    s_powerstatus.batteryPack1.cellA.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1A_PIN);
+    s_powerstatus.batteryPack1.cellB.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1B_PIN);
+    s_powerstatus.batteryPack1.cellB.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1B_PIN);
+    s_powerstatus.batteryPack1.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_1_PIN);
 
-    /* pull results out */
-    sCurrentDraw.isense1             = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_1_CP_MEM);
-    sCurrentDraw.isense2             = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_2_CP_MEM);
-    sCurrentCharge.isense1           = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_1_CP_MEM);
-    sCurrentCharge.isense2           = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_2_CP_MEM);
-    sVoltageBattery1.vcell_a         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1A_CP_MEM);
-    sVoltageBattery1.vcell_b         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1B_CP_MEM);
-    sVoltageBattery2.vcell_a         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2A_CP_MEM);
-    sVoltageBattery2.vcell_b         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2B_CP_MEM);
-    sCombinedBatteryVoltage.vbatt1   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
-    sCombinedBatteryVoltage.vbatt2   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
+    s_powerstatus.batteryPack2.cellA.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2A_PIN);
+    s_powerstatus.batteryPack2.cellA.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2A_PIN);
+    s_powerstatus.batteryPack2.cellB.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2B_PIN);
+    s_powerstatus.batteryPack2.cellB.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2B_PIN);
+    s_powerstatus.batteryPack2.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
+}
 
-    /* FLAGS */
-    // Read GPIO flags and put them into buffer
-    sFlags.val = 0x00;
-    volatile uint8_t ovp1Aval = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
-    sFlags.val |= ovp1Aval << 9;
+// Mock version using easy-to-identify test values
+static void collect_power_status_mock()
+{
+    s_powerstatus.batteryPack1.currentDraw        = 0x11ee;
+    s_powerstatus.batteryPack1.currentCharge      = 0x12ee;
 
-    volatile uint8_t uvp1Bval = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1B_PIN);
-    sFlags.val |= uvp1Bval << 8;
+    s_powerstatus.batteryPack1.cellA.voltage      = 0x1Aee;
+    s_powerstatus.batteryPack1.cellB.voltage      = 0x1Bee;
 
-    volatile uint8_t uvp1Aval = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1A_PIN);
-    sFlags.val |= uvp1Aval << 7;
+    s_powerstatus.batteryPack1.voltage            = 0x1111;
 
-    volatile uint8_t ovp1Bval = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1B_PIN);
-    sFlags.val |= ovp1Bval << 6;
+    s_powerstatus.batteryPack1.cellA.overvoltage  = 0;
+    s_powerstatus.batteryPack1.cellA.undervoltage = 1;
+    s_powerstatus.batteryPack1.cellB.overvoltage  = 0;
+    s_powerstatus.batteryPack1.cellB.undervoltage = 0;
+    s_powerstatus.batteryPack1.overcurrent        = 1;
 
-    volatile uint8_t ocp1val = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_1_PIN);
-    sFlags.val |= ocp1val << 5;
+    s_powerstatus.batteryPack2.currentDraw        = 0x21ee;
+    s_powerstatus.batteryPack2.currentCharge      = 0x22ee;
 
-    volatile uint8_t ovp2Aval = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2A_PIN);
-    sFlags.val |= ovp2Aval << 4;
+    s_powerstatus.batteryPack2.cellA.voltage      = 0x2Aee;
+    s_powerstatus.batteryPack2.cellB.voltage      = 0x2Bee;
+    s_powerstatus.batteryPack2.voltage            = 0x2222;
 
-    volatile uint8_t ovp2Bval = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2B_PIN);
-    sFlags.val |= ovp2Bval << 3;
+    s_powerstatus.batteryPack2.cellA.overvoltage  = 1;
+    s_powerstatus.batteryPack2.cellA.undervoltage = 0;
+    s_powerstatus.batteryPack2.cellB.overvoltage  = 1;
+    s_powerstatus.batteryPack2.cellB.undervoltage = 0;
+    s_powerstatus.batteryPack2.overcurrent        = 0;
+}
 
-    volatile uint8_t uvp2Aval = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2A_PIN);
-    sFlags.val |= uvp2Aval << 2;
+#define ADC_NUM_CHANNELS 8
 
-    volatile uint8_t uvp2Bval = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2B_PIN);
-    sFlags.val |= uvp2Bval << 1;
+void BMS_collectData()
+{
+#ifdef MOCK_POWER
+    collect_power_status_mock();
+#else
+    collect_power_status();
+#endif
 
-    volatile uint8_t ocp2val = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
-    sFlags.val |= ocp2val;
-
-    /* TI ADS7138IRTER EXTERNAL ADC DATA  (THERMISTORS)*/
-    // Get External ADC data
-    uint8_t i;
-    uint16_t val = 0;
-    uint8_t num_half_channels = 4;
-    uint8_t buffer_idx = 0;
-    for (i = 0 ; i < num_half_channels; i++) {
+    // TI ADS7138IRTER EXTERNAL ADC DATA  (THERMISTORS)
+    // NOTE: Profile this.. might be able to ask for this directly in callback 
+    for (uint8_t i = 0 ; i < ADC_NUM_CHANNELS; i++) {
         ADS7138IRTER_SingleRegisterWrite(&sADS7138_SWI2C_Descriptor, ADS7138_CHANNEL_SEL_REGISTER, i);
-        val = ADS7138IRTER_Read(&sADS7138_SWI2C_Descriptor); 
-        sExtADCBuffer03[buffer_idx] = val >> 8;
-        sExtADCBuffer03[buffer_idx + 1u] = val & 0xff; 
-        buffer_idx += 2;
+        s_temperature_status.thermistors.arr[i] = ADS7138IRTER_Read(&sADS7138_SWI2C_Descriptor); 
     }
 
-    buffer_idx = 0;
-    for (i = 0 ; i < num_half_channels; i++) {
-        ADS7138IRTER_SingleRegisterWrite(&sADS7138_SWI2C_Descriptor, ADS7138_CHANNEL_SEL_REGISTER, i + num_half_channels);
-        val = ADS7138IRTER_Read(&sADS7138_SWI2C_Descriptor); 
-        sExtADCBuffer47[buffer_idx] = val >> 8;
-        sExtADCBuffer47[buffer_idx + 1u] = val & 0xff; 
-        buffer_idx += 2;
-    }
     sISRTriggered = false;
 }
 

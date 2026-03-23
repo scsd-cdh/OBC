@@ -37,6 +37,7 @@
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DEFINE.1213303661" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DEFINE" valueType="definedSymbols">
                                     <listOptionValue value="_MPU_ENABLE"/>
                                     <listOptionValue value="__MSP430FR5969__"/>
+                                    <listOptionValue value="MOCK_POWER"/>
                                 </option>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DATA_MODEL.1055239918" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DATA_MODEL" value="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DATA_MODEL.restricted" valueType="enumerated"/>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.ADVICE__HW_CONFIG.94767374" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.ADVICE__HW_CONFIG" value="all" valueType="string"/>
@@ -64,6 +65,10 @@
                                     <listOptionValue value="../../../MIDDLEWARE/ADS7138"/>
                                     <listOptionValue value="${CG_TOOL_ROOT}/include"/>
                                     <listOptionValue value="../../../MIDDLEWARE/shared_types"/>
+                                    <listOptionValue value="${PROJECT_ROOT}/../../MIDDLEWARE/"/>
+                                    <listOptionValue value="${PROJECT_ROOT}/../../MIDDLEWARE/asn1"/>
+                                    <listOptionValue value="${PROJECT_ROOT}/../../MIDDLEWARE/ASN1SCC"/>
+                                    <listOptionValue value="${PROJECT_ROOT}/../../MIDDLEWARE/LFP/include"/>
                                 </option>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.ADVICE__POWER.2115324089" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.ADVICE__POWER" value="&quot;all&quot;" valueType="string"/>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DEBUGGING_MODEL.595035225" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DEBUGGING_MODEL" value="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.DEBUGGING_MODEL.SYMDEBUG__DWARF" valueType="enumerated"/>
@@ -111,7 +116,7 @@
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        <entry excluding="lnk_msp430fr5989.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="MIDDLEWARE/ASN1SCC/example.c|lnk_msp430fr5989.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>

@@ -66,6 +66,16 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>MIDDLEWARE/ASN1SCC</name>
+			<type>2</type>
+			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/ASN1SCC</location>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP</name>
+			<type>2</type>
+			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/LFP</location>
+		</link>
+		<link>
 			<name>MIDDLEWARE/MRAM</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -79,6 +89,11 @@
 			<name>MIDDLEWARE/WATCHDOG</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1</name>
+			<type>2</type>
+			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/asn1</location>
 		</link>
 		<link>
 			<name>MIDDLEWARE/shared_types</name>
