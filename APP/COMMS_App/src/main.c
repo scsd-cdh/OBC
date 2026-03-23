@@ -4,12 +4,14 @@
 #include <csp/csp.h>
 #include <csp/drivers/usart.h>
 #include <csp/interfaces/csp_if_lo.h>
-#include <ulog/ulog.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/printk.h>
 
 #include "server.h"
 #include "test_client.h"
+
+LOG_MODULE_REGISTER(main);
 
 static void router_task(void * p1, void * p2, void * p3) {
 	ARG_UNUSED(p1);
@@ -39,7 +41,7 @@ int main(void) {
 	printk("Size: %d", sizeof(usart_context_t));
 	const char * kiss_device = DEVICE_DT_NAME(DT_ALIAS(transmitter));
 
-	ULOG_INFO("Initialising CSP");
+	LOG_INF("Initialising CSP");
 
 	csp_conf.version = 1;
 
@@ -60,7 +62,7 @@ int main(void) {
 	};
 	const int error = csp_usart_open_and_add_kiss_interface(&conf, CSP_IF_KISS_DEFAULT_NAME, SERVER_ADDRESS, &p_iface);
 	if (error != CSP_ERR_NONE) {
-		ULOG_ERROR("failed to add KISS interface [{}], error: {}", kiss_device, error);
+		LOG_ERR("failed to add KISS interface [%s], error: %d", kiss_device, error);
 		exit(1);
 	}
 	p_iface->is_default = 1;

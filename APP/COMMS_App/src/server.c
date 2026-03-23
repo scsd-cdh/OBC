@@ -1,10 +1,13 @@
 #include "server.h"
 
 #include <csp/csp.h>
-#include <ulog/ulog.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
 
 #include "main.h"
+
+LOG_MODULE_REGISTER(server);
 
 
 static void server_task(void * p1, void * p2, void * p3) {
@@ -12,7 +15,7 @@ static void server_task(void * p1, void * p2, void * p3) {
     ARG_UNUSED(p2);
     ARG_UNUSED(p3);
 
-	ULOG_INFO("Server task started");
+	LOG_INF("Server task started");
 
 	/* Create socket with no specific socket options, e.g. accepts CRC32, HMAC, etc. if enabled during compilation */
 	csp_socket_t sock = {0};
@@ -39,7 +42,7 @@ static void server_task(void * p1, void * p2, void * p3) {
 			switch (csp_conn_dport(conn)) {
 			case SERVER_PORT:
 				/* Process packet here */
-				ULOG_INFO("Packet received on MY_SERVER_PORT: {}", (char *) packet->data);
+				LOG_HEXDUMP_INF(packet->data, packet->length, "Packet received on MY_SERVER_PORT:");
 				csp_buffer_free(packet);
 				break;
 

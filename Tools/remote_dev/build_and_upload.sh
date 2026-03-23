@@ -40,6 +40,7 @@ build_zephyr() {
 
   echo "====Upload(START)===="
   elf_path="APP/${binary}_App/$build_dir/zephyr/zephyr.elf"
+  logdb_path="APP/${binary}_App/$build_dir/zephyr/log_dictionary.json"
 
   current_hash=$(ssh -p "$ssh_port" "$ssh_user@$ssh_host" -- sha1sum "remote_files/${binary}.elf" | cut -f1 -d' ' || echo MISSING)
   new_hash=$(sha1sum "$elf_path" | cut -f1 -d' ')
@@ -49,6 +50,7 @@ build_zephyr() {
     sftp -C -b - -P "$ssh_port" "$ssh_user@$ssh_host" <<- EOF
       progress
       put "$elf_path" remote_files/${binary}.elf
+      put "$logdb_path" remote_files/${binary}_dictionary.json
 EOF
   else
     echo "File is already present, skipping upload"

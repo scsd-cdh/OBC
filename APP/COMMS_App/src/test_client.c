@@ -1,16 +1,19 @@
 #include "test_client.h"
 
 #include <csp/csp.h>
-#include <ulog/ulog.h>
+#include <zephyr/logging/log.h>
+
 
 #include "main.h"
+
+LOG_MODULE_REGISTER(client);
 
 static void client_task(void * p1, void * p2, void * p3) {
     ARG_UNUSED(p1);
     ARG_UNUSED(p2);
     ARG_UNUSED(p3);
 
-    ULOG_INFO("Client task started");
+    LOG_INF("Client task started");
 
     unsigned int count = 'A';
 
@@ -20,7 +23,7 @@ static void client_task(void * p1, void * p2, void * p3) {
 
         /* Send ping to server, timeout 1000 mS, ping size 100 bytes */
         int __maybe_unused result = csp_ping(SERVER_ADDRESS, 1000, 100, CSP_O_NONE);
-        ULOG_INFO("Ping address: {}, result {} [mS]", SERVER_ADDRESS, result);
+        LOG_INF("Ping address: %d, result %d [mS]", SERVER_ADDRESS, result);
 
         /* Send data packet (string) to server */
 
@@ -28,7 +31,7 @@ static void client_task(void * p1, void * p2, void * p3) {
         csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, SERVER_ADDRESS, SERVER_PORT, 1000, CSP_O_NONE);
         if (conn == NULL) {
             /* Connect failed */
-            ULOG_ERROR("Connection failed");
+            LOG_ERR("Connection failed");
             return;
         }
 
@@ -36,7 +39,7 @@ static void client_task(void * p1, void * p2, void * p3) {
         csp_packet_t * packet = csp_buffer_get(0);
         if (packet == NULL) {
             /* Could not get buffer element */
-            ULOG_ERROR("Failed to get CSP buffer");
+            LOG_ERR("Failed to get CSP buffer");
             return;
         }
 
