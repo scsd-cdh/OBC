@@ -87,6 +87,7 @@ lfp_size_or_code_t lfp_encode(
     // Data segment
     lfp_cobs_encode_ctx_t encode_ctx;
     lfp_cobs_encode_init(&encode_ctx, p_data, length);
+    const uint32_t crc32 = lfp_crc32(p_data, length);
     while (true) {
         const uint8_t chr = lfp_cobs_encode_next_byte(&encode_ctx);
         if (chr == 0xFF) break;
@@ -98,7 +99,6 @@ lfp_size_or_code_t lfp_encode(
     }
 
     // Data checksum
-    const uint32_t crc32 = lfp_crc32(p_data, length);
     WRITE_CHR(crc32 >> 25 & 0b01111111);
     WRITE_CHR(crc32 >> 18 & 0b01111111);
     WRITE_CHR(crc32 >> 11 & 0b01111111);
