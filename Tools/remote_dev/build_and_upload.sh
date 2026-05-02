@@ -62,6 +62,7 @@ EOF
   ssh -p "$ssh_port" "$ssh_user@$ssh_host" bash -s <<- EOF
     printf '%s\x1a' 'capture "program ${binary}.elf preverify verify reset"' | nc -q 1 127.0.0.1 $tcl_port | tr '\32' '\n'
     echo "Done!"
+    exit
 EOF
   echo "====Flash(END)===="
   echo

@@ -44,6 +44,7 @@ while IFS= read -r line; do
 done < <(
 # shellcheck disable=SC2087
 ssh -L "127.0.0.1:$usb_local_port:127.0.0.1:$usb_remote_port" -p "$ssh_port" "$ssh_user@$ssh_host" bash -s -- "${requested_devices[@]@Q}" <<- 'EOF'
+  parent=$PPID
   for dev in "$@"; do
     dev=($dev)
     vendorId=${dev[0]}
@@ -55,6 +56,6 @@ ssh -L "127.0.0.1:$usb_local_port:127.0.0.1:$usb_remote_port" -p "$ssh_port" "$s
     find /sys/bus/usb/devices/* -maxdepth 1 -exec sh -c "{ grep -q \"$serial\$\" {}/serial && grep -q \"$vendorId\$\" {}/idVendor && grep -q \"$productId\$\" {}/idProduct ; } 2> /dev/null" \; -print | rev | cut -d/ -f1 | rev | sed 's/^/FOUND-DEVICE:/'
   done
   echo "Done! Press Ctl+C to stop the usb forwarding."
-  sleep inf
+  tail -f /dev/null --pid=$parent
 EOF
 )
