@@ -16,7 +16,9 @@ may be connected to the console at any given time.
 `build_and_upload.sh`: Builds the firmware, uploads it to the remote server, flashes the board and starts gdbserver.
 On windows, cmake will not be invoked unless it is in the PATH.
 
-`setup_key.sh`: Either prints the public key 
+`forward_usb.sh`: Attaches a USB over IP device.
+
+`setup_key.sh`: Generates a new SSH key if none exist then prints out the public key.
 
 ## Usage through CLion
 
@@ -25,7 +27,7 @@ On CLion, remote development should be used in the following manner:
 2. Select `CDH (Remote Upload + GDB)` and click the run icon. Do not stop this process
 until you are done debugging.
 3. Select `CDH (Remote Logs)` and click the run icon. This step will fail if another user is looking at the logs.
-4. Select `CDH (Remote Debug)` and clich the debug icon. You should be able to use the debugging features of the IDE as
+4. Select `CDH (Remote Debug)` and click the debug icon. You should be able to use the debugging features of the IDE as
 if you were standing in front of the board. This step will reset the board and may be repeated to reset the board again.
 5. Stop all running processes when you are done using the board so that the next person may use it.
 
