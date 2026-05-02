@@ -9,9 +9,13 @@ args=("$@")
 echo "Environment: Linux"
 echo "Devices: ${args[*]}"
 
-
-if ! grep -q "^vhci_hcd" /proc/modules ; then
-  sudo modprobe vhci_hcd
+if [[ ${OS:-""} == "Windows"* ]]; then
+  export PATH="/c/Program Files/USBip:${PATH}"
+else
+  if ! grep -q "^vhci_hcd" /proc/modules ; then
+    echo "Kernel module is missing. Attempting to load it."
+    sudo modprobe vhci_hcd
+  fi
 fi
 
 requested_devices=()
@@ -19,6 +23,7 @@ requested_devices=()
 for dev in "${args[@]}"; do
   if [[ ! -v usb_devices["$dev"] ]]; then
     echo "Unknown device '$dev'"
+    echo "Valid devices: ${!usb_devices[*]}"
     exit 1
   fi
 
@@ -30,7 +35,11 @@ while IFS= read -r line; do
   echo "$line"
 
   if [[ $line == "FOUND-DEVICE:"* ]]; then
-    sudo usbip --tcp-port "$usb_local_port" attach -r127.0.0.1 "-b${line#FOUND-DEVICE:}"
+    if [[ ${OS:-""} == "Windows"* ]]; then
+      usbip.exe --tcp-port "$usb_local_port" attach -r127.0.0.1 "-b${line#FOUND-DEVICE:}"
+    else
+      sudo usbip --tcp-port "$usb_local_port" attach -r127.0.0.1 "-b${line#FOUND-DEVICE:}"
+    fi
   fi
 done < <(
 # shellcheck disable=SC2087

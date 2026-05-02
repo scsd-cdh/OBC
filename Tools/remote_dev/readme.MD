@@ -47,3 +47,13 @@ This key is not known by any other names.
 Are you sure you want to continue connecting (yes/no/[fingerprint])? 
 ```
 You must type yes and then press enter. You will not be reasked this question.
+
+## USB over IP
+
+For certain boards, we must forward the device directly over the network using USB over IP. First, you must install
+the drivers for usb over ip. On linux, you may find what package you need to install at 
+https://pkgs.org/search/?q=usbip&on=files. On windows, you may use https://github.com/vadimgrn/usbip-win2. There is 
+currently no approved driver for MacOS. It is recommended that you instead use a virtual machine.
+
+Once the driver is installed, you can run `forward_usb.sh` or one of the `USB/IP (XXX)` run configurations. Press Ctl+C
+to release the device once you are done as only 1 person may use a specific usb device at any given time. 
