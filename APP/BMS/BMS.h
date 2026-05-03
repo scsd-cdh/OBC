@@ -10,7 +10,6 @@
 
 #include <stdbool.h>
 
-extern const struct TINYPROTOCOL_Config protocolConfig;
 
 /**
  * @brief Initializes the Battery Management System hardware and communication.
@@ -18,7 +17,7 @@ extern const struct TINYPROTOCOL_Config protocolConfig;
  * Sets up ADCs, GPIOs, PWM, RTC, and registers telemetry/telecommand channels.
 
  */
-void BMS_init();
+void bms_init();
 
 /**
  * @brief Synchronous data-acquisition pass that refreshes telemetry buffers.
@@ -26,7 +25,7 @@ void BMS_init();
  * @pre ::BMS_init() has been called.
  * @post Collect temperature data over i2c
  */
-void BMS_collectData();
+void bms_collectdata();
 
 /**
  * @brief Check whether an RTC event occurred since the last collection.
@@ -34,6 +33,6 @@ void BMS_collectData();
  * @return `true` if an RTC event has occurred and data collection is due;
  *         `false` otherwise.
  */
-bool BMS_ISRTriggered();
+bool bms_isr_triggered();
 
 #endif

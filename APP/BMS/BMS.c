@@ -19,7 +19,6 @@
 #include "PWM.h"
 #include "swi2c.h"
 #include "ads7138irter.h"
-#include "tinyprotocol.h"
 #include "i2c.h"
 #include "lfp.h"
 #include "lfp/stream.h"
@@ -109,6 +108,12 @@
 
 #define BMS_SLAVE_ADDR 0x09
 
+// number of external ADS7138IRTER channels. Corresponds to thermistors -> heaters
+#define ADC_NUM_CHANNELS 8
+
+// private isr triggered flag for access only
+static volatile bool s_isr_triggered = false;
+
 // Static serialized structs to be populated periodically from sensor data etc...
 static const BMSSystemStatusResponse s_systemstatus = {
     .uptime = 0xDEADBEEF,
@@ -127,9 +132,8 @@ static volatile uint8_t s_temperature_status_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTe
 static uint16_t s_heaterduty_response_size = 0;
 static uint8_t s_heaterduty_response_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyResponse)];
 
-
 // Global SWI2C config "descriptor"
-static SWI2C_Descriptor sADS7138_SWI2C_Descriptor;
+static SWI2C_Descriptor s_swi2c_descriptor;
 
 // LFP 
 typedef struct {
@@ -147,27 +151,23 @@ static lfp_stream_ctx_t s_lfp_ctx;
 static uint8_t s_rx_body_buffer[RX_BODY_BUFFER_SIZE];
 static user_ctx_t s_user_ctx;
 
-static void collect_power_status();
-static void collect_power_status_mock(); 
-
-static bool on_header(const lfp_header_t* p_header, void* p_ctx) 
-{
+static bool on_header(const lfp_header_t* p_header, void* p_ctx) {
     if (i2c_slave_current_state() == I2C_SLAVE_STATE_RESPONSE) {
         i2c_transition(I2C_SLAVE_STATE_REQUEST);
     }
     return true;
 }
 
-static void on_error(int error_code, const struct asn1_lfp_decode_data_t * p_data)
-{
-    
+
+// TODO: implement me?
+static void on_error(int error_code, const struct asn1_lfp_decode_data_t * p_data) {
 }
 
 // NOTE!! If we don't copy buffers into a seperate i2c transfer buffer, idk if it's possible for buffers to be updated mid transfer or not
 // I don't think so, but wouldn't hurt testing this just in casee
 // NOTE2: these callbacks are technically doing work in the isr, but on_msg only ever gets called on the last byte of the write
 // TODO: Make put them in helper function
-static void bms_system_status_req_cb(const BMSSystemStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+static inline void bms_system_status_req_cb(const BMSSystemStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     (void)p_payload;
     i2c_transition(I2C_SLAVE_STATE_PROCESSING);
     // GIE -- this is technically in the i2c isr, we don't want getting stuck here to stall BMS
@@ -183,7 +183,7 @@ static void bms_system_status_req_cb(const BMSSystemStatusRequest * p_payload, c
     i2c_reassign_txbuf(s_systemstatus_tx_buf, size);
 }
 
-static void bms_power_status_req_cb(const BMSPowerStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+static inline void bms_power_status_req_cb(const BMSPowerStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     (void)p_payload;
     i2c_transition(I2C_SLAVE_STATE_PROCESSING);
     __enable_interrupt();
@@ -197,7 +197,7 @@ static void bms_power_status_req_cb(const BMSPowerStatusRequest * p_payload, con
     i2c_reassign_txbuf(s_powerstatus_tx_buf, size);    
 }
 
-static void bms_temperature_status_req_cb(const BMSTemperatureStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+static inline void bms_temperature_status_req_cb(const BMSTemperatureStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     (void)p_payload;
     i2c_transition(I2C_SLAVE_STATE_PROCESSING);
     __enable_interrupt();
@@ -212,7 +212,7 @@ static void bms_temperature_status_req_cb(const BMSTemperatureStatusRequest * p_
     i2c_reassign_txbuf(s_temperature_status_tx_buf, size);   
 }
 
-static void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+static inline void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     // It's 100-1 and not 99 because that's what they do in the TI examples for PWM, IDK why the do that but best to stick to a standard if it exists
     i2c_transition(I2C_SLAVE_STATE_PROCESSING);
     if (p_payload->exist.heater1) {
@@ -232,8 +232,8 @@ static void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payload, co
     i2c_reassign_txbuf(s_temperature_status_tx_buf, s_temperature_status_size);   
 }
 
-static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16_t body_length, void * p_ctx) 
-{
+// bit silly to try to inline this. asm output at i2c.asm confirms a call with max optimizations (line 657): CALLA &s_ctx+0
+static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16_t body_length, void * p_ctx) {
     // if we get a valid message while responding to something else, forget what we were doing before respond to the new request
     if (i2c_slave_current_state() == I2C_SLAVE_STATE_RESPONSE) {
         i2c_transition(I2C_SLAVE_STATE_REQUEST);
@@ -263,7 +263,6 @@ static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16
     }
 }
 
-static volatile bool sISRTriggered = false;
 
 /* INITIALIZATOIN LOGIC */
 // Note most of the code is initialization, since the main logic is just reading sensors and updating buffers
@@ -271,8 +270,7 @@ static volatile bool sISRTriggered = false;
 // Sets up all ADC channels and memory buffers for multi-channel sweeps
 // Uses ADC12_B driverlib
 // NOTE: You need to set the end of sequence to the last ADC pin and set sequence. I repeat this a lot because it's easy to miss!
-static void initADCs() 
-{
+static void adc_init() {
     ADC_initMultiple();
 
     ADC12_B_disableConversions(ADC12_B_BASE, 1);
@@ -307,8 +305,7 @@ static void initADCs()
 
 // Initialize clock to 16MHz
 // Uses direct register manipulation as per device datasheet
-static void initClockTo16MHz()
-{
+static void clock_init_16mhz() {
     // Configure one FRAM waitstate as required by the device datasheet for MCLK
     // operation beyond 8MHz _before_ configuring the clock system.
     FRCTL0 = FRCTLPW | NWAITS_1;
@@ -330,12 +327,11 @@ static void initClockTo16MHz()
 
 // Initialize GPIO pins for flags, I2C, and PWM outputs
 // Uses GPIO driverlib
-static void initGPIO()
-{
+static void gpio_init() {
     // Importing drivers is a pain and we only really need WDT_A_hold(), so just copy and paste it here for now.
     // IMO it would be better to just have driverlib
-    uint8_t newWDTStatus = ((HWREG16(WDT_A_BASE + OFS_WDTCTL) & 0x00FF) | WDTHOLD);
-    HWREG16(WDT_A_BASE + OFS_WDTCTL) = WDTPW + newWDTStatus;
+    uint8_t new_wdt_status = ((HWREG16(WDT_A_BASE + OFS_WDTCTL) & 0x00FF) | WDTHOLD);
+    HWREG16(WDT_A_BASE + OFS_WDTCTL) = WDTPW + new_wdt_status;
 
     // Configure Pins for I2C
     //Set P1.6 and P1.7 as Secondary Module Function Input.
@@ -378,8 +374,7 @@ static void initGPIO()
 
 // Initialize the Real-Time Clock (RTC) for periodic interrupts
 // Uses RTC_C or RTC_B driverlib depending on device
-static void initRTC()
-{
+static void rtc_init() {
 #if defined (__MSP430FR5989__)
     RTC_C_clearInterrupt(RTC_C_BASE,
         RTC_C_CLOCK_READ_READY_INTERRUPT +
@@ -411,24 +406,20 @@ static void initRTC()
 #endif
 }
 
-static void i2c_rx_cb(uint8_t data)
-{
+static void i2c_rx_cb(uint8_t data) {
     lfp_stream_update(&s_lfp_ctx, data);
 }
 
 // Hardware initialization. Initializes MSP430 specific device modules for I2C, ADC, GPIO, Clock, and RTC
-static void initHardware()
-{
-    initGPIO();
-    initClockTo16MHz();
-    initRTC();
-    initADCs();
+static void hardware_init() {
+    gpio_init();
+    clock_init_16mhz();
+    rtc_init();
+    adc_init();
 }
 
-// App communication initialization. Initializes I2C and tinyprotocol, registers telemetry and telecommand channels
-// NOTE: Must be called after initBSP since it uses I2C pins
-static void InitAppComm()
-{
+// App communication initialization. Initializes I2C and lfp, registers telemetry and telecommand channels
+static void comm_init() {
     i2c_ctx_t i2c_ctx = {
         .i2c_rx_cb = i2c_rx_cb,
         .slave_addr = BMS_SLAVE_ADDR,
@@ -436,25 +427,25 @@ static void InitAppComm()
     i2c_init(&i2c_ctx);  
 
     // SW I2C
-    sADS7138_SWI2C_Descriptor.sda_port_out =   &P4OUT;
-    sADS7138_SWI2C_Descriptor.sda_port_in =    &P4IN;
-    sADS7138_SWI2C_Descriptor.sda_port_dir =   &P4DIR;
-    sADS7138_SWI2C_Descriptor.scl_port_out =   &P4OUT;
-    sADS7138_SWI2C_Descriptor.scl_port_in =    &P4IN;
-    sADS7138_SWI2C_Descriptor.scl_port_dir =   &P4DIR;
+    s_swi2c_descriptor.sda_port_out =   &P4OUT;
+    s_swi2c_descriptor.sda_port_in =    &P4IN;
+    s_swi2c_descriptor.sda_port_dir =   &P4DIR;
+    s_swi2c_descriptor.scl_port_out =   &P4OUT;
+    s_swi2c_descriptor.scl_port_in =    &P4IN;
+    s_swi2c_descriptor.scl_port_dir =   &P4DIR;
 #if defined (__MSP430FR5989__)
-    sADS7138_SWI2C_Descriptor.sda_pin =        GPIO_PIN1;
-    sADS7138_SWI2C_Descriptor.scl_pin =        GPIO_PIN0;
+    s_swi2c_descriptor.sda_pin =        GPIO_PIN1;
+    s_swi2c_descriptor.scl_pin =        GPIO_PIN0;
 #elif defined (__MSP430FR5969__)
-    sADS7138_SWI2C_Descriptor.sda_pin =        GPIO_PIN2;
-    sADS7138_SWI2C_Descriptor.scl_pin =        GPIO_PIN3;
+    s_swi2c_descriptor.sda_pin =        GPIO_PIN2;
+    s_swi2c_descriptor.scl_pin =        GPIO_PIN3;
 #endif
     P1DIR |= BIT0 | BIT1; // Set 1.0 and 1.1 direction to "output". I have no idea why this is here
     // Select general purpose IO for port 4
     P4SEL0 &= ~(BIT0 | BIT1);
     P4SEL1 &= ~(BIT0 | BIT1);
     
-    ADS7138IRTER_Initialize(&sADS7138_SWI2C_Descriptor);
+    ADS7138IRTER_Initialize(&s_swi2c_descriptor);
 
     // We only every have to do this once since it's just an empty body used as an ACK. 
     s_heaterduty_response_size = ASN1_LFP_SERIALIZE(bmsSystemId, cdhSystemId, BMSSetHeaterDutyResponse, s_heaterduty_response_tx_buf, sizeof(s_heaterduty_response_tx_buf), s_heaterduty_response);
@@ -465,20 +456,8 @@ static void InitAppComm()
     lfp_stream_init(&s_lfp_ctx, s_rx_body_buffer, sizeof(s_rx_body_buffer), on_header, on_msg, on_error, &s_user_ctx);
 }
 
-// Public BMS initialization. Calls initBSP and InitAppComm
-void BMS_init()
-{
-    initHardware();
-    InitAppComm();
-}
-/* END INITIALIZATION LOGIC  */
-
-/* 
- * RTC ISR and main program logic. 
- */  
-
-static void collect_power_status() 
-{
+#ifndef MOCK_POWER
+static void collect_power_status() {
     // Collect voltage and current ADC values 
     // Must do this this way (all at once) if using SEQOFCHANNELS mode
     // trigger the ten‑channel sweep 
@@ -523,9 +502,9 @@ static void collect_power_status()
     s_powerstatus.batteryPack2.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
 }
 
+#else
 // Mock version using easy-to-identify test values
-static void collect_power_status_mock()
-{
+static inline void collect_power_status_mock() {
     s_powerstatus.batteryPack1.currentDraw        = 0x11ee;
     s_powerstatus.batteryPack1.currentCharge      = 0x12ee;
 
@@ -553,11 +532,20 @@ static void collect_power_status_mock()
     s_powerstatus.batteryPack2.cellB.undervoltage = 0;
     s_powerstatus.batteryPack2.overcurrent        = 0;
 }
+#endif
 
-#define ADC_NUM_CHANNELS 8
+// Public BMS initialization. 
+void bms_init() {
+    hardware_init();
+    comm_init();
+}
+/* END INITIALIZATION LOGIC  */
 
-void BMS_collectData()
-{
+/* 
+ * RTC ISR and main program logic. 
+ */  
+// Public interval data collection
+void bms_collectdata() {
 #ifdef MOCK_POWER
     collect_power_status_mock();
 #else
@@ -567,16 +555,15 @@ void BMS_collectData()
     // TI ADS7138IRTER EXTERNAL ADC DATA  (THERMISTORS)
     // NOTE: Profile this.. might be able to ask for this directly in callback 
     for (uint8_t i = 0 ; i < ADC_NUM_CHANNELS; i++) {
-        ADS7138IRTER_SingleRegisterWrite(&sADS7138_SWI2C_Descriptor, ADS7138_CHANNEL_SEL_REGISTER, i);
-        s_temperature_status.thermistors.arr[i] = ADS7138IRTER_Read(&sADS7138_SWI2C_Descriptor); 
+        ADS7138IRTER_SingleRegisterWrite(&s_swi2c_descriptor, ADS7138_CHANNEL_SEL_REGISTER, i);
+        s_temperature_status.thermistors.arr[i] = ADS7138IRTER_Read(&s_swi2c_descriptor); 
     }
 
-    sISRTriggered = false;
+    s_isr_triggered = false;
 }
 
-bool BMS_ISRTriggered()
-{
-    return (bool)sISRTriggered;
+bool bms_isr_triggered() {
+    return (bool)s_isr_triggered;
 }
 
 /*ISR that maintains LPM until 30 minutes has passed*/
@@ -589,11 +576,10 @@ __attribute__((interrupt(RTC_VECTOR)))
 #endif
 void RTC_ISR (void)
 {
-    switch (__even_in_range(RTCIV, 16))
-    {
+    switch (__even_in_range(RTCIV, 16)) {
         case RTCIV_NONE:         break;
         case RTCIV_RTCRDYIFG: 
-            sISRTriggered = true; 
+            s_isr_triggered = true; 
             break;
         case RTCIV_RTCTEVIFG:    break; 
         case RTCIV_RTCAIFG:      /* alarm */ break;
