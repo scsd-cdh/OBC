@@ -17,7 +17,7 @@ samv71() {
 
   echo "====Console(START)===="
   # shellcheck disable=SC2087
-  ssh -tt -p "$ssh_port" "$ssh_user@$ssh_host" <<- EOF
+  ssh -tt -p "$ssh_port" "$ssh_user@$ssh_host" bash -s <<- EOF
     echo "remote_files/${binary}_dictionary.json" | FORCE_COLOR=1 TERM=xterm entr -r -n python3 ~/zephyr_log_parser/live_log_parser.py --debug "remote_files/${binary}_dictionary.json" serial /dev/serial/by-id/usb-Atmel_Corp._EDBG_CMSIS-DAP_* 115200
     exit
 EOF
