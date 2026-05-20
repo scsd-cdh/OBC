@@ -21,6 +21,18 @@ void i2c_init_registers(uint8_t slave_addr)
     UCB0IE |= UCSTTIE;                           // Enable START interrupt
     UCB0IE |= UCRXIE;                            // Enable RX interrupt
     UCB0IE |= UCTXIE;                            // Enable TX interrupt
+
+    // Redundant i2c  
+#ifdef __MSP430FR5989__
+    UCB1CTLW0 = UCSWRST;                         
+    UCB1CTLW0 |= UCMODE_3 | UCSYNC;              
+    UCB1I2COA0 = slave_addr | UCOAEN;            
+    UCB1CTLW0 &= ~UCSWRST;                       
+
+    UCB1IE |= UCSTTIE;                           
+    UCB1IE |= UCRXIE;                            
+    UCB1IE |= UCTXIE;  
+#endif                          
 }
 
 void i2c_init(i2c_ctx_t* ctx)
@@ -49,8 +61,14 @@ void i2c_transition(i2c_slave_state_t state)
     // NACK if we are in processing stage
     if (state == I2C_SLAVE_STATE_PROCESSING) {
         UCB0CTLW0 |= UCTXNACK;
+#ifdef __MSP430FR5989__
+        UCB1CTLW0 |= UCTXNACK;
+#endif
     } else {
         UCB0CTLW0 &= ~UCTXNACK;
+#ifdef __MSP430FR5989__
+        UCB1CTLW0 &= ~UCTXNACK;
+#endif
     }
     
     s_current_state = state;
@@ -81,12 +99,8 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
 #error Compiler not supported!
 #endif
 {
-  //Must read from UCB0RXBUF
   switch(__even_in_range(UCB0IV, USCI_I2C_UCBIT9IFG))
   {
-    case USCI_NONE:          break;         // Vector 0: No interrupts
-    case USCI_I2C_UCALIFG:   break;         // Vector 2: ALIFG
-    case USCI_I2C_UCNACKIFG: break;         // Vector 4: NACKIFG
     case USCI_I2C_UCSTTIFG:                 // Vector 6: STTIFG
         if (s_current_state == I2C_SLAVE_STATE_PROCESSING) { 
             UCB0CTLW0 |= UCTXNACK; // NACK master writes while we're processing
@@ -97,13 +111,6 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
             s_tx_idx--;
         }
         break;
-    case USCI_I2C_UCSTPIFG:  break;         // Vector 8: STPIFG
-    case USCI_I2C_UCRXIFG3:  break;         // Vector 10: RXIFG3
-    case USCI_I2C_UCTXIFG3:  break;         // Vector 12: TXIFG3
-    case USCI_I2C_UCRXIFG2:  break;         // Vector 14: RXIFG2
-    case USCI_I2C_UCTXIFG2:  break;         // Vector 16: TXIFG2
-    case USCI_I2C_UCRXIFG1:  break;         // Vector 18: RXIFG1
-    case USCI_I2C_UCTXIFG1:  break;         // Vector 20: TXIFG1
     case USCI_I2C_UCRXIFG0:                 // Vector 22: RXIFG0  -> Receive one byte from MASTER (SAMV71)
         // callback for processing incoming packet from master. Calls lfp_stream_update. This cannot be inlined as it is
         s_ctx.i2c_rx_cb(UCB0RXBUF);
@@ -128,3 +135,49 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
   }
 }
 
+#ifdef __MSP430FR5989__
+#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
+#pragma vector = USCI_B1_VECTOR
+__interrupt void USCI_B1_ISR(void)
+#elif defined(__GNUC__)
+void __attribute__ ((interrupt(USCI_B1_VECTOR))) USCI_B1_ISR (void)
+#else
+#error Compiler not supported!
+#endif
+{
+  switch(__even_in_range(UCB1IV, USCI_I2C_UCBIT9IFG))
+  {
+    case USCI_I2C_UCSTTIFG:                 // Vector 6: STTIFG
+        if (s_current_state == I2C_SLAVE_STATE_PROCESSING) { 
+            UCB1CTLW0 |= UCTXNACK; // NACK master writes while we're processing
+        }
+
+        // Roll back 1 byte on start to transmit the byte that was missed during the last transmission
+        if (s_tx_idx > 0 && s_tx_idx <= s_msg_len) { 
+            s_tx_idx--;
+        }
+        break;
+    case USCI_I2C_UCRXIFG0:                 // Vector 22: RXIFG0  -> Receive one byte from MASTER (SAMV71)
+        // callback for processing incoming packet from master. Calls lfp_stream_update. This cannot be inlined as it is
+        s_ctx.i2c_rx_cb(UCB1RXBUF);
+        break;
+    case USCI_I2C_UCTXIFG0:                 // Vector 24: TXIFG0  -> Send one byte to MASTER (SAMV71)
+        if (s_current_state != I2C_SLAVE_STATE_RESPONSE) { // Unless we are in response state, just return 0xFF
+            UCB1TXBUF = 0xFF;
+        } else if (!p_txbuf || s_tx_idx >= s_msg_len) { // if we are asked for more bytes than we have, send 0xFF
+            // If we are at the byte after the last byte, go one over to make sure we dont roll back on start 
+            // (by now the controller has received atleast one 0xFF)
+            if (s_tx_idx == s_msg_len) {
+                s_tx_idx++;
+            }
+            UCB1TXBUF = 0xFF; 
+        } else {
+            UCB1TXBUF = p_txbuf[s_tx_idx++]; 
+        }
+        break;
+                          
+    default: 
+        break;
+  }
+}
+#endif
