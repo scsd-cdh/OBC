@@ -4,31 +4,34 @@
 2. Follow the instructions in the `Installing dependencies` section
    at https://docs.zephyrproject.org/latest/develop/getting_started/index.html#install-dependencies. <br>
    **Do not follow the instructions for `Get Zephyr and install Python dependencies`**
-3. Create a folder in which the project will reside
-4. (Windows Only) Open `cmd.exe` and navigate using the `cd` command to the folder you have created. **Do not use
-   PowerShell, it will not work.**
-5. Run `python3 -m venv venv` inside the folder you have created
-6. (Windows Only) Run `venv\Scripts\activate.bat`. You will need to run this command every time you wish to use a `west`
+3. Create a main project folder in which the project will reside
+4. (Windows Only) Inside File Explorer for the main project folder, click on the [address bar (ignore path in image)](https://uis.georgetown.edu/wp-content/uploads/2019/05/win10-fileexplorer-addrbar.png)  and enter `cmd` to open the Command Prompt at the exact path.
+5. Run `python3 -m venv venv` inside the main project folder you have created
+6. (Windows Only) Run `.venv\Scripts\activate.bat`. You will need to run this command every time you wish to use a `west`
    command.
 7. (Linux Only) Run `source venv/bin/activate`. You will need to run this command every time you wish to use a `west`
    command.
-8. Run `pip install west` inside the folder that contains the `venv` folder
-9. Run `west init -m https://github.com/scsd-cdh/OBC.git .` inside the same folder
-10. Run `west update` inside the same folder. You will need to rerun this command every time the west.yaml file is
+8. Run `pip install west` inside the main project folder.
+9. Run `west init -m https://github.com/scsd-cdh/OBC.git .` inside the main project folder.
+10. Run `west update` inside the main project folder. You will need to rerun this command every time the west.yaml file is
     updated. (Don't forget to rerun the venv activate command first!)
-11. (Windows Only) Run `cmd /c scripts\utils\west-packages-pip-install.cmd` inside the same folder
+11. Run `west zephyr-export` inside the main project folder.
+11. (Windows Only) Inside File Explorer for the main project folder, click on the [address bar (ignore path in image)](https://uis.georgetown.edu/wp-content/uploads/2019/05/win10-fileexplorer-addrbar.png)  and enter `powershell` to open the PowerShell at the exact path. 
+Run `python -m pip install @((west packages pip) -split ' ')` from the main project file. You can then close PowerShell and return to working on cmd.
 12. (Linux Only) Run `west packages pip --install`
-13. Run `west zephyr-export`
-14. Run `west sdk install -t arm-zephyr-eabi` inside the same folder
-15. Open the `application` folder in CLion.
+14. Run `./zephyr west sdk install -t arm-zephyr-eabi` inside the main project folder.
+15. Open CLion and select to open the `application` folder within the main project folder.
+16. From CLion click the gear icon on the top left of the window and click on `Settings...`.
+17. From the section `Build, Execution, Deployement`, Click on `Toolchain` and edit the toolchain to resemble the [image provided](https://docs.zephyrproject.org/latest/_images/clion_toolchain_mingw.webp), with the environment file provided being the path towards venv's activate.bat from your main project folder. You could optionally name your toolchain to indicate that it is being used for Zephyr.
+18. Click `Apply` to save the changes.
+19. From the `Settings...` menu, click on `CMake`. From here ensure that the Toolchain used is the Zephyr toolchain you created previously. Specify that the Generator that you want to use is `Ninja` and within the CMake options, write `-G Ninja -DBOARD=sam_v71_xult/samv71q21`
+20. Click `Apply` to save the changes.
+21. Go to `Settings... -> Build,Execution,Deployment -> Embedded Development -> RTOS Integration` and set `Enable RTOS Integration`
+22. Click `Apply` to save the changes.
 16. Right click `APP/COMMS_App/CMakeLists.txt` or `APP/CDH_App/CMakeLists.txt` and select `Load West Project`. If this option is not available:
     1. If the `Convert to CMake Project` option appears, CLion has failed to detect west/zephyr and something went
        wrong.
     2. If the `Convert to West Project` option appears, everything is fine, it just means the project is already loaded.
-17. See [Configure the toolchain and CMake profile](https://docs.zephyrproject.org/latest/develop/tools/clion.html#configure-the-toolchain-and-cmake-profile)
-and [Enable RTOS integration](https://docs.zephyrproject.org/latest/develop/tools/clion.html#enable-rtos-integration)
-for details on configuring CLion. You will not need to setup a CMake Profile, but you will need to create a toolchain
-and then configure the Zephyr Profile to use it.
 18. In the top-right corner, select "COMMS (OpenOCD)" or "CDh (OpenOCD)" in the dropdown.
     1. Click the hammer to compile the code.
     2. Click the play button to compile, and upload the code to a connected board.
