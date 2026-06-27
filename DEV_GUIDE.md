@@ -17,26 +17,28 @@
     updated. (Don't forget to rerun the venv activate command first!)
 11. Run `west zephyr-export` inside the main project folder.
 12. (Windows Only) Inside File Explorer for the main project folder, click on the [address bar (ignore path in image)](https://uis.georgetown.edu/wp-content/uploads/2019/05/win10-fileexplorer-addrbar.png)  and enter `powershell` to open the PowerShell at the exact path. 
-Run `python -m pip install @((west packages pip) -split ' ')` from the main project file. You can then close PowerShell and return to working on cmd.
+Run `python -m pip install @((west packages pip) -split ' ')` from the main project file.
 13. (Linux Only) Run `west packages pip --install`
-14. Run `./zephyr west sdk install -t arm-zephyr-eabi` inside the main project folder.
-15. Open CLion and select to open the `application` folder within the main project folder.
-16. From CLion click the gear icon on the top left of the window and click on `Settings...`.
-17. From the section `Build, Execution, Deployement`, Click on `Toolchain` and edit the toolchain to resemble the [image provided](https://docs.zephyrproject.org/latest/_images/clion_toolchain_mingw.webp), with the environment file provided being the path towards venv's activate.bat from your main project folder. You could optionally name your toolchain to indicate that it is being used for Zephyr.
-18. Click `Apply` to save the changes.
-19. From the `Settings...` menu, click on `CMake`. From here ensure that the Toolchain used is the Zephyr toolchain you created previously. Specify that the Generator that you want to use is `Ninja` and within the CMake options, write `-G Ninja -DBOARD=sam_v71_xult/samv71q21`
-20. Click `Apply` to save the changes.
-21. Go to `Settings... -> Build,Execution,Deployment -> Embedded Development -> RTOS Integration` and set `Enable RTOS Integration`
-22. Click `Apply` to save the changes.
-23. Right click `APP/COMMS_App/CMakeLists.txt` or `APP/CDH_App/CMakeLists.txt` and select `Load West Project`. If this option is not available:
+14. (Windows Only) In Powershell, run `winget install -e --id xpack-dev-tools.openocd-xpack`. You can then close PowerShell and return to working on cmd.
+15. (Linux Only) Run `sudo apt install openocd`
+16. Run `./zephyr west sdk install -t arm-zephyr-eabi` inside the main project folder.
+17. Open CLion and select to open the `application` folder within the main project folder.
+18. From CLion click the gear icon on the top left of the window and click on `Settings...`.
+19. From the section `Build, Execution, Deployement`, Click on `Toolchain` and edit the toolchain to resemble the [image provided](https://docs.zephyrproject.org/latest/_images/clion_toolchain_mingw.webp), with the environment file provided being the path towards venv's activate.bat from your main project folder. You could optionally name your toolchain to indicate that it is being used for Zephyr. 
+20. Click `Apply` to save the changes. 
+21. From the `Settings...` menu, click on `CMake`. From here ensure that the Toolchain used is the Zephyr toolchain you created previously. Specify that the Generator that you want to use is `Ninja` and within the CMake options, write `-G Ninja -DBOARD=sam_v71_xult/samv71q21`
+22. Click `Apply` to save the changes. 
+23. Go to `Settings... -> Build,Execution,Deployment -> Embedded Development -> RTOS Integration` and set `Enable RTOS Integration`
+24. Click `Apply` to save the changes. 
+25. Right click `APP/COMMS_App/CMakeLists.txt` or `APP/CDH_App/CMakeLists.txt` and select `Load West Project`. If this option is not available:
     1. If the `Convert to CMake Project` option appears, CLion has failed to detect west/zephyr and something went
        wrong.
     2. If the `Convert to West Project` option appears, everything is fine, it just means the project is already loaded.
-24. In the top-right corner, select "COMMS (OpenOCD)" or "CDh (OpenOCD)" in the dropdown.
+26. In the top-right corner, select `COMMS (OpenOCD)` or `CDH (OpenOCD)` in the dropdown.
     1. Click the hammer to compile the code.
     2. Click the play button to compile, and upload the code to a connected board.
     3. Click the debug button to compile, upload the code to a connected board and start debugging.
-25. See Tools/remote_dev/readme.MD for information about remote development.
+27. See Tools/remote_dev/readme.MD for information about remote development.
 
 # Repository  Structure
 
