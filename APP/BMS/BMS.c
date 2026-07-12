@@ -151,13 +151,83 @@ static lfp_stream_ctx_t s_lfp_ctx;
 static uint8_t s_rx_body_buffer[RX_BODY_BUFFER_SIZE];
 static user_ctx_t s_user_ctx;
 
+
+typedef enum {
+    I2C_SLAVE_STATE_REQUEST,
+    I2C_SLAVE_STATE_PROCESSING,
+    I2C_SLAVE_STATE_RESPONSE
+} i2c_slave_state_t;
+
+static volatile i2c_slave_state_t s_current_state = I2C_SLAVE_STATE_REQUEST;
+static volatile uint16_t s_tx_idx = 0;
+static volatile uint8_t* p_txbuf = NULL;
+static volatile uint16_t s_msg_len = 0;
+
+static void i2c_transition(i2c_slave_state_t state) {
+    // naive for now
+    if (state == I2C_SLAVE_STATE_REQUEST) {
+        // discard tx buffer and reset 
+        p_txbuf = NULL;
+        s_tx_idx = 0;
+        s_msg_len = 0;
+    }
+
+    // NACK if we are in processing stage
+    if (state == I2C_SLAVE_STATE_PROCESSING) {
+        i2c_send_nack();
+    } else {
+        i2c_clear_nack();
+    }
+    
+    s_current_state = state;
+}
+
 static bool on_header(const lfp_header_t* p_header, void* p_ctx) {
-    if (i2c_slave_current_state() == I2C_SLAVE_STATE_RESPONSE) {
+    if (s_current_state == I2C_SLAVE_STATE_RESPONSE) {
         i2c_transition(I2C_SLAVE_STATE_REQUEST);
     }
     return true;
 }
 
+int16_t i2c_reassign_txbuf(volatile uint8_t* data, uint16_t size)
+{
+    s_tx_idx = 0;
+    s_msg_len = size;
+    p_txbuf = data; 
+    // We're ready to start transmitting data
+    i2c_transition(I2C_SLAVE_STATE_RESPONSE);
+}
+
+// FIXME: We should only ever transition REQUEST -> PROCESSING -> RESPONSE -> REQUEST ... 
+static void i2c_start_cond_cb() {
+    if (s_current_state == I2C_SLAVE_STATE_PROCESSING) { 
+        i2c_send_nack(); // NACK master writes while we're processing
+    }
+
+    // Roll back 1 byte on start to transmit the byte that was missed during the last transmission
+    if (s_tx_idx > 0 && s_tx_idx <= s_msg_len) { 
+        s_tx_idx--;
+    }
+}
+
+static void i2c_tx_byte_cb(volatile uint8_t* byte) {
+    if (s_current_state != I2C_SLAVE_STATE_RESPONSE) { // Unless we are in response state, just return 0xFF
+        *byte = 0xFF;
+    } else if (!p_txbuf || s_tx_idx >= s_msg_len) { // if we are asked for more bytes than we have, send 0xFF
+        // If we are at the byte after the last byte, go one over to make sure we dont roll back on start 
+        // (by now the controller has received atleast one 0xFF)
+        if (s_tx_idx == s_msg_len) {
+            s_tx_idx++;
+        }
+        *byte = 0xFF;
+    } else {
+        *byte = p_txbuf[s_tx_idx++]; 
+    }
+}
+
+static void i2c_rx_cb(uint8_t data) {
+    lfp_stream_update(&s_lfp_ctx, data);
+}
 
 // TODO: implement me?
 static void on_error(int error_code, const struct asn1_lfp_decode_data_t * p_data) {
@@ -235,7 +305,7 @@ static inline void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payl
 // bit silly to try to inline this. asm output at i2c.asm confirms a call with max optimizations (line 657): CALLA &s_ctx+0
 static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16_t body_length, void * p_ctx) {
     // if we get a valid message while responding to something else, forget what we were doing before respond to the new request
-    if (i2c_slave_current_state() == I2C_SLAVE_STATE_RESPONSE) {
+    if (s_current_state == I2C_SLAVE_STATE_RESPONSE) {
         i2c_transition(I2C_SLAVE_STATE_REQUEST);
     }
     const asn1_lfp_decode_data_t data = {
@@ -406,10 +476,6 @@ static void rtc_init() {
 #endif
 }
 
-static void i2c_rx_cb(uint8_t data) {
-    lfp_stream_update(&s_lfp_ctx, data);
-}
-
 // Hardware initialization. Initializes MSP430 specific device modules for I2C, ADC, GPIO, Clock, and RTC
 static void hardware_init() {
     gpio_init();
@@ -422,6 +488,8 @@ static void hardware_init() {
 static void comm_init() {
     i2c_ctx_t i2c_ctx = {
         .i2c_rx_cb = i2c_rx_cb,
+        .i2c_tx_byte_cb = i2c_tx_byte_cb,
+        .i2c_start_cond_cb = i2c_start_cond_cb,
         .slave_addr = BMS_SLAVE_ADDR,
     };
     i2c_init(&i2c_ctx);  
