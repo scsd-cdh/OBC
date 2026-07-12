@@ -66,6 +66,16 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>MIDDLEWARE/ASN1SCC</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/ASN1SCC</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP</locationURI>
+		</link>
+		<link>
 			<name>MIDDLEWARE/MRAM</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -79,6 +89,16 @@
 			<name>MIDDLEWARE/WATCHDOG</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/shared_types</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/shared_types</locationURI>
 		</link>
 		<link>
 			<name>MIDDLEWARE/tinyprotocol</name>

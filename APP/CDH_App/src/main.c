@@ -12,6 +12,7 @@
 
 #define SYSID_CDH 1
 #define SYSID_COMMS 3
+#define SYSID_BMS 5
 #define ENDPOINT_COMMS_TEST 154
 
 LOG_MODULE_REGISTER(main);
@@ -76,6 +77,7 @@ void asn1_example(void) {
     lfp_stream_init(&stream, payload2, sizeof(payload2), NULL, asn1_example_on_msg, asn1_example_stream_error_handler, NULL);
     lfp_stream_update_buf(&stream, payload, size);
 }
+
 
 int main(void)
 {

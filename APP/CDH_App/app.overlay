@@ -1,2 +1,12 @@
 / {
+	chosen {
+		ulog,usart = &usart1;
+	};
+};
+
+&ext1_i2c {
+	bms: bms@9 {
+		compatible = "vnd,i2c-device";
+		reg = <0x09>;
+	};
 };

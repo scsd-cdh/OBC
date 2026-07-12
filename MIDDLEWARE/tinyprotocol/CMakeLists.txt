@@ -1,12 +1,5 @@
-add_library(TINYPROTOCOL)
+zephyr_library_named(tinyprotocol)
 
-target_sources(
-    TINYPROTOCOL
-    PRIVATE
-        tinyprotocol.c
-    PUBLIC
-        FILE_SET HEADERS
-        BASE_DIRS .
-        FILES
-            tinyprotocol.h
-)
+zephyr_library_sources(src/tinyprotocol.c)
+
+zephyr_library_include_directories(include)

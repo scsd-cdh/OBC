@@ -25,13 +25,13 @@
 
 int main(void)
 {
-    BMS_init();
+    bms_init();
 
     __bis_SR_register(GIE);
     while (1) {
-        if (BMS_ISRTriggered()) {
-            BMS_collectData();
+        // Probably, I don't know if we can get here while transmitting i2c data or not
+        if (bms_isr_triggered() && !I2C_IS_TRANSMITTING) {
+            bms_collectdata();
         }
     }
-    return 0;
 }

@@ -6,63 +6,10 @@
  *  including ADC setup for current and voltage sensing, GPIO configuration for protection flags,
  *  PWM control for battery heaters, and I2C communications for telemetry and telecommand.
  *
- *  ADC channels are assigned to specific pins and memory buffers for multi-channel sweeps.
- *  GPIO pins are configured for over-voltage, under-voltage, and over-current protection flags.
- *  PWM outputs control battery heaters, with flexible duty cycle settings.
- *  Real-Time Clock (RTC) is used for periodic wakeup and routine execution.
- *  Telemetry and telecommand are handled via a custom protocol (tinyprotocol) over I2C.
- *
- *  * --- BMS.c Code Walkthrough ---
- *
- * This file implements the Battery Management System (BMS) logic for the MSP430.
- * 
- * Key sections:
- * 
- * 1. Hardware Definitions:
- *    - ADC pin assignments: Each *_PIN macro maps a physical pin to an ADC input channel.
- *    - ADC memory buffers: Each *_MEM macro maps an ADC channel to a memory buffer. These buffers store the results of ADC conversions.
- *    - GPIO pin assignments: Unique macros for each protection flag (over-voltage, under-voltage, over-current) mapped to specific pins.
- *    - PWM heater pins: Defines which pins are used for heater PWM outputs.
- *    - External ADC and I2C addresses.
- *
- * 2. Static Data Buffers:
- *    - Buffers for system status, current, voltage, flags, and external ADC readings.
- *    - These are used for telemetry responses and protocol communication.
- *
- * 3. Initialization Functions:
- *    - initADCs(): Sets up all ADC channels and memory buffers for multi-channel sweeps.
- *    - initGPIO(): Configures all GPIO pins for flags, I2C, and PWM outputs.
- *    - initClockTo16MHz(): Sets the MSP430 clock to 16MHz for fast operation.
- *    - initRTC(): Initializes the Real-Time Clock for periodic interrupts.
- *    - initBSP(): Calls all hardware initialization routines.
- *
- * 4. Communication Setup:
- *    - InitAppComm(): Initializes I2C and the custom tinyprotocol for telemetry/telecommand.
- *    - Registers all telemetry channels and telecommands.
- *
- * 5. Main Periodic Routine:
- *    - RoutineCycle_Process(): Called by RTC interrupt. Sweeps ADCs, reads GPIO flags, collects external ADC data, and updates buffers.
- *
- * 6. Interrupt Service Routine:
- *    - RTC_ISR(): Handles RTC interrupts, triggers periodic routine, and blinks LED for events.
- *
- * 7. Telemetry and Telecommand Handlers:
- *    - SendTelemetryResponse(): Responds to telemetry requests.
- *    - ProcessTelemetryRequest(): Dispatches telemetry responses.
- *    - SendPWM(): Sets heater PWM duty cycles.
- *    - ProcessTelecommand(): Handles incoming telecommands (e.g., heater control).
- *
- * --- Notes for Reviewers ---
- * - ADC memory buffers are crucial for storing conversion results; each sensor channel has a dedicated buffer.
- * - GPIO flag assignments should be unique and clearly mapped to physical pins.
- * - All hardware initialization is grouped for clarity and maintainability.
- * - Telemetry/telecommand protocol is modular and easily extendable.
- * - RoutineCycle_Process is the main data acquisition and update loop, triggered by RTC.
- * - Comments throughout the file explain hardware mapping and logic flow.
  *  Author: Brendan Kelly
  */
 
-#include <stdint.h>
+#include <stdbool.h>
 
 #include "BMS.h"
 #include "ADC_Read.h"
@@ -72,6 +19,15 @@
 #include "PWM.h"
 #include "swi2c.h"
 #include "ads7138irter.h"
+#include "i2c.h"
+#include "lfp.h"
+#include "lfp/stream.h"
+#include "asn1/bms.h"
+#include "ASN1SCC/asn1_lfp.h"
+#include "asn1/_systems.h"
+#include "asn1/bms.h"
+#include "i2c.h"
+
 #if defined (__MSP430FR5989__)
 #include "rtc_c.h"
 #elif defined (__MSP430FR5969__)
@@ -150,52 +106,233 @@
 #define HEATER4_CCR TIMER_B_CAPTURECOMPARE_REGISTER_6
 #endif  
 
-#define SLAVE_ADDR 0x08
+#define BMS_SLAVE_ADDR 0x09
 
-// Static data buffers to be sent back to CDH via tinyprotocol
-static const SystemStatusResp_t sSystemStatus = {
-    .runtime = 0x12,
-    .fw_version = 0xA, 
+// number of external ADS7138IRTER channels. Corresponds to thermistors -> heaters
+#define ADC_NUM_CHANNELS 8
+
+// private isr triggered flag for access only
+static volatile bool s_isr_triggered = false;
+
+// Static serialized structs to be populated periodically from sensor data etc...
+static const BMSSystemStatusResponse s_systemstatus = {
+    .uptime = 0xDEADBEEF,
+    .version = 12    
 };
+static volatile BMSPowerStatusResponse s_powerstatus;
+static volatile BMSTemperatureStatusResponse s_temperature_status;
+static BMSSetHeaterDutyResponse s_heaterduty_response; // this 
 
-static CurrentResp_t sCurrentDraw = {
-    .isense1 = 0,
-    .isense2 = 0,
-};
-
-static CurrentResp_t sCurrentCharge = {
-    .isense1 = 0,
-    .isense2 = 0,
-};
-
-static VoltageResp_t sVoltageBattery1 = {
-    .vcell_a = 0,
-    .vcell_b = 0,
-};
-
-static VoltageResp_t sVoltageBattery2 = {
-    .vcell_a = 0,
-    .vcell_b = 0,
-};
-
-static CombinedVoltageResp_t sCombinedBatteryVoltage = {
-    .vbatt1 = 0,
-    .vbatt2 = 0,
-};
-
-static Flag_t sFlags = {
-    .val = 0x00,
-};
-
-// Need 2 buffers since max buffer size for tinyprotocol is 11 and we have 8 16 bit 
-static uint8_t sExtADCBuffer03[8] = {};
-static uint8_t sExtADCBuffer47[8] = {};
-
+// Static asn1 encoded data buffers to be sent back to CDH on request
+static volatile uint8_t s_systemstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
+static volatile uint16_t s_powerstatus_size = 0;
+static volatile uint8_t s_powerstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
+static volatile uint16_t s_temperature_status_size = 0;
+static volatile uint8_t s_temperature_status_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusResponse)];
+static uint16_t s_heaterduty_response_size = 0;
+static uint8_t s_heaterduty_response_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyResponse)];
 
 // Global SWI2C config "descriptor"
-static SWI2C_Descriptor sADS7138_SWI2C_Descriptor;
+static SWI2C_Descriptor s_swi2c_descriptor;
 
-static volatile bool sISRTriggered = false;
+// LFP 
+typedef struct {
+    const lfp_header_t* p_header;
+    const uint8_t* p_body;
+    uint16_t body_length;
+    lfp_code_t reason;
+} user_ctx_t;
+
+static lfp_stream_ctx_t s_lfp_ctx;
+
+// FIXME: arbitrary temporary size
+#define RX_BODY_BUFFER_SIZE 16
+
+static uint8_t s_rx_body_buffer[RX_BODY_BUFFER_SIZE];
+static user_ctx_t s_user_ctx;
+
+
+typedef enum {
+    I2C_SLAVE_STATE_REQUEST,
+    I2C_SLAVE_STATE_PROCESSING,
+    I2C_SLAVE_STATE_RESPONSE
+} i2c_slave_state_t;
+
+static volatile i2c_slave_state_t s_current_state = I2C_SLAVE_STATE_REQUEST;
+static volatile uint16_t s_tx_idx = 0;
+static volatile uint8_t* p_txbuf = NULL;
+static volatile uint16_t s_msg_len = 0;
+
+static void i2c_transition(i2c_slave_state_t state) {
+    // naive for now
+    if (state == I2C_SLAVE_STATE_REQUEST) {
+        // discard tx buffer and reset 
+        p_txbuf = NULL;
+        s_tx_idx = 0;
+        s_msg_len = 0;
+    }
+
+    // NACK if we are in processing stage
+    if (state == I2C_SLAVE_STATE_PROCESSING) {
+        i2c_send_nack();
+    } else {
+        i2c_clear_nack();
+    }
+    
+    s_current_state = state;
+}
+
+static bool on_header(const lfp_header_t* p_header, void* p_ctx) {
+    if (s_current_state == I2C_SLAVE_STATE_RESPONSE) {
+        i2c_transition(I2C_SLAVE_STATE_REQUEST);
+    }
+    return true;
+}
+
+int16_t i2c_reassign_txbuf(volatile uint8_t* data, uint16_t size)
+{
+    s_tx_idx = 0;
+    s_msg_len = size;
+    p_txbuf = data; 
+    // We're ready to start transmitting data
+    i2c_transition(I2C_SLAVE_STATE_RESPONSE);
+}
+
+// FIXME: We should only ever transition REQUEST -> PROCESSING -> RESPONSE -> REQUEST ... 
+static void i2c_start_cond_cb() {
+    if (s_current_state == I2C_SLAVE_STATE_PROCESSING) { 
+        i2c_send_nack(); // NACK master writes while we're processing
+    }
+
+    // Roll back 1 byte on start to transmit the byte that was missed during the last transmission
+    if (s_tx_idx > 0 && s_tx_idx <= s_msg_len) { 
+        s_tx_idx--;
+    }
+}
+
+static void i2c_tx_byte_cb(volatile uint8_t* byte) {
+    if (s_current_state != I2C_SLAVE_STATE_RESPONSE) { // Unless we are in response state, just return 0xFF
+        *byte = 0xFF;
+    } else if (!p_txbuf || s_tx_idx >= s_msg_len) { // if we are asked for more bytes than we have, send 0xFF
+        // If we are at the byte after the last byte, go one over to make sure we dont roll back on start 
+        // (by now the controller has received atleast one 0xFF)
+        if (s_tx_idx == s_msg_len) {
+            s_tx_idx++;
+        }
+        *byte = 0xFF;
+    } else {
+        *byte = p_txbuf[s_tx_idx++]; 
+    }
+}
+
+static void i2c_rx_cb(uint8_t data) {
+    lfp_stream_update(&s_lfp_ctx, data);
+}
+
+// TODO: implement me?
+static void on_error(int error_code, const struct asn1_lfp_decode_data_t * p_data) {
+}
+
+// NOTE!! If we don't copy buffers into a seperate i2c transfer buffer, idk if it's possible for buffers to be updated mid transfer or not
+// I don't think so, but wouldn't hurt testing this just in casee
+// NOTE2: these callbacks are technically doing work in the isr, but on_msg only ever gets called on the last byte of the write
+// TODO: Make put them in helper function
+static inline void bms_system_status_req_cb(const BMSSystemStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+    (void)p_payload;
+    i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    // GIE -- this is technically in the i2c isr, we don't want getting stuck here to stall BMS
+    __enable_interrupt(); 
+
+    uint16_t size = ASN1_LFP_SERIALIZE(
+        p_data->p_header->initiator, bmsSystemId, 
+        BMSSystemStatusResponse, 
+        s_systemstatus_tx_buf, sizeof(s_systemstatus_tx_buf), 
+        s_systemstatus
+    );
+    __disable_interrupt();
+    i2c_reassign_txbuf(s_systemstatus_tx_buf, size);
+}
+
+static inline void bms_power_status_req_cb(const BMSPowerStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+    (void)p_payload;
+    i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    __enable_interrupt();
+    uint16_t size = ASN1_LFP_SERIALIZE(
+        p_data->p_header->initiator, bmsSystemId, 
+        BMSPowerStatusResponse, 
+        s_powerstatus_tx_buf, sizeof(s_powerstatus_tx_buf), 
+        s_powerstatus
+    );
+    __disable_interrupt();
+    i2c_reassign_txbuf(s_powerstatus_tx_buf, size);    
+}
+
+static inline void bms_temperature_status_req_cb(const BMSTemperatureStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+    (void)p_payload;
+    i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    __enable_interrupt();
+    uint16_t size = ASN1_LFP_SERIALIZE(
+        p_data->p_header->initiator, bmsSystemId, 
+        BMSTemperatureStatusResponse, 
+        s_temperature_status_tx_buf, 
+        sizeof(s_temperature_status_tx_buf), 
+        s_temperature_status
+    );
+    __disable_interrupt();
+    i2c_reassign_txbuf(s_temperature_status_tx_buf, size);   
+}
+
+static inline void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
+    // It's 100-1 and not 99 because that's what they do in the TI examples for PWM, IDK why the do that but best to stick to a standard if it exists
+    i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    if (p_payload->exist.heater1) {
+        PWM_Generate(100-1, p_payload->heater1, HEATER1_CCR);
+    }
+    if (p_payload->exist.heater2) {
+        PWM_Generate(100-1, p_payload->heater2, HEATER2_CCR);
+    }
+    if (p_payload->exist.heater3) {
+        PWM_Generate(100-1, p_payload->heater3, HEATER3_CCR);
+    }
+    if (p_payload->exist.heater4) {
+        PWM_Generate(100-1, p_payload->heater4, HEATER4_CCR);
+    }
+
+    // Send response (Empty body basically an ACK)
+    i2c_reassign_txbuf(s_temperature_status_tx_buf, s_temperature_status_size);   
+}
+
+// bit silly to try to inline this. asm output at i2c.asm confirms a call with max optimizations (line 657): CALLA &s_ctx+0
+static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16_t body_length, void * p_ctx) {
+    // if we get a valid message while responding to something else, forget what we were doing before respond to the new request
+    if (s_current_state == I2C_SLAVE_STATE_RESPONSE) {
+        i2c_transition(I2C_SLAVE_STATE_REQUEST);
+    }
+    const asn1_lfp_decode_data_t data = {
+        .p_header = p_header,
+        .p_body = p_body,
+        .p_ctx = p_ctx,
+        .body_length = body_length,
+        .p_on_error_cb = on_error,
+    };
+
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusRequest, bms_system_status_req_cb)) {
+        return;
+    }
+
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusRequest, bms_power_status_req_cb)) {
+        return;
+    }
+
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSTemperatureStatusRequest, bms_temperature_status_req_cb)) {
+        return;
+    }
+
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSetHeaterDutyRequest, bms_set_heater_duty_cb)) {
+        return;
+    }
+}
+
 
 /* INITIALIZATOIN LOGIC */
 // Note most of the code is initialization, since the main logic is just reading sensors and updating buffers
@@ -203,8 +340,7 @@ static volatile bool sISRTriggered = false;
 // Sets up all ADC channels and memory buffers for multi-channel sweeps
 // Uses ADC12_B driverlib
 // NOTE: You need to set the end of sequence to the last ADC pin and set sequence. I repeat this a lot because it's easy to miss!
-static void initADCs() 
-{
+static void adc_init() {
     ADC_initMultiple();
 
     ADC12_B_disableConversions(ADC12_B_BASE, 1);
@@ -239,8 +375,7 @@ static void initADCs()
 
 // Initialize clock to 16MHz
 // Uses direct register manipulation as per device datasheet
-static void initClockTo16MHz()
-{
+static void clock_init_16mhz() {
     // Configure one FRAM waitstate as required by the device datasheet for MCLK
     // operation beyond 8MHz _before_ configuring the clock system.
     FRCTL0 = FRCTLPW | NWAITS_1;
@@ -262,12 +397,11 @@ static void initClockTo16MHz()
 
 // Initialize GPIO pins for flags, I2C, and PWM outputs
 // Uses GPIO driverlib
-static void initGPIO()
-{
+static void gpio_init() {
     // Importing drivers is a pain and we only really need WDT_A_hold(), so just copy and paste it here for now.
     // IMO it would be better to just have driverlib
-    uint8_t newWDTStatus = ((HWREG16(WDT_A_BASE + OFS_WDTCTL) & 0x00FF) | WDTHOLD);
-    HWREG16(WDT_A_BASE + OFS_WDTCTL) = WDTPW + newWDTStatus;
+    uint8_t new_wdt_status = ((HWREG16(WDT_A_BASE + OFS_WDTCTL) & 0x00FF) | WDTHOLD);
+    HWREG16(WDT_A_BASE + OFS_WDTCTL) = WDTPW + new_wdt_status;
 
     // Configure Pins for I2C
     //Set P1.6 and P1.7 as Secondary Module Function Input.
@@ -308,86 +442,29 @@ static void initGPIO()
     PWM_PinSelect(HEATER_PWM_PORT, HEATER4_PWM_PIN);
 }
 
-
-
 // Initialize the Real-Time Clock (RTC) for periodic interrupts
 // Uses RTC_C or RTC_B driverlib depending on device
+static void rtc_init() {
 #if defined (__MSP430FR5989__)
-static void initRTC()
-{
-    Calendar currentTime;
-
-    //Setup for Calendar
-    currentTime.Seconds    = 0x00;
-    currentTime.Minutes    = 0x00;
-    currentTime.Hours      = 0x00;
-    currentTime.DayOfWeek  = 0x00;
-    currentTime.DayOfMonth = 0x00;
-    currentTime.Month      = 0x00;
-    currentTime.Year       = 0x7E9;  // 2025
-
-    //Initialize Calendar Mode of RTC
-    RTC_C_initCalendar(RTC_C_BASE, &currentTime, RTC_C_FORMAT_BCD);
-
-    //Setup Calendar Alarm for 30 minutes after start.
-    RTC_C_configureCalendarAlarmParam param = {0};
-    param.minutesAlarm      = 0x2;  // Currently set to 2 minute for testing - TODO change to 24 hours
-    param.hoursAlarm        = 0x0;
-    param.dayOfWeekAlarm    = 0x0;
-    param.dayOfMonthAlarm   = 0x0;
-    RTC_C_configureCalendarAlarm(RTC_C_BASE, &param);
-
     RTC_C_clearInterrupt(RTC_C_BASE,
         RTC_C_CLOCK_READ_READY_INTERRUPT +
         RTC_C_TIME_EVENT_INTERRUPT +
         RTC_C_CLOCK_ALARM_INTERRUPT
         );
-    //Enable interrupt for RTC Ready Status, which asserts when the RTC
-    //Calendar registers are ready to read.
-    //Also, enable interrupts for the Calendar alarm and Calendar event.
     RTC_C_enableInterrupt(RTC_C_BASE,
         RTC_C_CLOCK_READ_READY_INTERRUPT +
         RTC_C_TIME_EVENT_INTERRUPT +
         RTC_C_CLOCK_ALARM_INTERRUPT
     );
 
-    //Start RTC Clock
+    //Start RTC
     RTC_C_startClock(RTC_C_BASE);
-}
-
 #elif defined (__MSP430FR5969__)
-static void initRTC()
-{
-    Calendar currentTime;
-
-    //Setup for Calendar
-    currentTime.Seconds    = 0x00;
-    currentTime.Minutes    = 0x00;
-    currentTime.Hours      = 0x00;
-    currentTime.DayOfWeek  = 0x00;
-    currentTime.DayOfMonth = 0x00;
-    currentTime.Month      = 0x00;
-    currentTime.Year       = 0x7E9;  // 2025
-
-    //Initialize Calendar Mode of RTC
-    RTC_B_initCalendar(RTC_B_BASE, &currentTime, RTC_B_FORMAT_BCD);
-
-    //Setup Calendar Alarm for 30 minutes after start.
-    RTC_B_configureCalendarAlarmParam param = {0};
-    param.minutesAlarm      = 0x2;  // Currently set to 2 minute for testing - TODO change to 24 hours
-    param.hoursAlarm        = 0x0;
-    param.dayOfWeekAlarm    = 0x0;
-    param.dayOfMonthAlarm   = 0x0;
-    RTC_B_configureCalendarAlarm(RTC_B_BASE, &param);
-
     RTC_B_clearInterrupt(RTC_B_BASE,
         RTC_B_CLOCK_READ_READY_INTERRUPT +
         RTC_B_TIME_EVENT_INTERRUPT +
         RTC_B_CLOCK_ALARM_INTERRUPT
         );
-    //Enable interrupt for RTC Ready Status, which asserts when the RTC
-    //Calendar registers are ready to read.
-    //Also, enable interrupts for the Calendar alarm and Calendar event.
     RTC_B_enableInterrupt(RTC_B_BASE,
         RTC_B_CLOCK_READ_READY_INTERRUPT +
         RTC_B_TIME_EVENT_INTERRUPT +
@@ -396,229 +473,165 @@ static void initRTC()
 
     //Start RTC Clock
     RTC_B_startClock(RTC_B_BASE);
-}
 #endif
-
-
-// Private helper functions for telemetry and telecommand processing
-static void I2C_Proc_RX_Data(uint8_t data);
-
-static uint16_t SendTelemetryResponse(uint8_t request)
-{
-    uint8_t bytes[TINYPROTOCOL_MAX_PACKET_SIZE];
-    uint8_t count = 0;
-    uint8_t* pbyte = bytes;
-
-    while(TINYPROTOCOL_TelemetryBytesLeft() > 0) {
-        int16_t result = TINYPROTOCOL_ReadNextTelemetryByte(pbyte);
-        volatile uint8_t byte = *pbyte;
-        if (result == ETINYPROTOCOL_SUCCESS) {
-            pbyte++;
-            count++;
-        } else {
-            return result;
-        }
-    }
-    
-    transmitI2C(bytes, count);
-
-    return ETINYPROTOCOL_SUCCESS;
-} 
-
-static int16_t ProcessTelemetryRequest(uint8_t request)
-{
-    return SendTelemetryResponse(request);
-}
-
-// NOTE: Likely just going to be turning heaters all the way on and all the way off, but for now the API is flexible
-// NOTE: Once PWM generate is set, it goes on forever. Those pins are set to generate that PWM signal until we tell them not to
-static void SendPWM(const uint8_t* buffer, uint8_t size)
-{
-    // It's 100-1 and not 99 because that's what they do in the TI examples for PWM, IDK why the do that but best to stick to a standard if it exists
-    PWM_Generate(100-1, buffer[0], HEATER1_CCR);
-    PWM_Generate(100-1, buffer[1], HEATER2_CCR);
-    PWM_Generate(100-1, buffer[2], HEATER3_CCR);
-    PWM_Generate(100-1, buffer[3], HEATER4_CCR);
-}
-
-static int16_t ProcessTelecommand(uint8_t command, const uint8_t* buffer, uint8_t size)
-{
-    switch (command) {
-        case BMS_HEATERS_CONTROLLER_ID:
-            SendPWM(buffer, size);
-            break;
-        
-        default: 
-            return ETINYPROTOCOL_INVALID_CMD_ID;
-    }
-    return ETINYPROTOCOL_SUCCESS;
-}
-
-const struct TINYPROTOCOL_Config protocolConfig =
-{
-    .TINYPROTOCOL_ProcessTelecommand = ProcessTelecommand,
-    .TINYPROTOCOL_ProcessTelemetryRequest = ProcessTelemetryRequest,
-    .TINYPROTOCOL_WriteBuffer = transmitI2C
-};
-
-static void I2C_Proc_RX_Data(uint8_t data)
-{
-    TINYPROTOCOL_ParseByte(&protocolConfig, data);
 }
 
 // Hardware initialization. Initializes MSP430 specific device modules for I2C, ADC, GPIO, Clock, and RTC
-static void initHardware()
-{
-    initGPIO();
-    initClockTo16MHz();
-    initRTC();
-    initADCs();
+static void hardware_init() {
+    gpio_init();
+    clock_init_16mhz();
+    rtc_init();
+    adc_init();
 }
 
-// App communication initialization. Initializes I2C and tinyprotocol, registers telemetry and telecommand channels
-// NOTE: Must be called after initBSP since it uses I2C pins
-static void InitAppComm()
-{
-    sI2cConfigCb_t i2cConfig = {
-      .Rx_Proc_Data = I2C_Proc_RX_Data,
-        .slave_addr = SLAVE_ADDR,
+// App communication initialization. Initializes I2C and lfp, registers telemetry and telecommand channels
+static void comm_init() {
+    i2c_ctx_t i2c_ctx = {
+        .i2c_rx_cb = i2c_rx_cb,
+        .i2c_tx_byte_cb = i2c_tx_byte_cb,
+        .i2c_start_cond_cb = i2c_start_cond_cb,
+        .slave_addr = BMS_SLAVE_ADDR,
     };
-    initI2C(&i2cConfig);  
+    i2c_init(&i2c_ctx);  
 
     // SW I2C
-    sADS7138_SWI2C_Descriptor.sda_port_out =   &P4OUT;
-    sADS7138_SWI2C_Descriptor.sda_port_in =    &P4IN;
-    sADS7138_SWI2C_Descriptor.sda_port_dir =   &P4DIR;
-    sADS7138_SWI2C_Descriptor.scl_port_out =   &P4OUT;
-    sADS7138_SWI2C_Descriptor.scl_port_in =    &P4IN;
-    sADS7138_SWI2C_Descriptor.scl_port_dir =   &P4DIR;
+    s_swi2c_descriptor.sda_port_out =   &P4OUT;
+    s_swi2c_descriptor.sda_port_in =    &P4IN;
+    s_swi2c_descriptor.sda_port_dir =   &P4DIR;
+    s_swi2c_descriptor.scl_port_out =   &P4OUT;
+    s_swi2c_descriptor.scl_port_in =    &P4IN;
+    s_swi2c_descriptor.scl_port_dir =   &P4DIR;
 #if defined (__MSP430FR5989__)
-    sADS7138_SWI2C_Descriptor.sda_pin =        GPIO_PIN1;
-    sADS7138_SWI2C_Descriptor.scl_pin =        GPIO_PIN0;
+    s_swi2c_descriptor.sda_pin =        GPIO_PIN1;
+    s_swi2c_descriptor.scl_pin =        GPIO_PIN0;
 #elif defined (__MSP430FR5969__)
-    sADS7138_SWI2C_Descriptor.sda_pin =        GPIO_PIN2;
-    sADS7138_SWI2C_Descriptor.scl_pin =        GPIO_PIN3;
+    s_swi2c_descriptor.sda_pin =        GPIO_PIN2;
+    s_swi2c_descriptor.scl_pin =        GPIO_PIN3;
 #endif
     P1DIR |= BIT0 | BIT1; // Set 1.0 and 1.1 direction to "output". I have no idea why this is here
     // Select general purpose IO for port 4
     P4SEL0 &= ~(BIT0 | BIT1);
     P4SEL1 &= ~(BIT0 | BIT1);
     
-    ADS7138IRTER_Initialize(&sADS7138_SWI2C_Descriptor);
+    ADS7138IRTER_Initialize(&s_swi2c_descriptor);
 
-    TINYPROTOCOL_Initialize();
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_SYSTEM_STATUS_ID, sSystemStatus.buffer , sizeof(sSystemStatus.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_FLAG_ID, sFlags.buffer, sizeof(sFlags.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_DRAW_ID, sCurrentDraw.buffer, sizeof(sCurrentDraw.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_CURRENT_CHARGE_ID, sCurrentCharge.buffer, sizeof(sCurrentCharge.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY1_ID, sVoltageBattery1.buffer, sizeof(sVoltageBattery1.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_BATTERY2_ID, sVoltageBattery2.buffer, sizeof(sVoltageBattery2.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_VOLTAGE_COMBINED_ID, sCombinedBatteryVoltage.buffer, sizeof(sCombinedBatteryVoltage.buffer));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_THERMISTOR03_DATA_ID, sExtADCBuffer03, sizeof(sExtADCBuffer03));
-    TINYPROTOCOL_RegisterTelemetryChannel(BMS_THERMISTOR47_DATA_ID, sExtADCBuffer47, sizeof(sExtADCBuffer47));
+    // We only every have to do this once since it's just an empty body used as an ACK. 
+    s_heaterduty_response_size = ASN1_LFP_SERIALIZE(bmsSystemId, cdhSystemId, BMSSetHeaterDutyResponse, s_heaterduty_response_tx_buf, sizeof(s_heaterduty_response_tx_buf), s_heaterduty_response);
+    if (!s_heaterduty_response_size) {
+        __no_operation();
+    }
 
-    TINYPROTOCOL_RegisterTelecommand(BMS_HEATERS_CONTROLLER_ID, 4);
+    lfp_stream_init(&s_lfp_ctx, s_rx_body_buffer, sizeof(s_rx_body_buffer), on_header, on_msg, on_error, &s_user_ctx);
 }
 
-// Public BMS initialization. Calls initBSP and InitAppComm
-void BMS_init()
-{
-    initHardware();
-    InitAppComm();
+#ifndef MOCK_POWER
+static void collect_power_status() {
+    // Collect voltage and current ADC values 
+    // Must do this this way (all at once) if using SEQOFCHANNELS mode
+    // trigger the ten‑channel sweep 
+    ADC12_B_startConversion(ADC12_B_BASE,
+        ADC12_B_START_AT_ADC12MEM0,
+        ADC12_B_SEQOFCHANNELS);        // ENC+SC, walk MEM0->MEM9
+
+    // Profile this irl... can probably get away with having this in callback so we can get most accurate data immediately on asking
+    // I'm not sure how possible it is for this to spin forever if at all. 
+    uint16_t counter = 0;
+    while (ADC12_B_isBusy(ADC12_B_BASE)) {
+        counter++;
+    }
+    
+    // Current
+    s_powerstatus.batteryPack1.currentDraw        = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_1_CP_MEM);
+    s_powerstatus.batteryPack2.currentDraw        = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_2_CP_MEM);
+    s_powerstatus.batteryPack1.currentCharge      = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_1_CP_MEM);
+    s_powerstatus.batteryPack2.currentCharge      = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_2_CP_MEM);
+    
+    // Voltage per cell   
+    s_powerstatus.batteryPack1.cellA.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1A_CP_MEM);
+    s_powerstatus.batteryPack1.cellB.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1B_CP_MEM);
+    s_powerstatus.batteryPack2.cellA.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2A_CP_MEM);
+    s_powerstatus.batteryPack2.cellB.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2B_CP_MEM);
+    
+    // Combined voltage per battery   
+    s_powerstatus.batteryPack1.voltage            = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
+    s_powerstatus.batteryPack2.voltage            = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
+        
+    // Collect voltage and current flags
+    s_powerstatus.batteryPack1.cellA.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
+    s_powerstatus.batteryPack1.cellA.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1A_PIN);
+    s_powerstatus.batteryPack1.cellB.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1B_PIN);
+    s_powerstatus.batteryPack1.cellB.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1B_PIN);
+    s_powerstatus.batteryPack1.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_1_PIN);
+
+    s_powerstatus.batteryPack2.cellA.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2A_PIN);
+    s_powerstatus.batteryPack2.cellA.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2A_PIN);
+    s_powerstatus.batteryPack2.cellB.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2B_PIN);
+    s_powerstatus.batteryPack2.cellB.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2B_PIN);
+    s_powerstatus.batteryPack2.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
+}
+
+#else
+// Mock version using easy-to-identify test values
+static inline void collect_power_status_mock() {
+    s_powerstatus.batteryPack1.currentDraw        = 0x11ee;
+    s_powerstatus.batteryPack1.currentCharge      = 0x12ee;
+
+    s_powerstatus.batteryPack1.cellA.voltage      = 0x1Aee;
+    s_powerstatus.batteryPack1.cellB.voltage      = 0x1Bee;
+
+    s_powerstatus.batteryPack1.voltage            = 0x1111;
+
+    s_powerstatus.batteryPack1.cellA.overvoltage  = 0;
+    s_powerstatus.batteryPack1.cellA.undervoltage = 1;
+    s_powerstatus.batteryPack1.cellB.overvoltage  = 0;
+    s_powerstatus.batteryPack1.cellB.undervoltage = 0;
+    s_powerstatus.batteryPack1.overcurrent        = 1;
+
+    s_powerstatus.batteryPack2.currentDraw        = 0x21ee;
+    s_powerstatus.batteryPack2.currentCharge      = 0x22ee;
+
+    s_powerstatus.batteryPack2.cellA.voltage      = 0x2Aee;
+    s_powerstatus.batteryPack2.cellB.voltage      = 0x2Bee;
+    s_powerstatus.batteryPack2.voltage            = 0x2222;
+
+    s_powerstatus.batteryPack2.cellA.overvoltage  = 1;
+    s_powerstatus.batteryPack2.cellA.undervoltage = 0;
+    s_powerstatus.batteryPack2.cellB.overvoltage  = 1;
+    s_powerstatus.batteryPack2.cellB.undervoltage = 0;
+    s_powerstatus.batteryPack2.overcurrent        = 0;
+}
+#endif
+
+// Public BMS initialization. 
+void bms_init() {
+    hardware_init();
+    comm_init();
 }
 /* END INITIALIZATION LOGIC  */
 
 /* 
  * RTC ISR and main program logic. 
- * This is where data is collected and stored into static buffers as per tinyprotocol 
- * NOTE: inlining functions is entirely up to the compiler, therefore logic for different buffers (i.e. ADC, GPIO, etc) is kept in one function
- *  due to paranoia that the compiler might not inline it. This is subject to refactor. It is possible to force inline or use macros.
  */  
-extern void BMS_collectData()
-{
-    /* MSP430xxxx ON DEVICE ADCs */
-    // Collect ADC data and put it into buffers
-    // Must do this this way (all at once) if using SEQOFCHANNELS mode
-    /* trigger the ten‑channel sweep */
-    ADC12_B_startConversion(ADC12_B_BASE,
-        ADC12_B_START_AT_ADC12MEM0,
-        ADC12_B_SEQOFCHANNELS);        // ENC+SC, walk MEM0→MEM9
+// Public interval data collection
+void bms_collectdata() {
+#ifdef MOCK_POWER
+    collect_power_status_mock();
+#else
+    collect_power_status();
+#endif
 
-    while (ADC12_B_isBusy(ADC12_B_BASE));
-
-    /* pull results out */
-    sCurrentDraw.isense1             = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_1_CP_MEM);
-    sCurrentDraw.isense2             = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_2_CP_MEM);
-    sCurrentCharge.isense1           = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_1_CP_MEM);
-    sCurrentCharge.isense2           = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_2_CP_MEM);
-    sVoltageBattery1.vcell_a         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1A_CP_MEM);
-    sVoltageBattery1.vcell_b         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1B_CP_MEM);
-    sVoltageBattery2.vcell_a         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2A_CP_MEM);
-    sVoltageBattery2.vcell_b         = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2B_CP_MEM);
-    sCombinedBatteryVoltage.vbatt1   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
-    sCombinedBatteryVoltage.vbatt2   = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
-
-    /* FLAGS */
-    // Read GPIO flags and put them into buffer
-    sFlags.val = 0x00;
-    volatile uint8_t ovp1Aval = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
-    sFlags.val |= ovp1Aval << 9;
-
-    volatile uint8_t uvp1Bval = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1B_PIN);
-    sFlags.val |= uvp1Bval << 8;
-
-    volatile uint8_t uvp1Aval = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1A_PIN);
-    sFlags.val |= uvp1Aval << 7;
-
-    volatile uint8_t ovp1Bval = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1B_PIN);
-    sFlags.val |= ovp1Bval << 6;
-
-    volatile uint8_t ocp1val = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_1_PIN);
-    sFlags.val |= ocp1val << 5;
-
-    volatile uint8_t ovp2Aval = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2A_PIN);
-    sFlags.val |= ovp2Aval << 4;
-
-    volatile uint8_t ovp2Bval = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2B_PIN);
-    sFlags.val |= ovp2Bval << 3;
-
-    volatile uint8_t uvp2Aval = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2A_PIN);
-    sFlags.val |= uvp2Aval << 2;
-
-    volatile uint8_t uvp2Bval = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2B_PIN);
-    sFlags.val |= uvp2Bval << 1;
-
-    volatile uint8_t ocp2val = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
-    sFlags.val |= ocp2val;
-
-    /* TI ADS7138IRTER EXTERNAL ADC DATA  (THERMISTORS)*/
-    // Get External ADC data
-    uint8_t i;
-    uint16_t val = 0;
-    uint8_t num_half_channels = 4;
-    uint8_t buffer_idx = 0;
-    for (i = 0 ; i < num_half_channels; i++) {
-        ADS7138IRTER_SingleRegisterWrite(&sADS7138_SWI2C_Descriptor, ADS7138_CHANNEL_SEL_REGISTER, i);
-        val = ADS7138IRTER_Read(&sADS7138_SWI2C_Descriptor); 
-        sExtADCBuffer03[buffer_idx] = val >> 8;
-        sExtADCBuffer03[buffer_idx + 1u] = val & 0xff; 
-        buffer_idx += 2;
+    // TI ADS7138IRTER EXTERNAL ADC DATA  (THERMISTORS)
+    // NOTE: Profile this.. might be able to ask for this directly in callback 
+    for (uint8_t i = 0 ; i < ADC_NUM_CHANNELS; i++) {
+        ADS7138IRTER_SingleRegisterWrite(&s_swi2c_descriptor, ADS7138_CHANNEL_SEL_REGISTER, i);
+        s_temperature_status.thermistors.arr[i] = ADS7138IRTER_Read(&s_swi2c_descriptor); 
     }
 
-    buffer_idx = 0;
-    for (i = 0 ; i < num_half_channels; i++) {
-        ADS7138IRTER_SingleRegisterWrite(&sADS7138_SWI2C_Descriptor, ADS7138_CHANNEL_SEL_REGISTER, i + num_half_channels);
-        val = ADS7138IRTER_Read(&sADS7138_SWI2C_Descriptor); 
-        sExtADCBuffer47[buffer_idx] = val >> 8;
-        sExtADCBuffer47[buffer_idx + 1u] = val & 0xff; 
-        buffer_idx += 2;
-    }
-    sISRTriggered = false;
+    s_isr_triggered = false;
 }
 
-bool BMS_ISRTriggered()
-{
-    return (bool)sISRTriggered;
+bool bms_isr_triggered() {
+    return (bool)s_isr_triggered;
 }
 
 /*ISR that maintains LPM until 30 minutes has passed*/
@@ -631,13 +644,12 @@ __attribute__((interrupt(RTC_VECTOR)))
 #endif
 void RTC_ISR (void)
 {
-    switch (__even_in_range(RTCIV, 16))
-    {
+    switch (__even_in_range(RTCIV, 16)) {
         case RTCIV_NONE:         break;
         case RTCIV_RTCRDYIFG: 
-            sISRTriggered = true; 
+            s_isr_triggered = true; 
             break;
-        case RTCIV_RTCTEVIFG:    P1OUT |= BIT0; break; // I think this is blinking an LED or some shit
+        case RTCIV_RTCTEVIFG:    break; 
         case RTCIV_RTCAIFG:      /* alarm */ break;
         case RTCIV_RT0PSIFG:     /* prescale 0 */ break;
         case RTCIV_RT1PSIFG:     /* prescale 1 */ break;
