@@ -23,6 +23,7 @@ void i2c_init_registers(uint8_t slave_addr)
     UCB0IE |= UCTXIE;                            // Enable TX interrupt
 
     // Redundant i2c  
+#if 0
 #ifdef __MSP430FR5989__
     UCB1CTLW0 = UCSWRST;                         
     UCB1CTLW0 |= UCMODE_3 | UCSYNC;              
@@ -32,7 +33,8 @@ void i2c_init_registers(uint8_t slave_addr)
     UCB1IE |= UCSTTIE;                           
     UCB1IE |= UCRXIE;                            
     UCB1IE |= UCTXIE;  
-#endif                          
+#endif         
+#endif                  
 }
 
 void i2c_init(i2c_ctx_t* ctx)
@@ -62,12 +64,12 @@ void i2c_transition(i2c_slave_state_t state)
     if (state == I2C_SLAVE_STATE_PROCESSING) {
         UCB0CTLW0 |= UCTXNACK;
 #ifdef __MSP430FR5989__
-        UCB1CTLW0 |= UCTXNACK;
+        // UCB1CTLW0 |= UCTXNACK;
 #endif
     } else {
         UCB0CTLW0 &= ~UCTXNACK;
 #ifdef __MSP430FR5989__
-        UCB1CTLW0 &= ~UCTXNACK;
+        // UCB1CTLW0 &= ~UCTXNACK;
 #endif
     }
     
@@ -135,6 +137,7 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
   }
 }
 
+#if 0
 #ifdef __MSP430FR5989__
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector = USCI_B1_VECTOR
@@ -181,3 +184,4 @@ void __attribute__ ((interrupt(USCI_B1_VECTOR))) USCI_B1_ISR (void)
   }
 }
 #endif
+#endif 

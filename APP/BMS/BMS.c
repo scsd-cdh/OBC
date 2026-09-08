@@ -28,7 +28,7 @@
 #include "asn1/bms.h"
 #include "i2c.h"
 
-#if defined (__MSP430FR5989__)
+#if defined (__MSP430FR5989__) || defined (__MSP430FR6989__)
 #include "rtc_c.h"
 #elif defined (__MSP430FR5969__)
 #include "rtc_b.h"
@@ -83,7 +83,7 @@
 // PWM designated output pins
 #define HEATER_PWM_PORT GPIO_PORT_P2 // Port
 // Pins
-#if defined (__MSP430FR5989__)
+#if defined (__MSP430FR5989__) || defined (__MSP430FR6989__)
 #define HEATER1_PWM_PIN GPIO_PIN4 
 #define HEATER2_PWM_PIN GPIO_PIN5
 #define HEATER3_PWM_PIN GPIO_PIN6
@@ -375,7 +375,7 @@ static void gpio_init() {
 // Initialize the Real-Time Clock (RTC) for periodic interrupts
 // Uses RTC_C or RTC_B driverlib depending on device
 static void rtc_init() {
-#if defined (__MSP430FR5989__)
+#if defined (__MSP430FR5989__) || defined (__MSP430FR6989__)
     RTC_C_clearInterrupt(RTC_C_BASE,
         RTC_C_CLOCK_READ_READY_INTERRUPT +
         RTC_C_TIME_EVENT_INTERRUPT +
@@ -433,7 +433,7 @@ static void comm_init() {
     s_swi2c_descriptor.scl_port_out =   &P4OUT;
     s_swi2c_descriptor.scl_port_in =    &P4IN;
     s_swi2c_descriptor.scl_port_dir =   &P4DIR;
-#if defined (__MSP430FR5989__)
+#if defined (__MSP430FR5989__) || defined (__MSP430FR6989__)
     s_swi2c_descriptor.sda_pin =        GPIO_PIN1;
     s_swi2c_descriptor.scl_pin =        GPIO_PIN0;
 #elif defined (__MSP430FR5969__)
