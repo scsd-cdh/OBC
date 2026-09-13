@@ -328,28 +328,13 @@ static void clock_init_16mhz() {
 // Initialize GPIO pins for flags, I2C, and PWM outputs
 // Uses GPIO driverlib
 static void gpio_init() {
-    // Importing drivers is a pain and we only really need WDT_A_hold(), so just copy and paste it here for now.
-    // IMO it would be better to just have driverlib
-    uint8_t new_wdt_status = ((HWREG16(WDT_A_BASE + OFS_WDTCTL) & 0x00FF) | WDTHOLD);
-    HWREG16(WDT_A_BASE + OFS_WDTCTL) = WDTPW + new_wdt_status;
+    // I2C pins
+    P1SEL0 |= BIT6 | BIT7;
+    P1SEL1 &= ~(BIT6 | BIT7);
 
-    // Configure Pins for I2C
-    //Set P1.6 and P1.7 as Secondary Module Function Input.
-    /*
-    * Select Port 1
-    * Set Pin 6, 7 to input Secondary Module Function, (UCB0SIMO/UCB0SDA, UCB0SOMI/UCB0SCL).
-    */
-    GPIO_setAsPeripheralModuleFunctionInputPin(
-        GPIO_PORT_P1,
-        GPIO_PIN6 + GPIO_PIN7,
-        GPIO_SECONDARY_MODULE_FUNCTION
-    );
-
-    /*
-     * Disable the GPIO power-on default high-impedance mode to activate
-     * previously configured port settings
-     */
-    PMM_unlockLPM5();
+    // Disable the GPIO power-on default high-impedance mode to activate
+    // previously configured port settings
+    PM5CTL0 &= ~LOCKLPM5;
 
     // Set flag pins
     // MSP430FR5989 Pins 10 through 13 use GPIO_PORT_P5
@@ -412,6 +397,7 @@ static void i2c_rx_cb(uint8_t data) {
 
 // Hardware initialization. Initializes MSP430 specific device modules for I2C, ADC, GPIO, Clock, and RTC
 static void hardware_init() {
+    WDTCTL = WDTPW | WDTHOLD;                                // Stop WDT
     gpio_init();
     clock_init_16mhz();
     rtc_init();

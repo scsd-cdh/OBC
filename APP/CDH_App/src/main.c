@@ -91,9 +91,9 @@ void asn1_example(void) {
 static void bms_i2c_test() {
     int ret = i2c_write_dt(&dev_bms, (uint8_t[]){0xAA}, 1 );
     if (ret != 0) {
-        LOG_INF("Failed to send zero request: %d", ret);
+        LOG_INF("i2c write failed: %d", ret);
     } else {
-        LOG_WRN("Zero request was successful: %d", ret);
+        LOG_WRN("i2c write successful: %d", ret);
     }
 }
 
