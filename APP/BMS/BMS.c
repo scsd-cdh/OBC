@@ -328,9 +328,16 @@ static void clock_init_16mhz() {
 // Initialize GPIO pins for flags, I2C, and PWM outputs
 // Uses GPIO driverlib
 static void gpio_init() {
+    
     // I2C pins
     P1SEL0 |= BIT6 | BIT7;
     P1SEL1 &= ~(BIT6 | BIT7);
+
+    // Redundant I2C pins
+#if defined (__MSP430FR5989__) || (__MSP430FR6989__)
+    P3SEL0 |= BIT1 | BIT2;
+    P3SEL1 &= ~(BIT1 | BIT2);
+#endif 
 
     // Disable the GPIO power-on default high-impedance mode to activate
     // previously configured port settings
