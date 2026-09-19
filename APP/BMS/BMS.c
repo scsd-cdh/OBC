@@ -27,12 +27,21 @@
 #include "asn1/_systems.h"
 #include "asn1/bms.h"
 #include "i2c.h"
+#include "lfp_i2c.h"
+#include "msp_utils.h"
 
 #if defined (__MSP430FR5989__) || defined (__MSP430FR6989__)
 #include "rtc_c.h"
 #elif defined (__MSP430FR5969__)
 #include "rtc_b.h"
 #endif
+
+typedef struct {
+    const lfp_header_t* p_header;
+    const uint8_t* p_body;
+    uint16_t body_length;
+    lfp_code_t reason;
+} user_ctx_t;
 
 // ADC pin assignments for current and voltage sensing
 // Each *_PIN macro maps a physical pin to an ADC input channel
@@ -132,70 +141,13 @@ static volatile uint8_t s_temperature_status_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTe
 static uint16_t s_heaterduty_response_size = 0;
 static uint8_t s_heaterduty_response_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyResponse)];
 
-// Global SWI2C config "descriptor"
-static SWI2C_Descriptor s_swi2c_descriptor;
-
-// LFP I2C
-typedef enum {
-    I2C_SLAVE_STATE_REQUEST,
-    I2C_SLAVE_STATE_PROCESSING,
-    I2C_SLAVE_STATE_RESPONSE
-} lfp_i2c_state_t;
-
-// we might want to keep more than one buffer, one for main, one for redundant
-static volatile uint8_t* p_lfp_i2c_txbuf = NULL;
-static uint16_t s_lfp_i2c_txbuf_len = 0;
-static uint16_t s_lfp_i2c_txidx = 0;
-
-lfp_i2c_state_t s_lfp_i2c_state;
-
-void lfp_i2c_transition(lfp_i2c_state_t state)
-{
-    // naive for now
-    if (state == I2C_SLAVE_STATE_REQUEST) {
-        // discard tx buffer and reset
-        p_lfp_i2c_txbuf = NULL;
-        s_lfp_i2c_txidx  = 0;
-        s_lfp_i2c_txbuf_len  = 0;
-    }
-
-    // NACK if we are in processing stage
-    if (state == I2C_SLAVE_STATE_PROCESSING) {
-        i2c_nack(I2C_MODULE_UCB0);
-#if defined (__MSP430FR5989__) || (__MSP430FR6989__)
-        i2c_nack(I2C_MODULE_UCB1);
-#endif
-    } else {
-        i2c_ack(I2C_MODULE_UCB0);
-#if defined (__MSP430FR5989__) || (__MSP430FR6989__)
-        i2c_ack(I2C_MODULE_UCB1);
-#endif
-    }
-
-    s_lfp_i2c_state = state;
-}
-
-// Which buffer is to be sent over i2c
-int16_t lfp_i2c_set_txbuf(volatile uint8_t* data, uint8_t size)
-{
-    s_lfp_i2c_txidx = 0;
-    s_lfp_i2c_txbuf_len = size;
-    p_lfp_i2c_txbuf = data;
-    // We're ready to start transmitting data
-    lfp_i2c_transition(I2C_SLAVE_STATE_RESPONSE);
-
-    return 0; // TODO switch to project defined error flags
-}
-
-typedef struct {
-    const lfp_header_t* p_header;
-    const uint8_t* p_body;
-    uint16_t body_length;
-    lfp_code_t reason;
-} user_ctx_t;
 
 static lfp_stream_ctx_t s_lfp_ctx;
 
+// Global SWI2C config "descriptor"
+static SWI2C_Descriptor s_swi2c_descriptor;
+
+// LFP
 // FIXME: arbitrary temporary size
 #define RX_BODY_BUFFER_SIZE 16
 
@@ -203,7 +155,7 @@ static uint8_t s_rx_body_buffer[RX_BODY_BUFFER_SIZE];
 static user_ctx_t s_user_ctx;
 
 static bool on_header(const lfp_header_t* p_header, void* p_ctx) {
-    if (s_lfp_i2c_state == I2C_SLAVE_STATE_RESPONSE) {
+    if (lfp_i2c_state() == I2C_SLAVE_STATE_RESPONSE) {
         lfp_i2c_transition(I2C_SLAVE_STATE_REQUEST);
     }
     return true;
@@ -285,7 +237,7 @@ static inline void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payl
 // bit silly to try to inline this. asm output at i2c.asm confirms a call with max optimizations (line 657): CALLA &s_ctx+0
 static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16_t body_length, void * p_ctx) {
     // if we get a valid message while responding to something else, forget what we were doing before respond to the new request
-    if (s_lfp_i2c_state == I2C_SLAVE_STATE_RESPONSE) {
+    if (lfp_i2c_state() == I2C_SLAVE_STATE_RESPONSE) {
         lfp_i2c_transition(I2C_SLAVE_STATE_REQUEST);
     }
     const asn1_lfp_decode_data_t data = {
@@ -313,9 +265,7 @@ static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16
     }
 }
 
-
 /* INITIALIZATOIN LOGIC */
-// Note most of the code is initialization, since the main logic is just reading sensors and updating buffers
 // Init ADCs
 // Sets up all ADC channels and memory buffers for multi-channel sweeps
 // Uses ADC12_B driverlib
@@ -325,10 +275,12 @@ static void adc_init() {
 
     ADC12_B_disableConversions(ADC12_B_BASE, 1);
     // Selects what pin to get mapped to what ADC memory thing
-    ADC_PinSelect(I_SENSE_VUR_1_CP_PIN,     I_SENSE_VUR_1_CP_MEM);
+    // Current sensors
+    ADC_PinSelect(I_SENSE_VUR_1_CP_PIN,     I_SENSE_VUR_1_CP_MEM); 
     ADC_PinSelect(I_SENSE_VUR_2_CP_PIN,     I_SENSE_VUR_2_CP_MEM);
     ADC_PinSelect(I_SENSE_CHR_1_CP_PIN,     I_SENSE_CHR_1_CP_MEM);
     ADC_PinSelect(I_SENSE_CHR_2_CP_PIN,     I_SENSE_CHR_2_CP_MEM);
+    // Voltage sensors
     ADC_PinSelect(V_CELL_1A_CP_PIN,         V_CELL_1A_CP_MEM);
     ADC_PinSelect(V_CELL_1B_CP_PIN,         V_CELL_1B_CP_MEM);
     ADC_PinSelect(V_CELL_2A_CP_PIN,         V_CELL_2A_CP_MEM);
@@ -351,28 +303,6 @@ static void adc_init() {
     /* 4. Sequence‑of‑channels mode, one pass per trigger */
     // This allows us to use more than one MEM, necessary for multiple sensors
     ADC12CTL1 |= ADC12CONSEQ_1;   // driverlib name: ADC12_B_SEQUENCEOFCHANNELS
-}
-
-// Initialize clock to 16MHz
-// Uses direct register manipulation as per device datasheet
-static void clock_init_16mhz() {
-    // Configure one FRAM waitstate as required by the device datasheet for MCLK
-    // operation beyond 8MHz _before_ configuring the clock system.
-    FRCTL0 = FRCTLPW | NWAITS_1;
-
-    // Clock System Setup
-    CSCTL0_H = CSKEY_H;                     // Unlock CS registers
-    CSCTL1 = DCOFSEL_0;                     // Set DCO to 1MHz
-    // Set SMCLK = MCLK = DCO, ACLK = LFXTCLK (VLOCLK if unavailable)
-    CSCTL2 = SELA__LFXTCLK | SELS__DCOCLK | SELM__DCOCLK;
-    // Per Device Errata set divider to 4 before changing frequency to
-    // prevent out of spec operation from overshoot transient
-    CSCTL3 = DIVA__4 | DIVS__4 | DIVM__4;   // Set all corresponding clk sources to divide by 4 for errata
-    CSCTL1 = DCOFSEL_4 | DCORSEL;           // Set DCO to 16MHz
-    // Delay by ~10us to let DCO settle. 60 cycles = 20 cycles buffer + (10us / (1/4MHz))
-    __delay_cycles(60);
-    CSCTL3 = DIVA__1 | DIVS__1 | DIVM__1;   // Set all dividers to 1 for 16MHz operation
-    CSCTL0_H = 0;                           // Lock CS registers
 }
 
 // Initialize GPIO pins for flags, I2C, and PWM outputs
@@ -414,72 +344,6 @@ static void gpio_init() {
     PWM_PinSelect(HEATER_PWM_PORT, HEATER4_PWM_PIN);
 }
 
-// Initialize the Real-Time Clock (RTC) for periodic interrupts
-// Uses RTC_C or RTC_B driverlib depending on device
-static void rtc_init() {
-#if defined (__MSP430FR5989__) || defined (__MSP430FR6989__)
-    RTC_C_clearInterrupt(RTC_C_BASE,
-        RTC_C_CLOCK_READ_READY_INTERRUPT +
-        RTC_C_TIME_EVENT_INTERRUPT +
-        RTC_C_CLOCK_ALARM_INTERRUPT
-        );
-    RTC_C_enableInterrupt(RTC_C_BASE,
-        RTC_C_CLOCK_READ_READY_INTERRUPT +
-        RTC_C_TIME_EVENT_INTERRUPT +
-        RTC_C_CLOCK_ALARM_INTERRUPT
-    );
-
-    //Start RTC
-    RTC_C_startClock(RTC_C_BASE);
-#elif defined (__MSP430FR5969__)
-    RTC_B_clearInterrupt(RTC_B_BASE,
-        RTC_B_CLOCK_READ_READY_INTERRUPT +
-        RTC_B_TIME_EVENT_INTERRUPT +
-        RTC_B_CLOCK_ALARM_INTERRUPT
-        );
-    RTC_B_enableInterrupt(RTC_B_BASE,
-        RTC_B_CLOCK_READ_READY_INTERRUPT +
-        RTC_B_TIME_EVENT_INTERRUPT +
-        RTC_B_CLOCK_ALARM_INTERRUPT
-    );
-
-    //Start RTC Clock
-    RTC_B_startClock(RTC_B_BASE);
-#endif
-}
-
-static void i2c_stt_cb(i2c_module_t module) {
-    if (s_lfp_i2c_state == I2C_SLAVE_STATE_PROCESSING) {
-        i2c_nack(module);
-    }
-
-    // Roll back 1 byte on start to transmit the byte that was missed during the last transmission
-    // USCI_B triggers TXIFG0 while previous byte being clocked out (as soon as UCB0TXBUF is empty). If master asks for a header, the first byte of the following body will
-    // therefore loaded into UCB0TXBUF and s_tx_id will be incremented. Master sending stop condition discards this byte in UCB0TXBUF
-    // https://e2e.ti.com/support/microcontrollers/msp-low-power-microcontrollers-group/msp430/f/msp-low-power-microcontroller-forum/209820/msp430-i2c-slave-transmit
-    if (s_lfp_i2c_txidx > 0 && s_lfp_i2c_txidx <= s_lfp_i2c_txbuf_len) {
-        s_lfp_i2c_txidx--;
-    }
-}
-
-static void i2c_tx_cb(i2c_module_t module) {
-    if (s_lfp_i2c_state != I2C_SLAVE_STATE_RESPONSE) { // Unless we are in response state, just return 0xFF
-        i2c_write(module, 0xFF);
-    } else if (!p_lfp_i2c_txbuf || s_lfp_i2c_txidx >= s_lfp_i2c_txbuf_len) { // if we are asked for more bytes than we have, send 0xFF. This should really never happen
-        // If we are at the byte after the last byte, go one over to make sure we dont roll back on start
-        // (by now the controller has received atleast one 0xFF) -- why?
-        if (s_lfp_i2c_txidx == s_lfp_i2c_txbuf_len) {
-            s_lfp_i2c_txidx++;
-        }
-        i2c_write(module, 0xFF);
-    } else {
-        i2c_write(module, p_lfp_i2c_txbuf[s_lfp_i2c_txidx++]);
-    }
-}
-
-static void i2c_rx_cb(uint8_t data) {
-    lfp_stream_update(&s_lfp_ctx, data);
-}
 
 // Hardware initialization. Initializes MSP430 specific device modules for I2C, ADC, GPIO, Clock, and RTC
 static void hardware_init() {
@@ -492,14 +356,8 @@ static void hardware_init() {
 
 // App communication initialization. Initializes I2C and lfp, registers telemetry and telecommand channels
 static void comm_init() {
-    i2c_ctx_t i2c_ctx = {
-        .i2c_stt_cb = i2c_stt_cb,
-        .i2c_tx_cb = i2c_tx_cb,
-
-        .i2c_rx_cb = i2c_rx_cb,
-        .slave_addr = BMS_SLAVE_ADDR,
-    };
-    i2c_init(I2C_MODULE_UCB0|I2C_MODULE_UCB1, &i2c_ctx);
+    // Initialize main and redundant hardware i2c
+    lfp_i2c_init(&s_lfp_ctx, I2C_MODULE_UCB0|I2C_MODULE_UCB1, BMS_SLAVE_ADDR);
 
     // SW I2C
     s_swi2c_descriptor.sda_port_out =   &P4OUT;

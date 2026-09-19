@@ -79,6 +79,11 @@
                     "TI MSP430 USB1_0/MSP430": {
                         "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues/>\n"
                     }
+                },
+                "targetConfigs/MSP430FR6989.ccxml": {
+                    "TI MSP430 USB1_0/MSP430": {
+                        "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues/>\n"
+                    }
                 }
             }
         }

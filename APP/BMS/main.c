@@ -22,11 +22,11 @@
 
 #include "BMS.h"
 #include "i2c.h"
+#include <msp430.h>
 
 int main(void)
 {
     bms_init();
-
     __bis_SR_register(GIE);
     while (1) {
         // Probably, I don't know if we can get here while transmitting i2c data or not
