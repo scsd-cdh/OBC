@@ -66,9 +66,29 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>MIDDLEWARE/ASN1SCC</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/ASN1SCC</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP_I2C</name>
+			<type>2</type>
+			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/LFP_I2C</location>
+		</link>
+		<link>
 			<name>MIDDLEWARE/MRAM</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/MSP_UTILS</name>
+			<type>2</type>
+			<location>/home/brendan/dev/zephyr_obc/application/MIDDLEWARE/MSP_UTILS</location>
 		</link>
 		<link>
 			<name>MIDDLEWARE/PWR_CTRL</name>
@@ -79,6 +99,11 @@
 			<name>MIDDLEWARE/WATCHDOG</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1</locationURI>
 		</link>
 		<link>
 			<name>MIDDLEWARE/tinyprotocol</name>

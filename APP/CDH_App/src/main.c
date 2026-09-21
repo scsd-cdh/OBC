@@ -9,12 +9,16 @@
 #include <lfp/stream.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/i2c.h>
 
 #define SYSID_CDH 1
 #define SYSID_COMMS 3
+#define SYSID_BMS 5
 #define ENDPOINT_COMMS_TEST 154
 
 LOG_MODULE_REGISTER(main);
+
+static const struct i2c_dt_spec dev_bms = I2C_DT_SPEC_GET(DT_NODELABEL(bms));
 
 void asn1_example_bms_system_status_req(const BMSSystemStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     LOG_INF("Received system status request");
@@ -75,9 +79,29 @@ void asn1_example(void) {
     lfp_stream_ctx_t stream;
     lfp_stream_init(&stream, payload2, sizeof(payload2), NULL, asn1_example_on_msg, asn1_example_stream_error_handler, NULL);
     lfp_stream_update_buf(&stream, payload, size);
+
+    int ret = i2c_write_dt(&dev_bms, payload2, sizeof(payload2));
+    if (ret != 0) {
+        LOG_WRN("I2C write failed: %d", ret);
+        return;
+    }
+
 }
+
+static void bms_i2c_test() {
+    int ret = i2c_write_dt(&dev_bms, (uint8_t[]){0xAA}, 1 );
+    if (ret != 0) {
+        LOG_INF("i2c write failed: %d", ret);
+    } else {
+        LOG_WRN("i2c write successful: %d", ret);
+    }
+}
+
 
 int main(void)
 {
-    asn1_example();
+    while (1) {
+        bms_i2c_test();
+        k_msleep(100);
+    }
 }

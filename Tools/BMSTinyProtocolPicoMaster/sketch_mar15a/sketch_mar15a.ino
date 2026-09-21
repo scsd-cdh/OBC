@@ -10,6 +10,8 @@ const static uint8_t crc_init_value = 0xFF;
 // Value XORed to the final register before the CRC is returned
 const static uint8_t crc_xor_value = 0xFF;
 
+#define BMS_SLAVE_ADDR 0x09
+
 // Pre-computed AUTOSAR CRC8 table
 const static uint8_t crc_lookup_table[256] = {
         0x00, 0x2F, 0x5E, 0x71, 0xBC, 0x93, 0xE2, 0xCD, 0x57, 0x78, 0x09, 0x26, 0xEB, 0xC4, 0xB5, 0x9A,
@@ -65,7 +67,7 @@ void sendTeleCommand(uint8_t cmd_id, const uint8_t* buff, uint8_t size)
   cpy[0] = cmd_id;
   memcpy(&cpy[1], buff, size);
   const uint8_t crc = TINYPROTOCOL_CalculateCRC(cpy, size + 1);
-  Wire.beginTransmission(0x08);
+  Wire.beginTransmission(BMS_SLAVE_ADDR);
   Wire.write(0x9b);   // MAGIC
   Serial.print("Sending CMD: ");
   Serial.println(cmd_id, HEX);
@@ -172,7 +174,7 @@ void requestADC() {
 void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
   
   // Begin transmission to slave at address 0x08
-  Wire.beginTransmission(0x08);
+  Wire.beginTransmission(BMS_SLAVE_ADDR);
   Wire.write(0x9b);   // MAGIC
 
   // FIXME: This is really stupid, this function should definitely expect unaltered channel_id/
@@ -193,7 +195,7 @@ void sendTeleChannelRequest(uint8_t channel_id, uint8_t* buff, size_t len) {
     // Serial.println("ACK!");
   }
 
-  Wire.requestFrom(0x8, len, true);    // read
+  Wire.requestFrom(BMS_SLAVE_ADDR, len, true);    // read
   for (size_t i = 0; i < len; i++) {
     buff[i] = Wire.read();
   }
@@ -238,12 +240,12 @@ void setup() {
 
 void loop() {
   requestADC();            // Send command and read data
-  delay(10);
-  requestFlags();
-  delay(10);
-  getExtADC();
-  delay(10);
-  sendPWMData();
+  // delay(10);
+  // requestFlags();
+  // delay(10);
+  // getExtADC();
+  // delay(10);
+  // sendPWMData();
   delay(1000);          // Wait 1 second before repeating
 }
 
