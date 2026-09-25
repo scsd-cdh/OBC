@@ -68,8 +68,10 @@ void i2c_ack(i2c_module_t module) {
         return;
     if (module == I2C_MODULE_UCB0)
         UCB0CTLW0 &= ~UCTXNACK;
+#if defined (__MSP430FR5989__) || (__MSP430FR6989__)
     if (module == I2C_MODULE_UCB1)
         UCB1CTLW0 &= ~UCTXNACK;
+#endif
 }
 
 void i2c_nack(i2c_module_t module) {
@@ -77,8 +79,10 @@ void i2c_nack(i2c_module_t module) {
         return;
     if (module == I2C_MODULE_UCB0)
         UCB0CTLW0 |= UCTXNACK;
+#if defined (__MSP430FR5989__) || (__MSP430FR6989__)
     if (module == I2C_MODULE_UCB1)
         UCB1CTLW0 |= UCTXNACK;
+#endif
 }
 
 void i2c_write(i2c_module_t module, uint8_t byte) {
@@ -86,8 +90,10 @@ void i2c_write(i2c_module_t module, uint8_t byte) {
         return;
     if (module == I2C_MODULE_UCB0)
         UCB0TXBUF = byte;
+#if defined (__MSP430FR5989__) || (__MSP430FR6989__)
     if (module == I2C_MODULE_UCB1)
         UCB1TXBUF = byte;
+#endif
 }
 
 //******************************************************************************
