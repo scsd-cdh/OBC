@@ -16,6 +16,7 @@ extern "C" {
 extern const asn1SccSint groundSystemId;
 extern const asn1SccSint cdhSystemId;
 extern const asn1SccSint bmsSystemId;
+extern const asn1SccSint pdsSystemId;
 
 /* ================= Encoding/Decoding function prototypes =================
  * These functions are placed at the end of the file to make sure all types

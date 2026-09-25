@@ -1,0 +1,50 @@
+PDS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+PDSADCValue ::= INTEGER(0..65535)
+
+lfpIdPDSSystemStatusRequest INTEGER ::= 0
+PDSSystemStatusRequest ::= SEQUENCE {
+    placeholder INTEGER(0)
+}
+
+lfpIdPDSSystemStatusResponse INTEGER ::= 1
+PDSSystemStatusResponse ::= SEQUENCE {
+    version INTEGER(0..255),
+    uptime INTEGER(0..4294967295)
+}
+
+lfpIdPDSHealthCheckRequest INTEGER ::= 2
+PDSHealthCheckRequest ::= SEQUENCE {
+    placeholder INTEGER(0)
+}
+
+lfpIdPDSHealthCheckResponse INTEGER ::= 3
+PDSHealthCheckResponse ::= SEQUENCE {
+    hash SEQUENCE SIZE(16) OF INTEGER(0..255)
+}
+
+lfpIdPDSConverterMonitorRequest INTEGER ::= 4
+PDSConverterMonitorRequest ::= SEQUENCE {
+    placeholder INTEGER(0)
+}
+
+lfpIdPDSConverterMonitorResponse INTEGER ::= 5
+PDSConverterMonitorResponse ::= SEQUENCE {
+    int5vVs PDSADCValue,
+    reg5vVs PDSADCValue,
+    converterA5vVs PDSADCValue,
+    converterB5vVs PDSADCValue,
+    temperatureSense PDSADCValue
+}
+
+lfpIdPDSRebootRequest INTEGER ::= 6
+PDSRebootRequest ::= SEQUENCE {
+    placeholder INTEGER(0)
+}
+
+lfpIdPDSRebootResponse INTEGER ::= 7
+PDSRebootResponse ::= SEQUENCE {
+    placeholder INTEGER(0)
+}
+
+END
