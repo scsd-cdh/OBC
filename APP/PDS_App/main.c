@@ -20,18 +20,16 @@
 //  PDS Firmware
 //******************************************************************************
 
-#include "bsp.h"
-#include "AppComm.h"
-#include "RoutineCycle.h"
+#include "PDS.h"
+#include "msp430.h"
 
 int main(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
-    //WDT_A_hold(WDT_A_BASE);     // Stop watchdog timer
-    //PMM_unlockLPM5();           // Disable the GPIO power-on default high-impedance mode
-
-    initBSP();
-    InitAppComm();
-    
-    __bis_SR_register(LPM0_bits + GIE);
+    pds_init();
+    __bis_SR_register(GIE);
+    while (1) {
+        if (pds_isr_triggered()) {
+            pds_collectdata();
+        }
+    }
 }
