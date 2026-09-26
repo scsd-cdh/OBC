@@ -1,0 +1,5 @@
+description: CDH SPI MRAM test device
+
+compatible: "cdh,mram"
+
+include: spi-device.yaml

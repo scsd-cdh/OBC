@@ -3,10 +3,18 @@
 		ulog,usart = &usart1;
 	};
 };
-
 &ext1_i2c {
 	bms: bms@9 {
 		compatible = "vnd,i2c-device";
 		reg = <0x09>;
+	};
+};
+&spi0 {
+	status = "okay";
+
+	mram: mram@0 {
+		compatible = "cdh,mram";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
 	};
 };
