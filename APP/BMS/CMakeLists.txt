@@ -45,7 +45,7 @@ set(INCLUDE_DIRS
 # Manually add source files
 # ---------------------------------------------------------------------------
 set(SOURCES
-        ${PROJECT_NAME}.c
+        BMS.c
         ${REPO_ROOT}/DRIVERS/MSP430/ADC/ADC_Read.c
         ${REPO_ROOT}/DRIVERS/MSP430/ADC/include/adc12_b.c
         ${REPO_ROOT}/DRIVERS/MSP430/GPIO/gpio.c
