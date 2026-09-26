@@ -9,8 +9,21 @@ FIRMWARE="${1:-build/BMS.hex}"
 MCU="${MCU:-msp430fr6989}"
 PROBE_DEV="${PROBE_DEV:-}"
 
-PROBE_VID="2047"
-PROBE_PID="0013"
+# Known TI MSP430 debug probe USB IDs, in preference order (first match wins):
+#   MSP-FET       - standalone black JTAG/SBW debugger
+#   MSP-FET430UIF - older USB FET
+#   eZ-FET        - on-board debugger on LaunchPad boards
+PROBE_CANDIDATES=(
+    "2047:0203:MSP-FET"
+    "2047:0010:MSP-FET430UIF"
+    "2047:0013:eZ-FET"
+)
+
+# Backwards-compatible manual override: if the user sets PROBE_VID/PROBE_PID,
+# use only that single probe.
+if [[ -n "${PROBE_VID:-}" || -n "${PROBE_PID:-}" ]]; then
+    PROBE_CANDIDATES=("${PROBE_VID:-2047}:${PROBE_PID:-0013}:custom")
+fi
 
 # ---------------------------------------------------------------------------
 # Platform detection
@@ -40,36 +53,57 @@ ps() {
     powershell.exe -NoProfile -Command "$1"
 }
 
-# Detect the probe's raw USB device path directly from the host's sysfs.
-# Works on Linux where /sys is native, and inside Docker Desktop's VM on
-# Windows (via a privileged helper container).
-detect_probe() {
-    if [[ "$PLATFORM" == "linux" ]]; then
-        local dev busnum devnum
+# ---- Linux: scan /sys directly -------------------------------------------
+_detect_linux() {
+    local entry vid pid name dev
+    for entry in "${PROBE_CANDIDATES[@]}"; do
+        IFS=: read -r vid pid name <<< "$entry"
         for dev in /sys/bus/usb/devices/*; do
             [[ -f "$dev/idVendor" ]]  || continue
             [[ -f "$dev/idProduct" ]] || continue
-            if [[ "$(cat "$dev/idVendor")"  == "$PROBE_VID" ]] && \
-               [[ "$(cat "$dev/idProduct")" == "$PROBE_PID" ]]; then
-                busnum=$(cat "$dev/busnum")
-                devnum=$(cat "$dev/devnum")
-                printf '/dev/bus/usb/%03d/%03d\n' "$busnum" "$devnum"
+            if [[ "$(cat "$dev/idVendor")"  == "$vid" ]] && \
+               [[ "$(cat "$dev/idProduct")" == "$pid" ]]; then
+                printf '%s %s %s /dev/bus/usb/%03d/%03d\n' \
+                    "$vid" "$pid" "$name" \
+                    "$(cat "$dev/busnum")" "$(cat "$dev/devnum")"
                 return 0
             fi
         done
-        return 1
-    else
-        docker run --rm --privileged -v /sys:/sys:ro alpine sh -c "
+    done
+    return 1
+}
+
+# ---- Windows (Docker Desktop VM): scan /sys via a helper container --------
+_detect_windows() {
+    local entry vid pid name out
+    for entry in "${PROBE_CANDIDATES[@]}"; do
+        IFS=: read -r vid pid name <<< "$entry"
+        out=$(docker run --rm --privileged -v /sys:/sys:ro alpine sh -c "
           for dev in /sys/bus/usb/devices/*; do
             [ -f \"\$dev/idVendor\" ]  || continue
             [ -f \"\$dev/idProduct\" ] || continue
-            if [ \"\$(cat \$dev/idVendor)\"  = \"${PROBE_VID}\" ] && \
-               [ \"\$(cat \$dev/idProduct)\" = \"${PROBE_PID}\" ]; then
+            if [ \"\$(cat \$dev/idVendor)\"  = \"$vid\" ] && \
+               [ \"\$(cat \$dev/idProduct)\" = \"$pid\" ]; then
               printf '/dev/bus/usb/%03d/%03d\n' \"\$(cat \$dev/busnum)\" \"\$(cat \$dev/devnum)\"
               break
             fi
           done
-        " 2>/dev/null || true
+        " 2>/dev/null) || true
+        if [[ -n "$out" ]]; then
+            printf '%s %s %s %s\n' "$vid" "$pid" "$name" "$out"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Detect a TI MSP430 debug probe. On success, prints:
+#   <vid> <pid> <name> <device-path>
+detect_probe() {
+    if [[ "$PLATFORM" == "linux" ]]; then
+        _detect_linux
+    else
+        _detect_windows
     fi
 }
 
@@ -154,16 +188,23 @@ fi
 # ===========================================================================
 
 # ---- Detect the raw USB device path --------------------------------------
+PROBE_NAME=""
 if [[ -z "$PROBE_DEV" ]]; then
-    echo "==> Detecting MSP debug probe (VID:PID ${PROBE_VID}:${PROBE_PID})..."
-    PROBE_DEV=$(detect_probe) || true
+    echo "==> Detecting MSP debug probe..."
+    for entry in "${PROBE_CANDIDATES[@]}"; do
+        IFS=: read -r _v _p _n <<< "$entry"
+        echo "      looking for: $_n ($_v:$_p)"
+    done
 
-    if [[ -n "$PROBE_DEV" ]]; then
-        echo "    Detected probe at: $PROBE_DEV"
+    detected="$(detect_probe || true)"
+
+    if [[ -n "$detected" ]]; then
+        read -r PROBE_VID PROBE_PID PROBE_NAME PROBE_DEV <<< "$detected"
+        echo "    Detected $PROBE_NAME ($PROBE_VID:$PROBE_PID) at $PROBE_DEV"
     else
-        echo "error: could not auto-detect the probe." >&2
+        echo "error: could not auto-detect any MSP debug probe." >&2
         if [[ "$PLATFORM" == "linux" ]]; then
-            echo "  - Is the LaunchPad plugged in?" >&2
+            echo "  - Is the LaunchPad or MSP-FET plugged in?" >&2
             echo "  - Is the cdc_acm driver claiming it? Try:" >&2
             echo "      lsusb | grep -i 2047" >&2
         else
@@ -193,6 +234,9 @@ fi
 
 # ---- Flash ---------------------------------------------------------------
 echo "==> Flashing $FIRMWARE to $MCU"
+if [[ -n "$PROBE_NAME" ]]; then
+    echo "    probe:        $PROBE_NAME"
+fi
 echo "    probe device: $PROBE_DEV"
 
 docker run --rm \
