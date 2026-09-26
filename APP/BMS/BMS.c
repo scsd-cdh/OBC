@@ -229,7 +229,7 @@ static inline void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payl
     }
 
     // Send response (Empty body basically an ACK)
-    lfp_i2c_set_txbuf(s_temperature_status_tx_buf, s_temperature_status_size);
+    lfp_i2c_set_txbuf(s_heaterduty_response_tx_buf, s_heaterduty_response_size);
 }
 
 // bit silly to try to inline this. asm output at i2c.asm confirms a call with max optimizations (line 657): CALLA &s_ctx+0
