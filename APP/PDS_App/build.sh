@@ -68,6 +68,6 @@ docker run --rm \
 
 echo "==> Done"
 echo "Outputs:"
-echo "  $SCRIPT_DIR/build/BMS.elf"
-echo "  $SCRIPT_DIR/build/BMS.hex"
-echo "  $SCRIPT_DIR/build/BMS.bin"
+echo "  $SCRIPT_DIR/build/PDS.elf"
+echo "  $SCRIPT_DIR/build/PDS.hex"
+echo "  $SCRIPT_DIR/build/PDS.bin"
