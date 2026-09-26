@@ -20,23 +20,23 @@ get_filename_component(REPO_ROOT
 # ---------------------------------------------------------------------------
 set(INCLUDE_DIRS
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/I2C
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/PWM
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/PWM/include
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/RTC_C
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/RTC_B
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/UTILS
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/ADC
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/ADC/include
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/GPIO
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/SWI2C
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/ADS7138
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/asn1
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/ASN1SCC
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/LFP/include
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/LFP/include/lfp
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/LFP_I2C
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/MSP_UTILS
+        ${REPO_ROOT}/DRIVERS/MSP430/I2C
+        ${REPO_ROOT}/DRIVERS/MSP430/PWM
+        ${REPO_ROOT}/DRIVERS/MSP430/PWM/include
+        ${REPO_ROOT}/DRIVERS/MSP430/RTC_C
+        ${REPO_ROOT}/DRIVERS/MSP430/RTC_B
+        ${REPO_ROOT}/DRIVERS/MSP430/UTILS
+        ${REPO_ROOT}/DRIVERS/MSP430/ADC
+        ${REPO_ROOT}/DRIVERS/MSP430/ADC/include
+        ${REPO_ROOT}/DRIVERS/MSP430/GPIO
+        ${REPO_ROOT}/DRIVERS/MSP430/SWI2C
+        ${REPO_ROOT}/MIDDLEWARE
+        ${REPO_ROOT}/MIDDLEWARE/ADS7138
+        ${REPO_ROOT}/MIDDLEWARE/ASN1SCC
+        ${REPO_ROOT}/MIDDLEWARE/LFP/include
+        ${REPO_ROOT}/MIDDLEWARE/LFP/include/lfp
+        ${REPO_ROOT}/MIDDLEWARE/LFP_I2C
+        ${REPO_ROOT}/MIDDLEWARE/MSP_UTILS
 )
 
 # ---------------------------------------------------------------------------
@@ -44,22 +44,21 @@ set(INCLUDE_DIRS
 # ---------------------------------------------------------------------------
 set(SOURCES
         BMS.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../DRIVERS/MSP430/ADC/ADC_Read.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/ADC/include/adc12_b.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/GPIO/gpio.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/I2C/i2c.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/PWM/PWM.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/PWM/include/pmm.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/PWM/include/timer_a.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/PWM/include/timer_b.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/RTC_B/rtc_b.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/RTC_C/rtc_c.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/SWI2C/swi2c.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../DRIVERS/MSP430/UTILS/utils.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/ADS7138/ads7138irter.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/MSP_UTILS/msp_utils.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/LFP_I2C/lfp_i2c.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/ASN1SCC/example.c
+        ${REPO_ROOT}/DRIVERS/MSP430/ADC/ADC_Read.c
+        ${REPO_ROOT}/DRIVERS/MSP430/ADC/include/adc12_b.c
+        ${REPO_ROOT}/DRIVERS/MSP430/GPIO/gpio.c
+        ${REPO_ROOT}/DRIVERS/MSP430/I2C/i2c.c
+        ${REPO_ROOT}/DRIVERS/MSP430/PWM/PWM.c
+        ${REPO_ROOT}/DRIVERS/MSP430/PWM/include/pmm.c
+        ${REPO_ROOT}/DRIVERS/MSP430/PWM/include/timer_a.c
+        ${REPO_ROOT}/DRIVERS/MSP430/PWM/include/timer_b.c
+        ${REPO_ROOT}/DRIVERS/MSP430/RTC_B/rtc_b.c
+        ${REPO_ROOT}/DRIVERS/MSP430/RTC_C/rtc_c.c
+        ${REPO_ROOT}/DRIVERS/MSP430/SWI2C/swi2c.c
+        ${REPO_ROOT}/DRIVERS/MSP430/UTILS/utils.c
+        ${REPO_ROOT}/MIDDLEWARE/ADS7138/ads7138irter.c
+        ${REPO_ROOT}/MIDDLEWARE/MSP_UTILS/msp_utils.c
+        ${REPO_ROOT}/MIDDLEWARE/LFP_I2C/lfp_i2c.c
 )
 
 # ---------------------------------------------------------------------------
@@ -69,10 +68,13 @@ set(SOURCES
 # to avoid mistakes and avoid bloating of the image with unnecessary .c's
 # ---------------------------------------------------------------------------
 file(GLOB_RECURSE GLOBBED_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/LFP/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}../../MIDDLEWARE/asn1/*.c
+        ${REPO_ROOT}/MIDDLEWARE/LFP/*.c
+        ${REPO_ROOT}/MIDDLEWARE/asn1/*.c
 )
 list(APPEND SOURCES ${GLOBBED_SOURCES})
+
+message(STATUS "CMAKE_CURRENT_LIST_DIR = ${CMAKE_CURRENT_LIST_DIR}")
+message(STATUS "REPO_ROOT              = ${REPO_ROOT}")
 
 add_executable(BMS
         main.c
