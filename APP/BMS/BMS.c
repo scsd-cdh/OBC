@@ -155,9 +155,7 @@ static uint8_t s_rx_body_buffer[RX_BODY_BUFFER_SIZE];
 static user_ctx_t s_user_ctx;
 
 static bool on_header(const lfp_header_t* p_header, void* p_ctx) {
-    if (lfp_i2c_state() == I2C_SLAVE_STATE_RESPONSE) {
-        lfp_i2c_transition(I2C_SLAVE_STATE_REQUEST);
-    }
+    lfp_i2c_transition(I2C_SLAVE_STATE_REQUEST);
     return true;
 }
 
