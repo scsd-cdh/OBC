@@ -118,7 +118,7 @@
                         </toolChain>
                     </folderInfo>
                     <sourceEntries>
-                        <entry excluding="lnk_msp430fr5989.cmd|lnk_msp430fr5969.cmd|MIDDLEWARE/ASN1SCC/example.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        <entry excluding="lnk_msp430fr5989.cmd|lnk_msp430fr5969.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
                     </sourceEntries>
                 </configuration>
             </storageModule>
