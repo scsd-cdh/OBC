@@ -6,8 +6,10 @@
 #include <asn1/bms.h>
 #include <asn1/_systems.h>
 #include <lfp/stream.h>
-#include <ulog/ulog.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bms_handler);
 
 #define BMS_LOGGING_INTERVAL 10
 #define BMS_HEATER_INTERVAL 10
@@ -42,16 +44,20 @@ static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const i
     const BMSCellStatus * p_cell_a = &p_pack->cellA;
     const BMSCellStatus * p_cell_b = &p_pack->cellB;
 
-    ULOG_INFO(
-        "Battery {}: \n\tVoltage: {:.3} | Current Draw: {:.3} | Current Charge: {:.3}\n\tCell A:\n\t\tVoltage: {:.3}\n\t\tOV/UV/OC/UC: {}/{}/{}/{}\n\tCell B:\n\t\tVoltage: {:.3}\n\t\tOV/UV/OC/UC: {}/{}/{}/{}",
+    LOG_INF(
+        "Battery %d:\n\tVoltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
+        "\tCell A:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d\n"
+        "\tCell B:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d",
         pack_id,
-        bms_adc_to_float(p_pack->voltage),bms_adc_to_float(p_pack->currentDraw), bms_adc_to_float(p_pack->currentCharge),
+        bms_adc_to_float(p_pack->voltage), bms_adc_to_float(p_pack->currentDraw),
+        bms_adc_to_float(p_pack->currentCharge),
+        p_pack->overcurrent,
 
         bms_adc_to_float(p_cell_a->voltage),
-        p_cell_a->overvoltage, p_cell_a->undervoltage, p_cell_a->overcurrent, p_cell_a->undervoltage,
+        p_cell_a->overvoltage, p_cell_a->undervoltage,
 
         bms_adc_to_float(p_cell_b->voltage),
-        p_cell_b->overvoltage, p_cell_b->undervoltage, p_cell_b->overcurrent, p_cell_b->undervoltage,
+        p_cell_b->overvoltage, p_cell_b->undervoltage
     );
 
 }
@@ -65,7 +71,8 @@ static void bms_logging_callback(BMSPowerStatusResponse * p_payload, asn1_lfp_de
 
 
 static void test_function(int error_code, const struct asn1_lfp_decode_data_t* p_data) {
-    ULOG_WARN("ASN1 parse failure: {}", error_code);
+    ARG_UNUSED(p_data);
+    LOG_WRN("ASN1 parse failure: %d", error_code);
 }
 
 static void bms_logging_thread(const void *p1, const void *p2, const void *p3) {
@@ -79,15 +86,16 @@ static void bms_logging_thread(const void *p1, const void *p2, const void *p3) {
         {
             const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSPowerStatusRequest, lfp_send_buf, sizeof(lfp_send_buf), {});
             if (!size) {
-                ULOG_WARN("Failed to serialize power status request: a:{} l:{}", ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
+                LOG_WRN("Failed to serialize power status request: a:%d l:%d",
+                    ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
                 goto unlock;
             }
 
-            ULOG_INFO("Sending {}", ((struct ulog_slice) {.data = lfp_send_buf, .size=size}));
+            LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
 
             const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
             if (ret != 0) {
-                ULOG_WARN("Failed to send power status request: {}", ret);
+                LOG_WRN("Failed to send power status request: %d", ret);
                 goto unlock;
             }
         }
@@ -96,34 +104,34 @@ static void bms_logging_thread(const void *p1, const void *p2, const void *p3) {
         {
             int ret = i2c_write_dt(&dev_bms, (uint8_t[]){0xFF}, 0 );
             if (ret != 0) {
-                ULOG_INFO("Failed to send zero request: {}", ret);
+                LOG_INF("Failed to send zero request: %d", ret);
             } else {
-                ULOG_WARN("Zero request was successful: {}", ret);
+                LOG_WRN("Zero request was successful: %d", ret);
             }
             ret = i2c_write_dt(&dev_bms, (uint8_t[]){0xFF}, 1);
             if (ret != 0) {
-                ULOG_INFO("Failed to send extra request: {}", ret);
+                LOG_INF("Failed to send extra request: %d", ret);
             } else {
-                ULOG_WARN("Extra request was successful: {}", ret);
+                LOG_WRN("Extra request was successful: %d", ret);
             }
 
             uint8_t buf[1];
             int ret2 = i2c_read_dt(&dev_bms, buf, 1);
             if (ret2 != 0) {
-                ULOG_WARN("Failed to send extra read: {}", ret2);
+                LOG_WRN("Failed to send extra read: %d", ret2);
             } else {
-                ULOG_INFO("Extra read: {}", buf[0]);
+                LOG_INF("Extra read: %d", buf[0]);
             }
 
             ret2 = i2c_read_dt(&dev_bms, buf, 1);
             if (ret2 != 0) {
-                ULOG_WARN("Failed to send extra read 2: {}", ret2);
+                LOG_WRN("Failed to send extra read 2: %d", ret2);
             } else {
-                ULOG_INFO("Extra read2: {}", buf[0]);
+                LOG_INF("Extra read2: %d", buf[0]);
             }
         }
 
-        ULOG_INFO("Request sent!");
+        LOG_INF("Request sent!");
 
         k_sleep(K_SECONDS(1));
 
@@ -135,7 +143,7 @@ static void bms_logging_thread(const void *p1, const void *p2, const void *p3) {
             lfp_recv_buf, sizeof(lfp_recv_buf),
             K_MSEC(100));
         if (data.body_length == LFP_FAIL) {
-            ULOG_WARN("Failed to read BMS response");
+            LOG_WRN("Failed to read BMS response");
             goto unlock;
         }
 
@@ -143,7 +151,7 @@ static void bms_logging_thread(const void *p1, const void *p2, const void *p3) {
             goto unlock;
         }
 
-        ULOG_WARN("Bad message handler!");
+        LOG_WRN("Bad message handler!");
 
 unlock:
         k_mutex_unlock(&dev_bms_lock);
