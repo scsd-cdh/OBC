@@ -31,9 +31,7 @@ set(INCLUDE_DIRS
         ${REPO_ROOT}/DRIVERS/MSP430/ADC
         ${REPO_ROOT}/DRIVERS/MSP430/ADC/include
         ${REPO_ROOT}/DRIVERS/MSP430/GPIO
-        ${REPO_ROOT}/DRIVERS/MSP430/SWI2C
         ${REPO_ROOT}/MIDDLEWARE
-        ${REPO_ROOT}/MIDDLEWARE/ADS7138
         ${REPO_ROOT}/MIDDLEWARE/ASN1SCC
         ${REPO_ROOT}/MIDDLEWARE/LFP/include
         ${REPO_ROOT}/MIDDLEWARE/LFP/include/lfp
@@ -45,7 +43,7 @@ set(INCLUDE_DIRS
 # Manually add source files
 # ---------------------------------------------------------------------------
 set(SOURCES
-        ${PROJECT_NAME}.c
+        PDS.c
         ${REPO_ROOT}/DRIVERS/MSP430/ADC/ADC_Read.c
         ${REPO_ROOT}/DRIVERS/MSP430/ADC/include/adc12_b.c
         ${REPO_ROOT}/DRIVERS/MSP430/GPIO/gpio.c
@@ -56,9 +54,7 @@ set(SOURCES
         ${REPO_ROOT}/DRIVERS/MSP430/PWM/include/timer_b.c
         ${REPO_ROOT}/DRIVERS/MSP430/RTC_B/rtc_b.c
         ${REPO_ROOT}/DRIVERS/MSP430/RTC_C/rtc_c.c
-        ${REPO_ROOT}/DRIVERS/MSP430/SWI2C/swi2c.c
         ${REPO_ROOT}/DRIVERS/MSP430/UTILS/utils.c
-        ${REPO_ROOT}/MIDDLEWARE/ADS7138/ads7138irter.c
         ${REPO_ROOT}/MIDDLEWARE/MSP_UTILS/msp_utils.c
         ${REPO_ROOT}/MIDDLEWARE/LFP_I2C/lfp_i2c.c
 )
