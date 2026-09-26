@@ -17,8 +17,12 @@ target_sources(app
         src/lfp_i2c_single.c
         src/main.c
         ../../MIDDLEWARE/tinyprotocol/tinyprotocol.c
+        ../../../MIDDLEWARE/MRAM/mram.c
 )
 
+target_include_directories(app PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE
+)
 
 include("../../MIDDLEWARE/ASN1SCC/asn1scc.cmake")
 
