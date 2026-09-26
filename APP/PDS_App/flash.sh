@@ -51,6 +51,7 @@ esac
 #   eZ-FET        - on-board debugger on LaunchPad boards
 PROBE_CANDIDATES=(
     "2047:0203:MSP-FET"
+    "2047:0014:MSP-FET"
     "2047:0010:MSP-FET430UIF"
     "2047:0013:eZ-FET"
 )
