@@ -103,8 +103,6 @@ lfp_size_or_fail_t lfp_i2c_single_receive(
             continue;
         }
 
-        LOG_HEXDUMP_INF(buf, next_chunk_size, "Received:");
-
         // Update the stream state and record the next chunk size
         next_chunk_size = lfp_stream_update_buf(&stream, buf, next_chunk_size);
 
