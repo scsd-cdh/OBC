@@ -5,7 +5,7 @@ set -euo pipefail
 # Configuration
 # ---------------------------------------------------------------------------
 IMAGE_NAME="${IMAGE_NAME:-msp430-builder}"
-FIRMWARE="${1:-build/BMS.hex}"
+FIRMWARE="${1:-build/PDS.hex}"
 MCU="${MCU:-msp430fr6989}"
 PROBE_DEV="${PROBE_DEV:-}"
 
