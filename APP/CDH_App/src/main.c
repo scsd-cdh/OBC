@@ -11,6 +11,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
 
+#include <MRAM/mram.h>
+
 #define SYSID_CDH 1
 #define SYSID_COMMS 3
 #define SYSID_BMS 5
@@ -101,7 +103,9 @@ static void bms_i2c_test() {
 int main(void)
 {
     while (1) {
-        bms_i2c_test();
-        k_msleep(100);
+        // bms_i2c_test();
+        // k_msleep(100);
+        // asn1_example();
+        MRAM_Spi_Test();
     }
 }
