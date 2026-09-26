@@ -3,8 +3,10 @@
 #include <asn1_lfp.h>
 #include <lfp.h>
 #include <lfp/stream.h>
-#include <ulog/ulog.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(lfp_i2c_single);
 
 #define I2C_BUF_SIZE 32
 #define I2C_PREREAD_SIZE LFP_HEADER_SIZE
@@ -51,7 +53,7 @@ static void on_message(const lfp_header_t * p_header, const uint8_t * p_body, co
 static void on_error(const lfp_code_t error, void * p_ctx) {
     ARG_UNUSED(p_ctx);
 
-    ULOG_WARN("I2C LFP stream error detected: {}", error);
+    LOG_WRN("I2C LFP stream error detected: %d", error);
 }
 
 lfp_size_or_fail_t lfp_i2c_single_receive(
@@ -79,7 +81,7 @@ lfp_size_or_fail_t lfp_i2c_single_receive(
     while (true) {
         // We spent too much time trying to read the body, give up
         if (k_timer_status_get(&timeout)) {
-            ULOG_WARN("I2C read timeout!");
+            LOG_WRN("I2C read timeout!");
             goto fail;
         }
 
@@ -101,7 +103,7 @@ lfp_size_or_fail_t lfp_i2c_single_receive(
             continue;
         }
 
-        ULOG_INFO("Received {}", ((struct ulog_slice) {.data = buf, .size = next_chunk_size}));
+        LOG_HEXDUMP_INF(buf, next_chunk_size, "Received:");
 
         // Update the stream state and record the next chunk size
         next_chunk_size = lfp_stream_update_buf(&stream, buf, next_chunk_size);
