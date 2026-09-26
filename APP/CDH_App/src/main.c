@@ -11,6 +11,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
 
+#include "lfp_i2c_single.h"
+
 #define SYSID_CDH 1
 #define SYSID_COMMS 3
 #define SYSID_BMS 5
@@ -18,7 +20,20 @@
 
 LOG_MODULE_REGISTER(main);
 
-static const struct i2c_dt_spec dev_bms = I2C_DT_SPEC_GET(DT_NODELABEL(bms));
+static const struct i2c_dt_spec dev_bms = I2C_DT_SPEC_GET(DT_NODELABEL(bms_i2c));
+
+static uint8_t lfp_send_buf[MAX_FROM_LIST( // NOLINT(bugprone-branch-clone)
+    ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusRequest),
+    ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusRequest),
+    ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusRequest),
+    ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyRequest)
+)];
+static uint8_t lfp_recv_buf[MAX_FROM_LIST( // NOLINT(bugprone-branch-clone)
+    ASN1_LFP_RECV_BUF_SIZE(BMSPowerStatusResponse),
+    ASN1_LFP_RECV_BUF_SIZE(BMSTemperatureStatusResponse),
+    ASN1_LFP_RECV_BUF_SIZE(BMSSystemStatusResponse),
+    ASN1_LFP_RECV_BUF_SIZE(BMSSetHeaterDutyResponse)
+)];
 
 void asn1_example_bms_system_status_req(const BMSSystemStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     LOG_INF("Received system status request");
@@ -36,6 +51,11 @@ void asn1_example_stream_error_handler(lfp_code_t reason, void * p_ctx) {
 void asn1_example_error_handler(const int asn1_error, const asn1_lfp_decode_data_t * p_data) {
     LOG_ERR("Failed to decode message %d (error %d)", lfp_composite_id(p_data->p_header), asn1_error);
 }
+static void test_function(int error_code, const struct asn1_lfp_decode_data_t* p_data) {
+    ARG_UNUSED(p_data);
+    LOG_WRN("ASN1 parse failure: %d", error_code);
+}
+
 
 void asn1_example_on_msg(const lfp_header_t * p_header, const uint8_t * p_body, const uint16_t body_length, void * p_ctx) {
     ARG_UNUSED(p_ctx);
@@ -63,26 +83,30 @@ void asn1_example_on_msg(const lfp_header_t * p_header, const uint8_t * p_body, 
 }
 
 void asn1_example(void) {
-    uint8_t payload[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
-
-    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusResponse, payload, sizeof(payload), {
-        .uptime = 0xDEADBEEF,
-        .version = 12
-    });
+    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusRequest, lfp_send_buf, sizeof(lfp_send_buf), {});
     if (!size) {
-        LOG_ERR("LFP encoding failed! %d %d", ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
+        LOG_WRN("Failed to serialize system status request: a:%d l:%d",
+            ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
+        return;
     }
 
-    LOG_HEXDUMP_INF(payload, size, "Sending:");
+    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
 
-    uint8_t payload2[ASN1_LFP_RECV_BUF_SIZE(BMSSystemStatusResponse)];
-    lfp_stream_ctx_t stream;
-    lfp_stream_init(&stream, payload2, sizeof(payload2), NULL, asn1_example_on_msg, asn1_example_stream_error_handler, NULL);
-    lfp_stream_update_buf(&stream, payload, size);
-
-    int ret = i2c_write_dt(&dev_bms, payload2, sizeof(payload2));
+    const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
-        LOG_WRN("I2C write failed: %d", ret);
+        LOG_WRN("Failed to send system status request: %d", ret);
+        return;
+    }
+
+    lfp_header_t header;
+    asn1_lfp_decode_data_t data = {.p_on_error_cb = test_function, .p_header = &header, .p_body = lfp_recv_buf};
+    data.body_length = lfp_i2c_single_receive(
+        &dev_bms,
+        &header,
+        lfp_recv_buf, sizeof(lfp_recv_buf),
+        K_MSEC(100));
+    if (data.body_length == LFP_FAIL) {
+        LOG_WRN("Failed to read BMS response");
         return;
     }
 
@@ -101,7 +125,7 @@ static void bms_i2c_test() {
 int main(void)
 {
     while (1) {
-        bms_i2c_test();
-        k_msleep(100);
+        asn1_example();
+        k_msleep(500);
     }
 }
