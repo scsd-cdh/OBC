@@ -4,7 +4,9 @@ cmake_minimum_required(VERSION 3.20)
 # detection, which fails for bare-metal MSP430. Use a static-library test.
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-project(BMS C)
+set(PROJECT_NAME "BMS" CACHE STRING "Project / executable name")
+
+project(${PROJECT_NAME} C)
 
 set(MCU "msp430fr6989" CACHE STRING "MSP430 device")
 set(EXTRA_MCU_FLAGS "-mlarge" CACHE STRING "Extra MCU flags, e.g. -mlarge")
@@ -43,7 +45,7 @@ set(INCLUDE_DIRS
 # Manually add source files
 # ---------------------------------------------------------------------------
 set(SOURCES
-        BMS.c
+        ${PROJECT_NAME}.c
         ${REPO_ROOT}/DRIVERS/MSP430/ADC/ADC_Read.c
         ${REPO_ROOT}/DRIVERS/MSP430/ADC/include/adc12_b.c
         ${REPO_ROOT}/DRIVERS/MSP430/GPIO/gpio.c
@@ -75,8 +77,9 @@ list(APPEND SOURCES ${GLOBBED_SOURCES})
 
 message(STATUS "CMAKE_CURRENT_LIST_DIR = ${CMAKE_CURRENT_LIST_DIR}")
 message(STATUS "REPO_ROOT              = ${REPO_ROOT}")
+message(STATUS "PROJECT_NAME           = ${PROJECT_NAME}")
 
-add_executable(BMS
+add_executable(${PROJECT_NAME}
         main.c
         ${SOURCES}
 )
@@ -88,15 +91,15 @@ set_source_files_properties(${SOURCES} PROPERTIES
         COMPILE_OPTIONS "-Wno-int-to-pointer-cast"
 )
 
-set_target_properties(BMS PROPERTIES SUFFIX ".elf")
+set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".elf")
 
 # TI support-files include is always present; your INCLUDE_DIRS are appended.
-target_include_directories(BMS PRIVATE
+target_include_directories(${PROJECT_NAME} PRIVATE
         /opt/ti/support-files/include
         ${INCLUDE_DIRS}
 )
 
-target_compile_options(BMS PRIVATE
+target_compile_options(${PROJECT_NAME} PRIVATE
         -mmcu=${MCU}
         ${EXTRA_MCU_FLAGS}
         -Os
@@ -107,7 +110,7 @@ target_compile_options(BMS PRIVATE
         -fdata-sections
 )
 
-target_link_options(BMS PRIVATE
+target_link_options(${PROJECT_NAME} PRIVATE
         -mmcu=${MCU}
         ${EXTRA_MCU_FLAGS}
         -L/opt/ti/support-files/include
@@ -118,13 +121,13 @@ target_link_options(BMS PRIVATE
 find_program(MSP430_OBJCOPY msp430-elf-objcopy REQUIRED)
 find_program(MSP430_SIZE msp430-elf-size REQUIRED)
 
-add_custom_command(TARGET BMS POST_BUILD
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${MSP430_OBJCOPY} -O ihex
-        $<TARGET_FILE:BMS>
+        $<TARGET_FILE:${PROJECT_NAME}>
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.hex
         COMMAND ${MSP430_OBJCOPY} -O binary
-        $<TARGET_FILE:BMS>
+        $<TARGET_FILE:${PROJECT_NAME}>
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.bin
-        COMMAND ${MSP430_SIZE} $<TARGET_FILE:BMS>
+        COMMAND ${MSP430_SIZE} $<TARGET_FILE:${PROJECT_NAME}>
         COMMENT "Generating ${PROJECT_NAME}.hex/.bin and size report"
 )
