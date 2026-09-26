@@ -155,9 +155,7 @@ static uint8_t s_rx_body_buffer[RX_BODY_BUFFER_SIZE];
 static user_ctx_t s_user_ctx;
 
 static bool on_header(const lfp_header_t* p_header, void* p_ctx) {
-    if (lfp_i2c_state() == I2C_SLAVE_STATE_RESPONSE) {
-        lfp_i2c_transition(I2C_SLAVE_STATE_REQUEST);
-    }
+    lfp_i2c_transition(I2C_SLAVE_STATE_REQUEST);
     return true;
 }
 
@@ -231,7 +229,7 @@ static inline void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payl
     }
 
     // Send response (Empty body basically an ACK)
-    lfp_i2c_set_txbuf(s_temperature_status_tx_buf, s_temperature_status_size);
+    lfp_i2c_set_txbuf(s_heaterduty_response_tx_buf, s_heaterduty_response_size);
 }
 
 // bit silly to try to inline this. asm output at i2c.asm confirms a call with max optimizations (line 657): CALLA &s_ctx+0

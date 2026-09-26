@@ -5,6 +5,7 @@
 #include "lfp/stream.h"
 
 typedef enum {
+    I2C_SLAVE_STATE_IDLE,
     I2C_SLAVE_STATE_REQUEST,
     I2C_SLAVE_STATE_PROCESSING,
     I2C_SLAVE_STATE_RESPONSE

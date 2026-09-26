@@ -50,7 +50,10 @@ static void i2c_rx_cb(uint8_t data) {
 }
 
 void lfp_i2c_init(lfp_stream_ctx_t * p_lfp_ctx, i2c_module_t module_mask, uint8_t slave_addr) {
-
+    s_state = I2C_SLAVE_STATE_IDLE;
+    p_txbuf = NULL;
+    s_txbuf_len = 0;
+    s_txidx = 0;
     p_ctx = p_lfp_ctx;
 
     i2c_ctx_t i2c_ctx = {
@@ -90,12 +93,14 @@ void lfp_i2c_transition(lfp_i2c_state_t state) {
 
 // Which buffer is to be sent over i2c
 int16_t lfp_i2c_set_txbuf(volatile uint8_t* data, uint8_t size) {
-    int res = i2c_set_txbuf(data, size);
-    if (res != 0) 
-        return res;
+    // The custom TX callback owns transmission, so keep the response buffer here.
+    p_txbuf = data;
+    s_txbuf_len = size;
+    s_txidx = 0;
+
     // We're ready to start transmitting data
     lfp_i2c_transition(I2C_SLAVE_STATE_RESPONSE);
-    return res; 
+    return 0;
 }
 
 lfp_i2c_state_t lfp_i2c_state() {

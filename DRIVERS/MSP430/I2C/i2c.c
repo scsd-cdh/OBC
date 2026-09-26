@@ -52,10 +52,6 @@ void i2c_init(uint8_t module_mask, i2c_ctx_t* ctx)
 // NOTE: this is a tad dangerous since we trust the user to pass in memory that is allocated and will stay allocated
 int16_t i2c_set_txbuf(volatile uint8_t* data, uint8_t size)
 {
-    if (s_ctx.i2c_tx_cb != NULL ) {
-        return -1;
-    }
-
     s_tx_idx = 0;
     s_msg_len = size;
     p_txbuf = data;
