@@ -9,6 +9,16 @@ set(PROJECT_NAME "PDS" CACHE STRING "Project / executable name")
 project(${PROJECT_NAME} C)
 
 set(MCU "msp430fr6989" CACHE STRING "MSP430 device")
+set(SUPPORTED_MCUS msp430fr5989 msp430fr5969 msp430fr6989)
+set_property(CACHE MCU PROPERTY STRINGS
+        msp430fr5989
+        msp430fr5969
+        msp430fr6989
+)
+if(NOT MCU IN_LIST SUPPORTED_MCUS)
+    message(FATAL_ERROR
+            "Unsupported MCU '${MCU}'. Supported MCUs: ${SUPPORTED_MCUS}")
+endif()
 set(EXTRA_MCU_FLAGS "-mlarge" CACHE STRING "Extra MCU flags, e.g. -mlarge")
 
 # ---------------------------------------------------------------------------

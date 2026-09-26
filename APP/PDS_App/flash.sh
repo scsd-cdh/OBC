@@ -5,9 +5,45 @@ set -euo pipefail
 # Configuration
 # ---------------------------------------------------------------------------
 IMAGE_NAME="${IMAGE_NAME:-msp430-builder}"
-FIRMWARE="${1:-build/PDS.hex}"
+FIRMWARE="build/PDS.hex"
 MCU="${MCU:-msp430fr6989}"
 PROBE_DEV="${PROBE_DEV:-}"
+firmware_set=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --mcu)
+            [[ $# -ge 2 ]] || {
+                echo "error: --mcu requires a target" >&2
+                exit 2
+            }
+            MCU="$2"
+            shift 2
+            ;;
+        --help|-h)
+            echo "usage: $0 [firmware] [--mcu msp430fr5989|msp430fr5969|msp430fr6989]"
+            exit 0
+            ;;
+        *)
+            if [[ "$firmware_set" -eq 0 ]]; then
+                FIRMWARE="$1"
+                firmware_set=1
+            else
+                echo "error: unexpected argument '$1'" >&2
+                exit 2
+            fi
+            shift
+            ;;
+    esac
+done
+case "$MCU" in
+    msp430fr5989|msp430fr5969|msp430fr6989) ;;
+    *)
+        echo "error: unsupported MCU '$MCU'" >&2
+        echo "       supported: msp430fr5989, msp430fr5969, msp430fr6989" >&2
+        exit 2
+        ;;
+esac
 
 # Known TI MSP430 debug probe USB IDs, in preference order (first match wins):
 #   MSP-FET       - standalone black JTAG/SBW debugger

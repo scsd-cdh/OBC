@@ -9,6 +9,22 @@ DOCKERFILE="${DOCKERFILE:-dockerfile}"
 MCU="${MCU:-msp430fr6989}"
 EXTRA_MCU_FLAGS="${EXTRA_MCU_FLAGS--mlarge}"
 
+if [[ $# -gt 1 ]]; then
+  echo "usage: $0 [msp430fr5989|msp430fr5969|msp430fr6989]" >&2
+  exit 2
+fi
+if [[ $# -eq 1 ]]; then
+  MCU="$1"
+fi
+case "$MCU" in
+  msp430fr5989|msp430fr5969|msp430fr6989) ;;
+  *)
+    echo "error: unsupported MCU '$MCU'" >&2
+    echo "       supported: msp430fr5989, msp430fr5969, msp430fr6989" >&2
+    exit 2
+    ;;
+esac
+
 # Directory containing this script == directory containing CMakeLists.txt
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -59,6 +75,17 @@ docker run --rm \
   "$IMAGE_NAME" \
   bash -lc '
     set -e
+
+    # A build directory may have been generated from a different mounted
+    # source tree. CMake cannot reuse that cache safely.
+    if [[ -f build/CMakeCache.txt ]]; then
+      cached_source="$(sed -n "s/^CMAKE_HOME_DIRECTORY:INTERNAL=//p" build/CMakeCache.txt)"
+      if [[ "$cached_source" != "$PWD" ]]; then
+        echo "==> Recreating stale build directory (cached source: $cached_source)"
+        rm -rf build
+      fi
+    fi
+
     cmake -S . -B build \
       -DCMAKE_TOOLCHAIN_FILE=/opt/ti/msp430-toolchain.cmake \
       -DMCU="$MCU" \
