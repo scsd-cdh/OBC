@@ -2,9 +2,15 @@
 };
 
 &ext1_i2c {
+	pds_i2c: pds@8 {
+		compatible = "vnd,i2c-device";
+
+		reg = < 0x08 >;
+	};
 	bms_i2c: bms@9 {
 		compatible = "vnd,i2c-device";
 
 		reg = < 0x09 >;
 	};
+
 };
