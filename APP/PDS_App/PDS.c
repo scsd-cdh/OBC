@@ -78,7 +78,13 @@ static void pds_process(void)
 
 static void init_hardware(void)
 {
-    clock_init_16mhz();
+    WDTCTL = WDTPW | WDTHOLD;
+
+    P1SEL0 |= BIT6 | BIT7;
+    P1SEL1 &= ~(BIT6 | BIT7);
+
+    PM5CTL0 &= ~LOCKLPM5;
+
     GPIO_setAsOutputPin(CONV_RUN_A_PORT, CONV_RUN_A_PIN);
     GPIO_setAsOutputPin(CONV_RUN_B_PORT, CONV_RUN_B_PIN);
     GPIO_setAsInputPin(CONV_FLAG1_X_PLUS_PORT, CONV_FLAG1_X_PLUS_PIN);
@@ -92,8 +98,8 @@ static void init_hardware(void)
     GPIO_setOutputHighOnPin(CONV_RUN_A_PORT, CONV_RUN_A_PIN);
     GPIO_setOutputHighOnPin(CONV_RUN_B_PORT, CONV_RUN_B_PIN);
 
-    P1SEL1 |= BIT6 | BIT7;
-    PM5CTL0 &= ~LOCKLPM5;
+
+    clock_init_16mhz();
 
 #if defined(__MSP430FR5989__) || defined(__MSP430FR6989__)
     Calendar current_time = {
@@ -235,7 +241,6 @@ static void init_communication(void)
 
 void pds_init(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;
     init_hardware();
     init_communication();
 }
