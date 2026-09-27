@@ -7,13 +7,13 @@ project(CDH)
 
 target_sources(app
         PRIVATE FILE_SET HEADERS BASE_DIRS src FILES
-        src/bms_handler.h
+        src/cdh_bms_example.h
         src/lfp_i2c_single.h
         src/main.h
         src/threads.h
 
         PRIVATE
-        src/bms_handler.c
+        src/cdh_bms_example.c
         src/lfp_i2c_single.c
         src/main.c
         ../../MIDDLEWARE/tinyprotocol/tinyprotocol.c
