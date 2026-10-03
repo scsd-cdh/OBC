@@ -45,7 +45,10 @@ static bool s_heartbeat_received;
 static PDSConverterMonitorResponse s_converter_data;
 static lfp_stream_ctx_t s_lfp_ctx;
 static uint8_t s_rx_body_buffer[ASN1_LFP_RECV_BUF_SIZE(PDSHealthCheckResponse)];
-static uint8_t s_tx_buffer[ASN1_LFP_SEND_BUF_SIZE(PDSHealthCheckResponse)];
+static uint8_t s_systemstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(PDSSystemStatusResponse)];
+static uint8_t s_healthcheck_tx_buf[ASN1_LFP_SEND_BUF_SIZE(PDSHealthCheckResponse)];
+static uint8_t s_converter_tx_buf[ASN1_LFP_SEND_BUF_SIZE(PDSConverterMonitorResponse)];
+static uint8_t s_reboot_tx_buf[ASN1_LFP_SEND_BUF_SIZE(PDSRebootResponse)];
 static uint32_t s_uptime;
 
 static uint8_t s_flag_ports[] = {
@@ -104,6 +107,13 @@ static void init_hardware(void)
 
     P1SEL0 |= BIT6 | BIT7;
     P1SEL1 &= ~(BIT6 | BIT7);
+
+#if defined(__MSP430FR6989__)
+    P8SEL0 |= BIT4 | BIT5 | BIT6;
+    P8SEL1 |= BIT4 | BIT5 | BIT6;
+    P9SEL0 |= BIT2 | BIT3;
+    P9SEL1 |= BIT2 | BIT3;
+#endif
 
     PM5CTL0 &= ~LOCKLPM5;
 
@@ -199,11 +209,11 @@ static void send_system_status(const PDSSystemStatusRequest *request,
     PDSSystemStatusResponse response = {.version = PDS_FW_VERSION, .uptime = s_uptime++};
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
     uint16_t size = ASN1_LFP_SERIALIZE(data->p_header->initiator, pdsSystemId,
-                                        PDSSystemStatusResponse, s_tx_buffer,
-                                        sizeof(s_tx_buffer), response);
+                                        PDSSystemStatusResponse, s_systemstatus_tx_buf,
+                                        sizeof(s_systemstatus_tx_buf), response);
     __disable_interrupt();
 
-    lfp_i2c_set_txbuf(s_tx_buffer, size);
+    lfp_i2c_set_txbuf(s_systemstatus_tx_buf, size);
 }
 
 static void send_health_check(const PDSHealthCheckRequest *request,
@@ -215,10 +225,10 @@ static void send_health_check(const PDSHealthCheckRequest *request,
     __enable_interrupt();
     s_heartbeat_received = true;
     uint16_t size = ASN1_LFP_SERIALIZE(data->p_header->initiator, pdsSystemId,
-                                        PDSHealthCheckResponse, (unsigned char*)s_tx_buffer,
-                                        sizeof(s_tx_buffer), s_health_check);
+                                        PDSHealthCheckResponse, (unsigned char*)s_healthcheck_tx_buf,
+                                        sizeof(s_healthcheck_tx_buf), s_health_check);
     __disable_interrupt();
-    (void)lfp_i2c_set_txbuf(s_tx_buffer, size);
+    (void)lfp_i2c_set_txbuf(s_healthcheck_tx_buf, size);
 }
 
 static void send_converter_status(const PDSConverterMonitorRequest *request,
@@ -228,10 +238,10 @@ static void send_converter_status(const PDSConverterMonitorRequest *request,
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
     __enable_interrupt();
     uint16_t size = ASN1_LFP_SERIALIZE(data->p_header->initiator, pdsSystemId,
-                                        PDSConverterMonitorResponse, s_tx_buffer,
-                                        sizeof(s_tx_buffer), s_converter_data);
+                                        PDSConverterMonitorResponse, s_converter_tx_buf,
+                                        sizeof(s_converter_tx_buf), s_converter_data);
     __disable_interrupt();
-    lfp_i2c_set_txbuf(s_tx_buffer, size);
+    lfp_i2c_set_txbuf(s_converter_tx_buf, size);
 }
 
 static void send_reboot(const PDSRebootRequest *request,
@@ -243,10 +253,10 @@ static void send_reboot(const PDSRebootRequest *request,
     pds_reboot();
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
     uint16_t size = ASN1_LFP_SERIALIZE(data->p_header->initiator, pdsSystemId,
-                                        PDSRebootResponse, s_tx_buffer,
-                                        sizeof(s_tx_buffer), response);
+                                        PDSRebootResponse, s_reboot_tx_buf,
+                                        sizeof(s_reboot_tx_buf), response);
     __disable_interrupt();
-    lfp_i2c_set_txbuf(s_tx_buffer, size);
+    lfp_i2c_set_txbuf(s_reboot_tx_buf, size);
 }
 
 static void on_message(const lfp_header_t *header, const uint8_t *body,
@@ -295,10 +305,9 @@ __attribute__((interrupt(RTC_VECTOR)))
 void RTC_ISR(void)
 {
     switch (__even_in_range(RTCIV, 16)) {
-    case 2:
-        s_isr_triggered = true;
-        break;
     case 4:
+        s_isr_triggered = true;
+
         if (s_heartbeat_received) {
             s_heartbeat_received = false;
         } else {

@@ -30,11 +30,11 @@
 #define CONV_FLAG2_Y_MINUS_PORT GPIO_PORT_P4
 #define CONV_FLAG2_Y_MINUS_PIN GPIO_PIN2
 
-#define INT_5V_VS P4_2
-#define REG_5V_VS P1_0
-#define A_5V_VS P1_1
-#define B_5V_VS P1_2
-#define TEMP_SENSE P1_3
+#define INT_5V_VS ADC12_B_INPUT_A10 /* P9.2 */
+#define REG_5V_VS ADC12_B_INPUT_A11 /* P9.3 */
+#define A_5V_VS ADC12_B_INPUT_A7   /* P8.4 */
+#define B_5V_VS ADC12_B_INPUT_A6   /* P8.5 */
+#define TEMP_SENSE ADC12_B_INPUT_A5 /* P8.6 */
 
 void pds_init(void);
 bool pds_isr_triggered(void);
