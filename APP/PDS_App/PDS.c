@@ -108,7 +108,11 @@ static void init_hardware(void)
     P1SEL0 |= BIT6 | BIT7;
     P1SEL1 &= ~(BIT6 | BIT7);
 
-#if defined(__MSP430FR6989__)
+
+#if defined(__MSP430FR5989__)
+    P9SEL0 |= BIT3 | BIT4 | BIT5 | BIT6 | BIT7;
+    P9SEL1 |= BIT3 | BIT4 | BIT5 | BIT6 | BIT7;
+#elif defined(__MSP430FR6989__) /*dev kit specific for our test bench*/
     P8SEL0 |= BIT4 | BIT5 | BIT6;
     P8SEL1 |= BIT4 | BIT5 | BIT6;
     P9SEL0 |= BIT2 | BIT3;
