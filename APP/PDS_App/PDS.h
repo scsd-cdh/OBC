@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "ADC_Read.h"
 #include "gpio.h"
 
 #define SLAVE_ADDR (0x08)
@@ -30,11 +31,25 @@
 #define CONV_FLAG2_Y_MINUS_PORT GPIO_PORT_P4
 #define CONV_FLAG2_Y_MINUS_PIN GPIO_PIN2
 
+#if defined(__MSP430FR5989__)
+#define INT_5V_VS ADC12_B_INPUT_A11 /* P9.3 */
+#define REG_5V_VS ADC12_B_INPUT_A12 /* P9.4 */
+#define A_5V_VS ADC12_B_INPUT_A13   /* P9.5 */
+#define B_5V_VS ADC12_B_INPUT_A14   /* P9.6 */
+#define TEMP_SENSE ADC12_B_INPUT_A15 /* P9.7 */
+#elif defined(__MSP430FR6989__)
+#define INT_5V_VS ADC12_B_INPUT_A10 /* P9.2 */
+#define REG_5V_VS ADC12_B_INPUT_A11 /* P9.3 */
+#define A_5V_VS ADC12_B_INPUT_A7   /* P8.4 */
+#define B_5V_VS ADC12_B_INPUT_A6   /* P8.5 */
+#define TEMP_SENSE ADC12_B_INPUT_A5 /* P8.6 */
+#else
 #define INT_5V_VS P4_2
 #define REG_5V_VS P1_0
 #define A_5V_VS P1_1
 #define B_5V_VS P1_2
 #define TEMP_SENSE P1_3
+#endif
 
 void pds_init(void);
 bool pds_isr_triggered(void);

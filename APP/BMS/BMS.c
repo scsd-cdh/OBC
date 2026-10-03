@@ -48,21 +48,22 @@ typedef struct {
 // Each *_MEM macro maps an ADC channel to a memory buffer
 // 1 and 2 does in fact refer to battery number
 
-// Current sensing VUR = Discharge current
-#define I_SENSE_VUR_1_CP_PIN      ADC12_B_INPUT_A10 // PIN 42 5989
-#define I_SENSE_VUR_2_CP_PIN      ADC12_B_INPUT_A0  // PIN 39 5989
+// Current sensing VUR = Discharge current.
+// Pin numbers are FR5989 64-pin PM/RGC; FR6989 numbers are 100-pin PZ / 80-pin PN.
+#define I_SENSE_VUR_1_CP_PIN      ADC12_B_INPUT_A10 // FR5989 P4.2 pin 42; FR6989 P9.2 pin 69 / 54
+#define I_SENSE_VUR_2_CP_PIN      ADC12_B_INPUT_A0  // FR5989 P1.0 pin 39; FR6989 P1.0 pin 66 / 51
 
-// Current sensing CHR = Charge current
-#define I_SENSE_CHR_1_CP_PIN      ADC12_B_INPUT_A9  // PIN 41 5989
-#define I_SENSE_CHR_2_CP_PIN      ADC12_B_INPUT_A8  // PIN 40 5989
+// Current sensing CHR = Charge current.
+#define I_SENSE_CHR_1_CP_PIN      ADC12_B_INPUT_A9  // FR5989 P4.1 pin 41; FR6989 P9.1 pin 68 / 53
+#define I_SENSE_CHR_2_CP_PIN      ADC12_B_INPUT_A8  // FR5989 P4.0 pin 40; FR6989 P9.0 pin 67 / 52
 
-// Voltage sensing
-#define V_CELL_1A_CP_PIN          ADC12_B_INPUT_A13 // PIN 45 5989
-#define V_CELL_1B_CP_PIN          ADC12_B_INPUT_A12 // PIN 44 5989
-#define V_CELL_2A_CP_PIN          ADC12_B_INPUT_A3  // PIN 36 5989
-#define V_CELL_2B_CP_PIN          ADC12_B_INPUT_A2  // PIN 37 5989
-#define V_BATTPACK_1_CP_PIN       ADC12_B_INPUT_A11 // PIN 43 5989
-#define V_BATTPACK_2_CP_PIN       ADC12_B_INPUT_A1  // PIN 38 5989
+// Voltage sensing.
+#define V_CELL_1A_CP_PIN          ADC12_B_INPUT_A13 // FR5989 P3.1 pin 45; FR6989 P9.5 pin 72 / 57
+#define V_CELL_1B_CP_PIN          ADC12_B_INPUT_A12 // FR5989 P3.0 pin 44; FR6989 P9.4 pin 71 / 56
+#define V_CELL_2A_CP_PIN          ADC12_B_INPUT_A3  // FR5989 P1.3 pin 36; FR6989 P1.3 pin 63 / 48
+#define V_CELL_2B_CP_PIN          ADC12_B_INPUT_A2  // FR5989 P1.2 pin 37; FR6989 P1.2 pin 64 / 49
+#define V_BATTPACK_1_CP_PIN       ADC12_B_INPUT_A11 // FR5989 P4.3 pin 43; FR6989 P9.3 pin 70 / 55
+#define V_BATTPACK_2_CP_PIN       ADC12_B_INPUT_A1  // FR5989 P1.1 pin 38; FR6989 P1.1 pin 65 / 50
 
 // ADC memory buffers
 #define I_SENSE_VUR_1_CP_MEM      ADC12_B_MEMORY_0
