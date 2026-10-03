@@ -7,7 +7,6 @@
 #include "i2c.h"
 #include "lfp_i2c.h"
 #include "msp_utils.h"
-#include "version.h"
 
 #include <msp430.h>
 #include <stddef.h>
@@ -17,6 +16,29 @@
 #elif defined(__MSP430FR5969__)
 #include "rtc_b.h"
 #endif
+
+#define PDS_FW_VERSION 1
+
+static const PDSHealthCheckResponse s_health_check = {
+    .hash = {
+        .arr[0] = 0xD,
+        .arr[1] = 0xE,
+        .arr[2] = 0xA,
+        .arr[3] = 0xD,
+        .arr[4] = 0xB,
+        .arr[5] = 0xE,
+        .arr[6] = 0xE,
+        .arr[7] = 0xF,
+        .arr[8] = 0x0,
+        .arr[9] = 0x0,
+        .arr[10] = 0x0,
+        .arr[11] = 0x0,
+        .arr[12] = 0x0,
+        .arr[13] = 0x0,
+        .arr[14] = 0x0,
+        .arr[15] = 0x0
+    }
+};
 
 static volatile bool s_isr_triggered;
 static bool s_heartbeat_received;
@@ -78,7 +100,13 @@ static void pds_process(void)
 
 static void init_hardware(void)
 {
-    clock_init_16mhz();
+    WDTCTL = WDTPW | WDTHOLD;
+
+    P1SEL0 |= BIT6 | BIT7;
+    P1SEL1 &= ~(BIT6 | BIT7);
+
+    PM5CTL0 &= ~LOCKLPM5;
+
     GPIO_setAsOutputPin(CONV_RUN_A_PORT, CONV_RUN_A_PIN);
     GPIO_setAsOutputPin(CONV_RUN_B_PORT, CONV_RUN_B_PIN);
     GPIO_setAsInputPin(CONV_FLAG1_X_PLUS_PORT, CONV_FLAG1_X_PLUS_PIN);
@@ -92,8 +120,8 @@ static void init_hardware(void)
     GPIO_setOutputHighOnPin(CONV_RUN_A_PORT, CONV_RUN_A_PIN);
     GPIO_setOutputHighOnPin(CONV_RUN_B_PORT, CONV_RUN_B_PIN);
 
-    P1SEL1 |= BIT6 | BIT7;
-    PM5CTL0 &= ~LOCKLPM5;
+
+    clock_init_16mhz();
 
 #if defined(__MSP430FR5989__) || defined(__MSP430FR6989__)
     Calendar current_time = {
@@ -165,11 +193,16 @@ static void send_system_status(const PDSSystemStatusRequest *request,
                                const asn1_lfp_decode_data_t *data)
 {
     (void)request;
+    lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    // GIE -- this is technically in the i2c isr, we don't want getting stuck here to stall BMS
+    __enable_interrupt();
     PDSSystemStatusResponse response = {.version = PDS_FW_VERSION, .uptime = s_uptime++};
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
     uint16_t size = ASN1_LFP_SERIALIZE(data->p_header->initiator, pdsSystemId,
                                         PDSSystemStatusResponse, s_tx_buffer,
                                         sizeof(s_tx_buffer), response);
+    __disable_interrupt();
+
     lfp_i2c_set_txbuf(s_tx_buffer, size);
 }
 
@@ -177,16 +210,15 @@ static void send_health_check(const PDSHealthCheckRequest *request,
                               const asn1_lfp_decode_data_t *data)
 {
     (void)request;
-    s_heartbeat_received = true;
-    PDSHealthCheckResponse response = {0};
-    for (uint8_t i = 0; i < sizeof(response.hash.arr); ++i) {
-        response.hash.arr[i] = pds_fw_hash[i];
-    }
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    // GIE -- this is technically in the i2c isr, we don't want getting stuck here to stall BMS
+    __enable_interrupt();
+    s_heartbeat_received = true;
     uint16_t size = ASN1_LFP_SERIALIZE(data->p_header->initiator, pdsSystemId,
-                                        PDSHealthCheckResponse, s_tx_buffer,
-                                        sizeof(s_tx_buffer), response);
-    lfp_i2c_set_txbuf(s_tx_buffer, size);
+                                        PDSHealthCheckResponse, (unsigned char*)s_tx_buffer,
+                                        sizeof(s_tx_buffer), s_health_check);
+    __disable_interrupt();
+    (void)lfp_i2c_set_txbuf(s_tx_buffer, size);
 }
 
 static void send_converter_status(const PDSConverterMonitorRequest *request,
@@ -194,9 +226,11 @@ static void send_converter_status(const PDSConverterMonitorRequest *request,
 {
     (void)request;
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
+    __enable_interrupt();
     uint16_t size = ASN1_LFP_SERIALIZE(data->p_header->initiator, pdsSystemId,
                                         PDSConverterMonitorResponse, s_tx_buffer,
                                         sizeof(s_tx_buffer), s_converter_data);
+    __disable_interrupt();
     lfp_i2c_set_txbuf(s_tx_buffer, size);
 }
 
@@ -205,11 +239,13 @@ static void send_reboot(const PDSRebootRequest *request,
 {
     (void)request;
     PDSRebootResponse response = {.placeholder = 0};
+    __enable_interrupt();
     pds_reboot();
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
     uint16_t size = ASN1_LFP_SERIALIZE(data->p_header->initiator, pdsSystemId,
                                         PDSRebootResponse, s_tx_buffer,
                                         sizeof(s_tx_buffer), response);
+    __disable_interrupt();
     lfp_i2c_set_txbuf(s_tx_buffer, size);
 }
 
@@ -235,7 +271,6 @@ static void init_communication(void)
 
 void pds_init(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;
     init_hardware();
     init_communication();
 }
