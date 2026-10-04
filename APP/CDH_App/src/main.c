@@ -1,4 +1,5 @@
-#include "main.h"
+#include "include/main.h"
+#include "include/pins.h"
 
 #include <asn1_lfp.h>
 #include <lfp.h>
@@ -9,6 +10,10 @@
 #include <lfp/stream.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+
+//static const struct gpio_dt_spec pb03 = GPIO_DT_SPEC_GET(TRANSCEIVER_NODE, transceiver_gpios);
 
 #define SYSID_CDH 1
 #define SYSID_COMMS 3
@@ -79,5 +84,13 @@ void asn1_example(void) {
 
 int main(void)
 {
+    gpio_init();
+    while (1) {
+        //gpio_pin_toggle_dt(&pb03);
+        k_msleep(1000);
+    }
+
+
     asn1_example();
+    return 0;
 }

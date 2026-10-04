@@ -5,12 +5,16 @@ include("../../settings.cmake")
 find_package(Zephyr)
 project(CDH)
 
+list(APPEND DTS_ROOT "${CMAKE_CURRENT_LIST_DIR}")
+
 target_sources(app
-        PRIVATE FILE_SET HEADERS BASE_DIRS src FILES
-        src/main.h
+        PRIVATE FILE_SET HEADERS BASE_DIRS src/include FILES
+        src/include/main.h
+        src/include/pins.h
 
         PRIVATE
         src/main.c
+        src/pins.c
 )
 
 
