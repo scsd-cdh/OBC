@@ -177,13 +177,22 @@ if [[ "$PLATFORM" == "windows" ]]; then
     # ---- Stage 2: Find the currently-connected, shared MSP/FET probe ------
     BOUND=""
     while IFS= read -r line; do
-        if [[ "$line" =~ ^([0-9]+-[0-9]+)[[:space:]] ]]; then
-            if echo "$line" | grep -qiE 'MSP|FET' && \
-               ! echo "$line" | grep -qiE 'Not shared'; then
-                BUSID="${BASH_REMATCH[1]}"
-                BOUND="$line"
-                break
+        if [[ "$line" =~ ^([0-9]+-[0-9]+)[[:space:]]+([0-9a-fA-F]{4}:[0-9a-fA-F]{4})[[:space:]] ]]; then
+            busid="${BASH_REMATCH[1]}"
+            vidpid="${BASH_REMATCH[2]}"
+            # Skip anything not shared
+            if echo "$line" | grep -qiE 'Not shared'; then
+                continue
             fi
+            # Match against known probe VID:PIDs
+            for entry in "${PROBE_CANDIDATES[@]}"; do
+                IFS=: read -r vid pid name <<< "$entry"
+                if [[ "${vidpid,,}" == "${vid,,}:${pid,,}" ]]; then
+                    BUSID="$busid"
+                    BOUND="$line"
+                    break 2
+                fi
+            done
         fi
     done < <("$USBIPD" list 2>/dev/null)
 
