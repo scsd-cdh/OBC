@@ -291,6 +291,6 @@ docker run --rm \
     -v "$PWD":/workspace \
     -w /workspace \
     "$IMAGE_NAME" \
-    MSP430Flasher -n "$MCU" -w "$FIRMWARE" -v -z '[VCC,RESET]'
+    mspdebug tilib "prog $FIRMWARE"
 
 echo "==> Done"
