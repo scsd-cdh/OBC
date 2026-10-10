@@ -1,59 +1,102 @@
 FROM ubuntu:22.04
 
-# Prevent interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Build tools needed for compiling MSP430 firmware with CMake.
-# (meson / ninja / python3-pip were only needed for picolibc.)
+# Build tools for the MSP430 firmware + mspdebug, plus dependencies for
+# building libmsp430.so from the MSP Debug Stack (MSPDS) source.
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
+    libreadline-dev \
+    libusb-dev \
+    p7zip-full \
+    pkg-config \
     wget \
     unzip \
-    bzip2 \
+    # MSPDS build dependencies
+    libboost-all-dev \
+    libudev-dev \
+    libusb-1.0-0-dev \
+    libfox-1.6-dev \
+    autotools-dev \
+    autoconf \
+    automake \
+    libtool \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/ti
 
-# Official TI MSP430 GCC toolchain (64-bit Linux, toolchain-only)
-RUN GCC_URL="https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSPGCC/8_3_0_0/exports/msp430-gcc-8.3.0.16_linux64.tar.bz2" && \
-    echo "Downloading TI MSP430 GCC from: $GCC_URL" && \
-    wget -U "Mozilla/5.0 (X11; Linux x86_64)" \
-        --referer="https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSPGCC/8_3_0_0/index_FDS.html" \
-        -O msp430-gcc.tar.bz2 "$GCC_URL" && \
-    mkdir -p /opt/ti/msp430-gcc && \
-    tar xjf msp430-gcc.tar.bz2 -C /opt/ti/msp430-gcc --strip-components=1 && \
-    rm msp430-gcc.tar.bz2
+# --- MSP430 GCC full installer 9.3.1.2 ------------------------------------
+RUN P7Z_URL="https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LlCjWuAbzH/9.3.1.2/msp430-gcc-full-linux-x64-installer-9.3.1.2.7z" && \
+    wget -q -O /tmp/msp430-gcc-full.7z "$P7Z_URL" && \
+    if head -c 200 /tmp/msp430-gcc-full.7z | grep -qiE '<html|<!DOCTYPE'; then \
+        echo "error: download is not a binary archive - check the URL" >&2; \
+        exit 1; \
+    fi && \
+    mkdir -p /tmp/msp430-extract && \
+    7z x -y -o/tmp/msp430-extract /tmp/msp430-gcc-full.7z >/dev/null && \
+    INSTALLER="$(find /tmp/msp430-extract -maxdepth 3 -name '*.run' -print -quit)" && \
+    if [ -n "$INSTALLER" ]; then \
+        chmod +x "$INSTALLER" && \
+        "$INSTALLER" --mode unattended --unattendedmodeui none \
+                     --prefix /opt/ti/msp430-gcc; \
+    else \
+        mkdir -p /opt/ti/msp430-gcc && \
+        cp -a /tmp/msp430-extract/. /opt/ti/msp430-gcc/; \
+    fi && \
+    rm -rf /tmp/msp430-extract /tmp/msp430-gcc-full.7z && \
+    test -x /opt/ti/msp430-gcc/bin/msp430-elf-gcc
 
 ENV PATH="/opt/ti/msp430-gcc/bin:${PATH}"
 
-# TI MSP430 support files (device headers + linker scripts), version 1.208
-RUN SUPPORT_URL="https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSPGCC/8_3_0_0/exports/msp430-gcc-support-files-1.208.zip" && \
-    echo "Downloading TI support files from: $SUPPORT_URL" && \
-    wget -U "Mozilla/5.0 (X11; Linux x86_64)" \
-        --referer="https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSPGCC/8_3_0_0/index_FDS.html" \
-        -O msp430-support-files.zip "$SUPPORT_URL" && \
-    mkdir -p /opt/ti/support-files && \
-    unzip -q msp430-support-files.zip -d /tmp/support && \
-    mv /tmp/support/*/include /opt/ti/support-files/include && \
-    find /tmp/support -name '*.ld' -exec cp {} /opt/ti/support-files/ \; && \
-    rm -rf /tmp/support msp430-support-files.zip
+# --- Device headers and linker scripts ------------------------------------
+RUN set -eu; \
+    HDR="$(find /opt/ti/msp430-gcc -name msp430.h -print -quit)"; \
+    LD="$(find /opt/ti/msp430-gcc -name msp430fr6989.ld -print -quit)"; \
+    [ -n "$HDR" ] || { echo "error: msp430.h not found" >&2; exit 1; }; \
+    [ -n "$LD"  ] || { echo "error: msp430fr6989.ld not found" >&2; exit 1; }; \
+    mkdir -p /opt/ti/support-files; \
+    ln -sfn "$(dirname "$HDR")" /opt/ti/support-files/include; \
+    ln -sfn "$(dirname "$LD")"  /opt/ti/support-files/lib
+ENV CPATH="/opt/ti/support-files/include"
+ENV LIBRARY_PATH="/opt/ti/support-files/lib"
 
-# MSP430Flasher (Linux 64-bit) — command-line programmer for MSP430
-RUN FLASHER_URL="https://dr-download.ti.com/software-development/software-programming-tool/MD-szn5bCveqt/1.03.20.00/MSPFlasher-1_03_20_00-linux-x64-installer.zip" && \
-    wget -q -O /tmp/mspflasher.zip "$FLASHER_URL" && \
-    unzip -q /tmp/mspflasher.zip -d /tmp/mspflasher && \
-    chmod +x /tmp/mspflasher/MSPFlasher-1.3.20-linux-x64-installer.run && \
-    /tmp/mspflasher/MSPFlasher-1.3.20-linux-x64-installer.run \
-        --mode unattended --prefix /opt/ti/MSPFlasher && \
-    ln -s /opt/ti/MSPFlasher/MSP430Flasher /usr/local/bin/MSP430Flasher && \
-    rm -rf /tmp/mspflasher /tmp/mspflasher.zip
+# --- Build libmsp430.so from MSPDS source ----------------------------------
+RUN mkdir -p /opt/src/MSPDS && cd /opt/src/MSPDS && \
+    wget -q "https://dr-download.ti.com/software-development/driver-or-library/MD-4vnqcP1Wk4/3.15.1.1/MSPDebugStack_OS_Package_3_15_1_1.zip" && \
+    unzip -q MSPDebugStack_OS_Package_3_15_1_1.zip && \
+    sed -i 's/\/\/#define FPGA_UPDATE/#define FPGA_UPDATE/' DLL430_v3/src/TI/DLL430/UpdateManagerFet.cpp && \
+    wget -q https://github.com/signal11/hidapi/archive/hidapi-0.8.0-rc1.zip && \
+    unzip -q hidapi-0.8.0-rc1.zip && \
+    sed -i '/^AC_CONFIG_MACRO_DIR(\[m4\])/d' hidapi-hidapi-0.8.0-rc1/configure.ac && \
+    cd hidapi-hidapi-0.8.0-rc1 && \
+    ./bootstrap && ./configure CFLAGS='-g -O2 -fPIC' && \
+    make -j"$(nproc)" && \
+    cd /opt/src/MSPDS && \
+    mkdir -p ThirdParty/include ThirdParty/lib ThirdParty/lib64 && \
+    cp hidapi-hidapi-0.8.0-rc1/hidapi/hidapi.h ThirdParty/include && \
+    cp hidapi-hidapi-0.8.0-rc1/libusb/hid.o ThirdParty/lib64/hid-libusb.o && \
+    cp hidapi-hidapi-0.8.0-rc1/libusb/hid.o ThirdParty/lib/hid-libusb.o && \
+    make -j"$(nproc)" && \
+    cp libmsp430.so /usr/local/lib/ && \
+    ldconfig && \
+    rm -rf /opt/src/MSPDS
 
-ENV LD_LIBRARY_PATH=/opt/ti/MSPFlasher
+# --- Remove the outdated libmsp430.so bundled with the GCC toolchain -------
+# Without this, mspdebug may load the old library from the GCC bin directory
+# instead of the new MSPDS version, causing "Unknown device (error = 5)".
+RUN rm -f /opt/ti/msp430-gcc/bin/libmsp430.so
 
-# CMake toolchain file baked into the image.
-# The toolchain ships its own libc.a / libm.a for both the small and large
-# memory models, so no external libc (picolibc or otherwise) is required.
+# --- mspdebug 0.26 --------------------------------------------------------
+RUN MSPDEBUG_VERSION="0.26" && \
+    wget -q -O /tmp/mspdebug.tar.gz \
+        "https://github.com/dlbeer/mspdebug/archive/refs/tags/v${MSPDEBUG_VERSION}.tar.gz" && \
+    tar xzf /tmp/mspdebug.tar.gz -C /tmp && \
+    make -C /tmp/mspdebug-${MSPDEBUG_VERSION} && \
+    make -C /tmp/mspdebug-${MSPDEBUG_VERSION} install && \
+    rm -rf /tmp/mspdebug.tar.gz /tmp/mspdebug-${MSPDEBUG_VERSION}
+
+# --- CMake toolchain file -------------------------------------------------
 RUN cat > /opt/ti/msp430-toolchain.cmake <<'EOF'
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR msp430)
