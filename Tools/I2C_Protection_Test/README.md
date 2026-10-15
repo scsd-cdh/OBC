@@ -19,10 +19,16 @@ define them in the CCS compiler settings, to test a different duration. The
 hold time should be longer than the protection circuit's 10 nF discharge
 interval.
 
-Create or copy the existing BMS MSP430FR5989 CCS project, replace its
-application `main.c` with this file, and include
-`MIDDLEWARE/MSP_UTILS/msp_utils.c` and its include path. Do not run this test
-while the normal BMS firmware is controlling the same I2C pins.
+The included Docker/CMake build uses the TI MSP430 GCC toolchain, compiles
+`MIDDLEWARE/MSP_UTILS/msp_utils.c`, and targets `msp430fr5989` by default:
+
+```sh
+./build.sh
+./flash.sh
+```
+
+The generated firmware is `build/I2C_Protection_Test.hex`. Do not run this
+test while the normal BMS firmware is controlling the same I2C pins.
 
 The released state is an input with the output latch low; it never actively
 drives the I2C line high. This is required for open-drain I2C wiring.

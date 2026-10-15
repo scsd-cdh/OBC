@@ -16,7 +16,7 @@
 #include "msp_utils.h"
 
 #ifndef I2C_PROTECTION_HOLD_MS
-#define I2C_PROTECTION_HOLD_MS       1000u
+#define I2C_PROTECTION_HOLD_MS       10000u
 #endif
 
 #ifndef I2C_PROTECTION_RELEASE_MS
