@@ -19,7 +19,15 @@ RUN apt-get update && apt-get install -y \
     autoconf \
     automake \
     libtool \
+    libncurses5 \
+    libtinfo5 \
     && rm -rf /var/lib/apt/lists/*
+
+# TI's msp430-elf-gdb was linked against the ncurses 5 wide-char ABI
+# (libncursesw.so.5). Ubuntu 22.04 ships libncursesw.so.6; expose it under
+# the .so.5 soname the binary asks for.
+RUN ln -sf /usr/lib/x86_64-linux-gnu/libncursesw.so.6 \
+           /usr/lib/x86_64-linux-gnu/libncursesw.so.5
 
 WORKDIR /opt/ti
 
