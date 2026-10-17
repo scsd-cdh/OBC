@@ -6,21 +6,21 @@ export MSYS_NO_PATHCONV=1
 IMAGE_NAME="${IMAGE_NAME:-msp430-builder}"
 DOCKERFILE="${DOCKERFILE:-dockerfile}"
 
-MCU="${MCU:-msp430fr5989}"
+MCU="${MCU:-msp430fr6989}"
 EXTRA_MCU_FLAGS="${EXTRA_MCU_FLAGS--mlarge}"
 
 if [[ $# -gt 1 ]]; then
-  echo "usage: $0 [msp430fr5989]" >&2
+  echo "usage: $0 [msp430fr5989|msp430fr5969|msp430fr6989]" >&2
   exit 2
 fi
 if [[ $# -eq 1 ]]; then
   MCU="$1"
 fi
 case "$MCU" in
-  msp430fr5989) ;;
+  msp430fr5989|msp430fr5969|msp430fr6989) ;;
   *)
     echo "error: unsupported MCU '$MCU'" >&2
-    echo "       supported: msp430fr5989" >&2
+    echo "       supported: msp430fr5989, msp430fr5969, msp430fr6989" >&2
     exit 2
     ;;
 esac

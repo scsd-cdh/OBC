@@ -6,9 +6,15 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 IMAGE_NAME="${IMAGE_NAME:-msp430-builder}"
 FIRMWARE="build/I2C_Protection_Test.hex"
-MCU="${MCU:-msp430fr5989}"
+MCU="${MCU:-msp430fr6989}"
 PROBE_DEV="${PROBE_DEV:-}"
 firmware_set=0
+DEBUG_MODE=0            # 0 = flash, 1 = interactive mspdebug, 2 = gdb server
+BUSID=""
+USBIPD=""
+GDB_SERVER_NAME=""
+GDB_PORT=""
+GDB_NETWORK=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -21,8 +27,16 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --help|-h)
-            echo "usage: $0 [firmware] [--mcu msp430fr5989]"
+            echo "usage: $0 [firmware] [--mcu msp430fr5989|msp430fr5969|msp430fr6989] [--debug|--gdb-server]"
             exit 0
+            ;;
+        --debug)
+            DEBUG_MODE=1
+            shift
+            ;;
+        --gdb-server)
+            DEBUG_MODE=2
+            shift
             ;;
         *)
             if [[ "$firmware_set" -eq 0 ]]; then
@@ -37,10 +51,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 case "$MCU" in
-    msp430fr5989) ;;
+    msp430fr5989|msp430fr5969|msp430fr6989) ;;
     *)
         echo "error: unsupported MCU '$MCU'" >&2
-        echo "       supported: msp430fr5989" >&2
+        echo "       supported: msp430fr5989, msp430fr5969, msp430fr6989" >&2
         exit 2
         ;;
 esac
@@ -77,10 +91,51 @@ esac
 
 echo "==> Platform: $PLATFORM"
 
+# ---------------------------------------------------------------------------
+# Cleanup (registered once at top level)
+# ---------------------------------------------------------------------------
+cleanup() {
+    if [[ -n "${GDB_SERVER_NAME:-}" ]] && \
+       docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$GDB_SERVER_NAME"; then
+        echo "==> Stopping GDB server container ($GDB_SERVER_NAME)..."
+        docker rm -f "$GDB_SERVER_NAME" >/dev/null 2>&1 || true
+    fi
+    if [[ -n "${BUSID:-}" ]] && [[ -n "${USBIPD:-}" ]]; then
+        echo "==> Detaching probe (BUSID $BUSID) from WSL..."
+        "$USBIPD" detach --busid "$BUSID" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT TERM
+
 # Git Bash on Windows rewrites leading-slash args to Windows paths.
 # Only needed there.
 if [[ "$PLATFORM" == "windows" ]]; then
     export MSYS_NO_PATHCONV=1
+
+    # ---- Yellow hint: a WSL instance must be open before flashing --------
+    if [[ -w /dev/tty ]]; then
+        printf '\033[33m' >/dev/tty
+        cat >/dev/tty <<'HINT'
+###############################################################################
+#                                                                             #
+#   IMPORTANT: A WSL instance must be open and running before flashing!      #
+#                                                                             #
+#   usbipd-win attaches the MSP debug probe to a live WSL distribution.      #
+#   If no WSL distro is running, the probe will be only partially            #
+#   initialized and mspdebug will fail with "No unused FET found."           #
+#                                                                             #
+#   Open a WSL terminal now (e.g. `wsl -d Debian`) and leave it running,     #
+#   then re-run this script.                                                 #
+#                                                                             #
+###############################################################################
+HINT
+        printf '\033[0m\n' >/dev/tty
+    else
+        printf '\033[33m' >&2
+        echo "IMPORTANT: a WSL instance must be open and running before flashing!" >&2
+        printf '\033[0m\n' >&2
+    fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -90,7 +145,6 @@ ps() {
     powershell.exe -NoProfile -Command "$1"
 }
 
-# ---- Linux: scan /sys directly -------------------------------------------
 _detect_linux() {
     local entry vid pid name dev
     for entry in "${PROBE_CANDIDATES[@]}"; do
@@ -110,7 +164,6 @@ _detect_linux() {
     return 1
 }
 
-# ---- Windows (Docker Desktop VM): scan /sys via a helper container --------
 _detect_windows() {
     local entry vid pid name out
     for entry in "${PROBE_CANDIDATES[@]}"; do
@@ -134,8 +187,6 @@ _detect_windows() {
     return 1
 }
 
-# Detect a TI MSP430 debug probe. On success, prints:
-#   <vid> <pid> <name> <device-path>
 detect_probe() {
     if [[ "$PLATFORM" == "linux" ]]; then
         _detect_linux
@@ -145,14 +196,10 @@ detect_probe() {
 }
 
 # ===========================================================================
-# Windows path: usbipd-win is required to bridge the USB probe into WSL2,
-# because Docker Desktop on Windows has no native USB passthrough.
+# Windows path: usbipd-win is required to bridge the USB probe into WSL2.
 # ===========================================================================
-BUSID=""
 
 if [[ "$PLATFORM" == "windows" ]]; then
-    # ---- Stage 1: Locate usbipd-win ---------------------------------------
-    USBIPD=""
     if command -v usbipd >/dev/null 2>&1; then
         USBIPD="usbipd"
     elif [[ -x "/c/Program Files/usbipd-win/usbipd.exe" ]]; then
@@ -174,16 +221,22 @@ if [[ "$PLATFORM" == "windows" ]]; then
 
     echo "==> usbipd-win located: $USBIPD"
 
-    # ---- Stage 2: Find the currently-connected, shared MSP/FET probe ------
     BOUND=""
     while IFS= read -r line; do
-        if [[ "$line" =~ ^([0-9]+-[0-9]+)[[:space:]] ]]; then
-            if echo "$line" | grep -qiE 'MSP|FET' && \
-               ! echo "$line" | grep -qiE 'Not shared'; then
-                BUSID="${BASH_REMATCH[1]}"
-                BOUND="$line"
-                break
+        if [[ "$line" =~ ^([0-9]+-[0-9]+)[[:space:]]+([0-9a-fA-F]{4}:[0-9a-fA-F]{4})[[:space:]] ]]; then
+            busid="${BASH_REMATCH[1]}"
+            vidpid="${BASH_REMATCH[2]}"
+            if echo "$line" | grep -qiE 'Not shared'; then
+                continue
             fi
+            for entry in "${PROBE_CANDIDATES[@]}"; do
+                IFS=: read -r vid pid name <<< "$entry"
+                if [[ "${vidpid,,}" == "${vid,,}:${pid,,}" ]]; then
+                    BUSID="$busid"
+                    BOUND="$line"
+                    break 2
+                fi
+            done
         fi
     done < <("$USBIPD" list 2>/dev/null)
 
@@ -202,16 +255,6 @@ if [[ "$PLATFORM" == "windows" ]]; then
     echo "==> Probe is bound: $BOUND"
     echo "==> Using BUSID: $BUSID"
 
-    # ---- Cleanup: detach the probe on any exit ----------------------------
-    cleanup() {
-        if [[ -n "${BUSID:-}" ]]; then
-            echo "==> Detaching probe (BUSID $BUSID) from WSL..."
-            "$USBIPD" detach --busid "$BUSID" 2>/dev/null || true
-        fi
-    }
-    trap cleanup EXIT
-
-    # ---- Stage 3: Attach probe (single-shot) ------------------------------
     echo "==> Attaching probe (BUSID $BUSID) to WSL..."
     if ! "$USBIPD" attach --wsl --busid "$BUSID"; then
         echo "error: usbipd attach failed." >&2
@@ -221,10 +264,9 @@ if [[ "$PLATFORM" == "windows" ]]; then
 fi
 
 # ===========================================================================
-# Common path (both platforms): detect device, flash
+# Common path: detect device, then flash / debug / serve
 # ===========================================================================
 
-# ---- Detect the raw USB device path --------------------------------------
 PROBE_NAME=""
 if [[ -z "$PROBE_DEV" ]]; then
     echo "==> Detecting MSP debug probe..."
@@ -256,32 +298,79 @@ else
     echo "==> Using PROBE_DEV from environment: $PROBE_DEV"
 fi
 
-# ---- Sanity check: is the device visible in a plain container? -----------
 if ! docker run --rm --device="$PROBE_DEV" alpine test -e "$PROBE_DEV" 2>/dev/null; then
     echo "error: $PROBE_DEV is not accessible in a container." >&2
     exit 1
 fi
 
-# ---- Sanity check: firmware exists ---------------------------------------
-if [[ ! -f "$FIRMWARE" ]]; then
-    echo "error: firmware not found: $FIRMWARE" >&2
-    echo "hint: run ./build.sh first" >&2
-    exit 1
+if [[ "$DEBUG_MODE" -eq 0 ]]; then
+    if [[ ! -f "$FIRMWARE" ]]; then
+        echo "error: firmware not found: $FIRMWARE" >&2
+        echo "hint: run ./build.sh first" >&2
+        exit 1
+    fi
 fi
 
-# ---- Flash ---------------------------------------------------------------
-echo "==> Flashing $FIRMWARE to $MCU"
-if [[ -n "$PROBE_NAME" ]]; then
-    echo "    probe:        $PROBE_NAME"
-fi
-echo "    probe device: $PROBE_DEV"
+# ---- Flash / debug / gdb-server -----------------------------------------
+if [[ "$DEBUG_MODE" -eq 2 ]]; then
+    GDB_SERVER_NAME="${GDB_SERVER_NAME:-msp430-gdb-server}"
+    GDB_PORT="${GDB_PORT:-2000}"
+    GDB_NETWORK="${GDB_NETWORK:-msp430-debug}"
 
-docker run --rm \
-    --privileged \
-    --device="$PROBE_DEV" \
-    -v "$PWD":/workspace \
-    -w /workspace \
-    "$IMAGE_NAME" \
-    MSP430Flasher -n "$MCU" -w "$FIRMWARE" -v -z '[VCC,RESET]'
+    echo "==> Starting mspdebug GDB server (container: $GDB_SERVER_NAME, network: $GDB_NETWORK, port $GDB_PORT)"
+    if [[ -n "$PROBE_NAME" ]]; then
+        echo "    probe:        $PROBE_NAME"
+    fi
+    echo "    probe device: $PROBE_DEV"
+
+    # Create a user-defined bridge network so another container can reach
+    # this server by its container name (Docker embedded DNS).
+    docker network create "$GDB_NETWORK" >/dev/null 2>&1 || true
+    docker rm -f "$GDB_SERVER_NAME" >/dev/null 2>&1 || true
+
+    docker run -dit \
+        --name "$GDB_SERVER_NAME" \
+        --network "$GDB_NETWORK" \
+        --privileged \
+        --device="$PROBE_DEV" \
+        -v "$PWD":/workspace \
+        -w /workspace \
+        "$IMAGE_NAME" \
+        mspdebug tilib "gdb $GDB_PORT"
+
+    echo "==> Waiting for the GDB server to exit (kill me or the container to stop)..."
+    # Blocks until the container is removed/killed.
+    docker wait "$GDB_SERVER_NAME" >/dev/null 2>&1 || true
+elif [[ "$DEBUG_MODE" -eq 1 ]]; then
+    echo "==> Opening interactive mspdebug shell"
+    if [[ -n "$PROBE_NAME" ]]; then
+        echo "    probe:        $PROBE_NAME"
+    fi
+    echo "    probe device: $PROBE_DEV"
+    echo "    type 'help' inside for commands, 'exit' or Ctrl+D to quit"
+    echo ""
+
+    docker run --rm -it \
+        --privileged \
+        --device="$PROBE_DEV" \
+        -v "$PWD":/workspace \
+        -w /workspace \
+        "$IMAGE_NAME" \
+        mspdebug tilib
+else
+    echo "==> Flashing $FIRMWARE to $MCU"
+    if [[ -n "$PROBE_NAME" ]]; then
+        echo "    probe:        $PROBE_NAME"
+    fi
+    echo "    probe device: $PROBE_DEV"
+
+    docker run --rm \
+        --privileged \
+        --device="$PROBE_DEV" \
+        -v "$PWD":/workspace \
+        -w /workspace \
+        "$IMAGE_NAME" \
+        mspdebug tilib "prog $FIRMWARE"
+fi
 
 echo "==> Done"
