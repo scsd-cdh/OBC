@@ -2,8 +2,6 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Build tools for the MSP430 firmware + mspdebug, plus dependencies for
-# building libmsp430.so from the MSP Debug Stack (MSPDS) source.
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -13,7 +11,6 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     wget \
     unzip \
-    # MSPDS build dependencies
     libboost-all-dev \
     libudev-dev \
     libusb-1.0-0-dev \
@@ -50,14 +47,30 @@ RUN P7Z_URL="https://dr-download.ti.com/software-development/ide-configuration-c
 ENV PATH="/opt/ti/msp430-gcc/bin:${PATH}"
 
 # --- Device headers and linker scripts ------------------------------------
+# Locate the support-files include dir by a header that only exists there.
+# Do NOT search for plain "msp430.h": the GCC toolchain also ships an
+# unrelated internal machine-description header with that name under
+# plugin/include/config/msp430/, which breaks user code with errors like
+#   unknown type name 'bool'
+#   nested redefinition of 'enum reg_class'
+#   msp430fr5xx_6xxgeneric.h: No such file or directory
 RUN set -eu; \
-    HDR="$(find /opt/ti/msp430-gcc -name msp430.h -print -quit)"; \
-    LD="$(find /opt/ti/msp430-gcc -name msp430fr6989.ld -print -quit)"; \
-    [ -n "$HDR" ] || { echo "error: msp430.h not found" >&2; exit 1; }; \
-    [ -n "$LD"  ] || { echo "error: msp430fr6989.ld not found" >&2; exit 1; }; \
+    HDR_DIR="$(dirname "$(find /opt/ti/msp430-gcc -name msp430fr5xx_6xxgeneric.h -print -quit)")"; \
+    LD_DIR="$(dirname "$(find /opt/ti/msp430-gcc -name msp430fr6989.ld -print -quit)")"; \
+    [ -n "$HDR_DIR" ] && [ "$HDR_DIR" != "." ] || { echo "error: support-files include dir not found" >&2; exit 1; }; \
+    [ -n "$LD_DIR"  ] && [ "$LD_DIR"  != "." ] || { echo "error: msp430fr6989.ld not found" >&2; exit 1; }; \
+    for f in msp430.h msp430fr6989.h msp430fr5xx_6xxgeneric.h; do \
+        [ -f "$HDR_DIR/$f" ] || { echo "error: $f missing from $HDR_DIR" >&2; exit 1; }; \
+    done; \
+    if grep -q 'enum reg_class' "$HDR_DIR/msp430.h"; then \
+        echo "error: picked GCC internal msp430.h ($HDR_DIR), not the device header" >&2; \
+        exit 1; \
+    fi; \
+    echo "support headers: $HDR_DIR"; \
+    echo "linker scripts:  $LD_DIR"; \
     mkdir -p /opt/ti/support-files; \
-    ln -sfn "$(dirname "$HDR")" /opt/ti/support-files/include; \
-    ln -sfn "$(dirname "$LD")"  /opt/ti/support-files/lib
+    ln -sfn "$HDR_DIR" /opt/ti/support-files/include; \
+    ln -sfn "$LD_DIR"  /opt/ti/support-files/lib
 ENV CPATH="/opt/ti/support-files/include"
 ENV LIBRARY_PATH="/opt/ti/support-files/lib"
 
@@ -83,8 +96,6 @@ RUN mkdir -p /opt/src/MSPDS && cd /opt/src/MSPDS && \
     rm -rf /opt/src/MSPDS
 
 # --- Remove the outdated libmsp430.so bundled with the GCC toolchain -------
-# Without this, mspdebug may load the old library from the GCC bin directory
-# instead of the new MSPDS version, causing "Unknown device (error = 5)".
 RUN rm -f /opt/ti/msp430-gcc/bin/libmsp430.so
 
 # --- mspdebug 0.26 --------------------------------------------------------
