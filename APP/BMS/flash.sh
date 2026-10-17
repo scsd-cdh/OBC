@@ -80,7 +80,33 @@ echo "==> Platform: $PLATFORM"
 # Git Bash on Windows rewrites leading-slash args to Windows paths.
 # Only needed there.
 if [[ "$PLATFORM" == "windows" ]]; then
-    export MSYS_NO_PATHCONV=1
+
+    # ---- Yellow hint: a WSL instance must be open before flashing --------
+    # Written to /dev/tty so it always lands on the terminal, even if
+    # stdout/stderr are redirected.
+    if [[ -w /dev/tty ]]; then
+        printf '\033[33m' >/dev/tty
+        cat >/dev/tty <<'HINT'
+###############################################################################
+#                                                                             #
+#   IMPORTANT: A WSL instance must be open and running before flashing!      #
+#                                                                             #
+#   usbipd-win attaches the MSP debug probe to a live WSL distribution.      #
+#   If no WSL distro is running, the probe will be only partially            #
+#   initialized and mspdebug will fail with "No unused FET found."           #
+#                                                                             #
+#   Open a WSL terminal now (e.g. `wsl -d Debian`) and leave it running,     #
+#   then re-run this script.                                                 #
+#                                                                             #
+###############################################################################
+HINT
+        printf '\033[0m\n' >/dev/tty
+    else
+        # Fallback: no controlling terminal available.
+        printf '\033[33m' >&2
+        echo "IMPORTANT: a WSL instance must be open and running before flashing!" >&2
+        printf '\033[0m\n' >&2
+    fi
 fi
 
 # ---------------------------------------------------------------------------
