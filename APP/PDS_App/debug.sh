@@ -82,6 +82,40 @@ if [[ "$elf_set" -eq 0 ]]; then
     fi
 fi
 
+# ---------------------------------------------------------------------------
+# Yellow hint: -g in CMakeLists is required for source-level debugging.
+# Shown before the slow Docker/usbipd startup so the user can Ctrl+C and fix
+# the build if needed.
+# ---------------------------------------------------------------------------
+if [[ -w /dev/tty ]]; then
+    printf '\033[33m' >/dev/tty
+    cat >/dev/tty <<'HINT'
+###############################################################################
+#                                                                             #
+#   IMPORTANT: Add -g to your CMakeLists.txt to debug with symbols!          #
+#                                                                             #
+#   Without -g, the .elf has no DWARF debug info: msp430-elf-gdb will show   #
+#   addresses only, and you cannot use function names, line numbers, or      #
+#   variable names (e.g. 'break main.c:41' or 'print cnt' will fail).        #
+#                                                                             #
+#   Add one of these to CMakeLists.txt, then rebuild (./build.sh):           #
+#                                                                             #
+#       set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -g")                           #
+#       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")                         #
+#     or:                                                                    #
+#       add_compile_options(-g)                                              #
+#     or:                                                                    #
+#       set(CMAKE_BUILD_TYPE Debug)                                          #
+#                                                                             #
+###############################################################################
+HINT
+    printf '\033[0m\n' >/dev/tty
+else
+    printf '\033[33m' >&2
+    echo "IMPORTANT: add -g to your CMakeLists.txt so the .elf has debug symbols!" >&2
+    printf '\033[0m\n' >&2
+fi
+
 FORWARD_ARGS=()
 [[ "$mcu_set" -eq 1 ]] && FORWARD_ARGS+=(--mcu "$MCU")
 
