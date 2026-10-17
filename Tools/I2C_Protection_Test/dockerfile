@@ -1,0 +1,65 @@
+FROM ubuntu:22.04
+
+# Prevent interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Build tools needed for compiling MSP430 firmware with CMake.
+# (meson / ninja / python3-pip were only needed for picolibc.)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    wget \
+    unzip \
+    bzip2 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/ti
+
+# Official TI MSP430 GCC toolchain (64-bit Linux, toolchain-only)
+RUN GCC_URL="https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSPGCC/8_3_0_0/exports/msp430-gcc-8.3.0.16_linux64.tar.bz2" && \
+    echo "Downloading TI MSP430 GCC from: $GCC_URL" && \
+    wget -U "Mozilla/5.0 (X11; Linux x86_64)" \
+        --referer="https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSPGCC/8_3_0_0/index_FDS.html" \
+        -O msp430-gcc.tar.bz2 "$GCC_URL" && \
+    mkdir -p /opt/ti/msp430-gcc && \
+    tar xjf msp430-gcc.tar.bz2 -C /opt/ti/msp430-gcc --strip-components=1 && \
+    rm msp430-gcc.tar.bz2
+
+ENV PATH="/opt/ti/msp430-gcc/bin:${PATH}"
+
+# TI MSP430 support files (device headers + linker scripts), version 1.208
+RUN SUPPORT_URL="https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSPGCC/8_3_0_0/exports/msp430-gcc-support-files-1.208.zip" && \
+    echo "Downloading TI support files from: $SUPPORT_URL" && \
+    wget -U "Mozilla/5.0 (X11; Linux x86_64)" \
+        --referer="https://software-dl.ti.com/msp430/msp430_public_sw/mcu/msp430/MSPGCC/8_3_0_0/index_FDS.html" \
+        -O msp430-support-files.zip "$SUPPORT_URL" && \
+    mkdir -p /opt/ti/support-files && \
+    unzip -q msp430-support-files.zip -d /tmp/support && \
+    mv /tmp/support/*/include /opt/ti/support-files/include && \
+    find /tmp/support -name '*.ld' -exec cp {} /opt/ti/support-files/ \; && \
+    rm -rf /tmp/support msp430-support-files.zip
+
+# MSP430Flasher (Linux 64-bit) — command-line programmer for MSP430
+RUN FLASHER_URL="https://dr-download.ti.com/software-development/software-programming-tool/MD-szn5bCveqt/1.03.20.00/MSPFlasher-1_03_20_00-linux-x64-installer.zip" && \
+    wget -q -O /tmp/mspflasher.zip "$FLASHER_URL" && \
+    unzip -q /tmp/mspflasher.zip -d /tmp/mspflasher && \
+    chmod +x /tmp/mspflasher/MSPFlasher-1.3.20-linux-x64-installer.run && \
+    /tmp/mspflasher/MSPFlasher-1.3.20-linux-x64-installer.run \
+        --mode unattended --prefix /opt/ti/MSPFlasher && \
+    ln -s /opt/ti/MSPFlasher/MSP430Flasher /usr/local/bin/MSP430Flasher && \
+    rm -rf /tmp/mspflasher /tmp/mspflasher.zip
+
+ENV LD_LIBRARY_PATH=/opt/ti/MSPFlasher
+
+# CMake toolchain file baked into the image.
+# The toolchain ships its own libc.a / libm.a for both the small and large
+# memory models, so no external libc (picolibc or otherwise) is required.
+RUN cat > /opt/ti/msp430-toolchain.cmake <<'EOF'
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR msp430)
+
+set(CMAKE_C_COMPILER msp430-elf-gcc)
+set(CMAKE_CXX_COMPILER msp430-elf-g++)
+EOF
+
+WORKDIR /workspace
