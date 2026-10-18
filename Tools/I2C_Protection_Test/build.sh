@@ -6,7 +6,7 @@ export MSYS_NO_PATHCONV=1
 IMAGE_NAME="${IMAGE_NAME:-msp430-builder}"
 DOCKERFILE="${DOCKERFILE:-dockerfile}"
 
-MCU="${MCU:-msp430fr6989}"
+MCU="${MCU:-msp430fr5989}"
 EXTRA_MCU_FLAGS="${EXTRA_MCU_FLAGS--mlarge}"
 
 if [[ $# -gt 1 ]]; then

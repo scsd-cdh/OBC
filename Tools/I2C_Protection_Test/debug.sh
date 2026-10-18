@@ -13,8 +13,10 @@ esac
 # ---------------------------------------------------------------------------
 
 IMAGE_NAME="${IMAGE_NAME:-msp430-builder}"
-MCU="${MCU:-msp430fr6989}"
-DEFAULT_ELF="build/I2C_Protection_Test.elf"          # default produced by ./build.sh
+MCU="${MCU:-msp430fr5989}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+DEFAULT_ELF="$SCRIPT_DIR/build/I2C_Protection_Test.elf" # default produced by build.sh
 FIRMWARE=""
 ELF=""
 firmware_set=0
@@ -31,7 +33,7 @@ while [[ $# -gt 0 ]]; do
             ELF="$2"; elf_set=1; shift 2 ;;
         --help|-h)
             cat <<'EOF'
-usage: ./debug.sh [firmware.hex] [--elf path/to.elf] [--mcu msp430fr6989]
+usage: ./debug.sh [firmware.hex] [--elf path/to.elf] [--mcu msp430fr5989]
 
 Flashes firmware (optional), then starts the mspdebug GDB server via
 ./flash.sh --gdb-server and connects msp430-elf-gdb to it.
@@ -67,12 +69,17 @@ EOF
     esac
 done
 
+if [[ -n "$ELF" && "$ELF" != /* ]]; then
+    ELF="$PWD/$ELF"
+fi
+
 # ELF resolution (only when --elf wasn't given):
 #   explicit .hex  ->  <firmware>.elf if it exists
 #   otherwise      ->  build/I2C_Protection_Test.elf if it exists (default build output)
 if [[ "$elf_set" -eq 0 ]]; then
     if [[ -n "$FIRMWARE" ]]; then
         candidate="${FIRMWARE%.hex}.elf"
+        [[ "$candidate" = /* ]] || candidate="$PWD/$candidate"
         if [[ -f "$candidate" ]]; then
             ELF="$candidate"
         fi
@@ -123,6 +130,8 @@ FORWARD_ARGS=()
 GDB_SERVER_NAME="${GDB_SERVER_NAME:-msp430-gdb-server}"
 GDB_NETWORK="${GDB_NETWORK:-msp430-debug}"
 GDB_PORT="${GDB_PORT:-2000}"
+MSPDEBUG_TIMEOUT="${MSPDEBUG_TIMEOUT:-150}"
+export MSPDEBUG_TIMEOUT
 
 # Ensure the network exists even if flash.sh hasn't created it yet.
 docker network create "$GDB_NETWORK" >/dev/null 2>&1 || true
@@ -132,7 +141,7 @@ docker network create "$GDB_NETWORK" >/dev/null 2>&1 || true
 # ---------------------------------------------------------------------------
 if [[ -n "$FIRMWARE" ]]; then
     echo "==> Flashing $FIRMWARE before starting the debug session..."
-    ./flash.sh "$FIRMWARE" "${FORWARD_ARGS[@]}"
+    "$SCRIPT_DIR/flash.sh" "$FIRMWARE" "${FORWARD_ARGS[@]}"
     echo ""
 fi
 
@@ -140,7 +149,7 @@ fi
 # Start GDB server via flash.sh in the background
 # ---------------------------------------------------------------------------
 echo "==> Starting mspdebug GDB server via ./flash.sh --gdb-server..."
-./flash.sh --gdb-server "${FORWARD_ARGS[@]}" &
+"$SCRIPT_DIR/flash.sh" --gdb-server "${FORWARD_ARGS[@]}" &
 FLASH_PID=$!
 
 # On exit/INT/TERM, tear everything down:
@@ -165,11 +174,12 @@ trap SERVER_CLEANUP EXIT INT TERM
 echo "==> Waiting for the GDB server to bind port $GDB_PORT..."
 BOUND=0
 SEEN=0
-for _ in $(seq 1 120); do
+GDB_STARTUP_TICKS="${GDB_STARTUP_TICKS:-$((MSPDEBUG_TIMEOUT * 2 + 20))}"
+for _ in $(seq 1 "$GDB_STARTUP_TICKS"); do
     if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$GDB_SERVER_NAME"; then
         SEEN=1
         if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$GDB_SERVER_NAME"; then
-            if docker logs --tail 50 "$GDB_SERVER_NAME" 2>&1 | grep -q "Bound to port"; then
+            if docker logs --tail 50 "$GDB_SERVER_NAME" 2>&1 | grep -qiE "bound to port|listening|gdb server"; then
                 BOUND=1
                 break
             fi
@@ -186,9 +196,19 @@ if [[ "$BOUND" -ne 1 ]]; then
         echo "---- container log (last 30 lines) ----" >&2
         docker logs --tail 30 "$GDB_SERVER_NAME" 2>&1 >&2 || true
         echo "---------------------------------------" >&2
+        if docker logs "$GDB_SERVER_NAME" 2>&1 | grep -q "MSP430_GetNumberOfUsbIfs"; then
+            echo "error: MSPDebug is stuck during MSP-FET USB initialization." >&2
+            echo "hint: unplug/reconnect the MSP-FET and target, then retry; use MSPDEBUG_TIMEOUT to adjust the limit." >&2
+        fi
     else
         echo "error: server container was never created; check flash.sh output above." >&2
     fi
+    echo "---- flash.sh diagnostics ----" >&2
+    if kill -0 "$FLASH_PID" 2>/dev/null; then
+        kill "$FLASH_PID" 2>/dev/null || true
+    fi
+    wait "$FLASH_PID" 2>&1 || true
+    echo "------------------------------" >&2
     exit 1
 fi
 echo "    server is up."
@@ -232,9 +252,14 @@ GDB_ARGS+=(-ex "monitor reset")
 echo "==> Launching msp430-elf-gdb"
 echo "    (inside GDB: 'continue' to run, 'quit' to exit)"
 echo ""
+if [[ -n "$ELF" ]]; then
+    ELF="/workspace/$(realpath --relative-to="$REPO_ROOT" "$ELF")"
+    GDB_ARGS[0]="$ELF"
+fi
+
 docker run --rm -it \
     --network "$GDB_NETWORK" \
-    -v "$PWD":/workspace \
+    -v "$REPO_ROOT":/workspace \
     -w /workspace \
     "$IMAGE_NAME" \
     msp430-elf-gdb "${GDB_ARGS[@]}"

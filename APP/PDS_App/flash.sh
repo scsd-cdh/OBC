@@ -17,6 +17,7 @@ USBIPD=""
 GDB_SERVER_NAME=""
 GDB_PORT=""
 GDB_NETWORK=""
+MSPDEBUG_TIMEOUT="${MSPDEBUG_TIMEOUT:-150}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -344,13 +345,15 @@ if [[ "$DEBUG_MODE" -eq 2 ]]; then
         -v "$REPO_ROOT":/workspace \
         -w /workspace \
         "$IMAGE_NAME" \
-        mspdebug tilib "gdb $GDB_PORT"
+        timeout --signal=TERM --kill-after=10s "${MSPDEBUG_TIMEOUT}s" \
+            mspdebug tilib "gdb $GDB_PORT"
 
     echo "==> Waiting for the GDB server to exit (kill me or the container to stop)..."
     # Blocks until the container is removed/killed. Preserve diagnostics before
     # the EXIT trap removes the container.
     docker wait "$GDB_SERVER_NAME" >/dev/null 2>&1 || true
     server_status="$(docker inspect --format '{{.State.ExitCode}}' "$GDB_SERVER_NAME" 2>/dev/null || echo 1)"
+    server_status="${server_status:-1}"
     if [[ "$server_status" != "0" ]]; then
         echo "error: mspdebug GDB server exited with status $server_status." >&2
         docker logs --tail 50 "$GDB_SERVER_NAME" >&2 || true

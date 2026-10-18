@@ -131,6 +131,8 @@ FORWARD_ARGS=()
 GDB_SERVER_NAME="${GDB_SERVER_NAME:-msp430-gdb-server}"
 GDB_NETWORK="${GDB_NETWORK:-msp430-debug}"
 GDB_PORT="${GDB_PORT:-2000}"
+MSPDEBUG_TIMEOUT="${MSPDEBUG_TIMEOUT:-150}"
+export MSPDEBUG_TIMEOUT
 
 # Ensure the network exists even if flash.sh hasn't created it yet.
 docker network create "$GDB_NETWORK" >/dev/null 2>&1 || true
@@ -173,7 +175,8 @@ trap SERVER_CLEANUP EXIT INT TERM
 echo "==> Waiting for the GDB server to bind port $GDB_PORT..."
 BOUND=0
 SEEN=0
-for _ in $(seq 1 120); do
+GDB_STARTUP_TICKS="${GDB_STARTUP_TICKS:-$((MSPDEBUG_TIMEOUT * 2 + 20))}"
+for _ in $(seq 1 "$GDB_STARTUP_TICKS"); do
     if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$GDB_SERVER_NAME"; then
         SEEN=1
         if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$GDB_SERVER_NAME"; then
@@ -194,15 +197,18 @@ if [[ "$BOUND" -ne 1 ]]; then
         echo "---- container log (last 30 lines) ----" >&2
         docker logs --tail 30 "$GDB_SERVER_NAME" 2>&1 >&2 || true
         echo "---------------------------------------" >&2
+        if docker logs "$GDB_SERVER_NAME" 2>&1 | grep -q "MSP430_GetNumberOfUsbIfs"; then
+            echo "error: MSPDebug is stuck during MSP-FET USB initialization." >&2
+            echo "hint: unplug/reconnect the MSP-FET and target, then retry; use MSPDEBUG_TIMEOUT to adjust the limit." >&2
+        fi
     else
         echo "error: server container was never created; check flash.sh output above." >&2
     fi
     echo "---- flash.sh diagnostics ----" >&2
-    if ! kill -0 "$FLASH_PID" 2>/dev/null; then
-        wait "$FLASH_PID" 2>&1 || true
-    else
-        echo "flash.sh is still running; stop it after reviewing the server state." >&2
+    if kill -0 "$FLASH_PID" 2>/dev/null; then
+        kill "$FLASH_PID" 2>/dev/null || true
     fi
+    wait "$FLASH_PID" 2>&1 || true
     echo "------------------------------" >&2
     exit 1
 fi
