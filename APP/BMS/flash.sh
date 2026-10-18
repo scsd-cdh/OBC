@@ -5,7 +5,9 @@ set -euo pipefail
 # Configuration
 # ---------------------------------------------------------------------------
 IMAGE_NAME="${IMAGE_NAME:-msp430-builder}"
-FIRMWARE="build/BMS.hex"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+FIRMWARE="$SCRIPT_DIR/build/BMS.hex"
 MCU="${MCU:-msp430fr6989}"
 PROBE_DEV="${PROBE_DEV:-}"
 firmware_set=0
@@ -50,6 +52,11 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+if [[ "$FIRMWARE" != /* ]]; then
+    FIRMWARE="$(cd -- "$(dirname -- "$FIRMWARE")" && pwd)/$(basename -- "$FIRMWARE")"
+fi
+FIRMWARE_CONTAINER="/workspace/$(realpath --relative-to="$REPO_ROOT" "$FIRMWARE")"
 case "$MCU" in
     msp430fr5989|msp430fr5969|msp430fr6989) ;;
     *)
@@ -333,14 +340,21 @@ if [[ "$DEBUG_MODE" -eq 2 ]]; then
         --network "$GDB_NETWORK" \
         --privileged \
         --device="$PROBE_DEV" \
-        -v "$PWD":/workspace \
+        -v "$REPO_ROOT":/workspace \
         -w /workspace \
         "$IMAGE_NAME" \
         mspdebug tilib "gdb $GDB_PORT"
 
     echo "==> Waiting for the GDB server to exit (kill me or the container to stop)..."
-    # Blocks until the container is removed/killed.
+    # Blocks until the container is removed/killed. Preserve diagnostics before
+    # the EXIT trap removes the container.
     docker wait "$GDB_SERVER_NAME" >/dev/null 2>&1 || true
+    server_status="$(docker inspect --format '{{.State.ExitCode}}' "$GDB_SERVER_NAME" 2>/dev/null || echo 1)"
+    if [[ "$server_status" != "0" ]]; then
+        echo "error: mspdebug GDB server exited with status $server_status." >&2
+        docker logs --tail 50 "$GDB_SERVER_NAME" >&2 || true
+        exit "$server_status"
+    fi
 elif [[ "$DEBUG_MODE" -eq 1 ]]; then
     echo "==> Opening interactive mspdebug shell"
     if [[ -n "$PROBE_NAME" ]]; then
@@ -353,7 +367,7 @@ elif [[ "$DEBUG_MODE" -eq 1 ]]; then
     docker run --rm -it \
         --privileged \
         --device="$PROBE_DEV" \
-        -v "$PWD":/workspace \
+        -v "$REPO_ROOT":/workspace \
         -w /workspace \
         "$IMAGE_NAME" \
         mspdebug tilib
@@ -367,10 +381,10 @@ else
     docker run --rm \
         --privileged \
         --device="$PROBE_DEV" \
-        -v "$PWD":/workspace \
+        -v "$REPO_ROOT":/workspace \
         -w /workspace \
         "$IMAGE_NAME" \
-        mspdebug tilib "prog $FIRMWARE"
+        mspdebug tilib "prog $FIRMWARE_CONTAINER"
 fi
 
 echo "==> Done"
