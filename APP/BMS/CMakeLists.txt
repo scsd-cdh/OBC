@@ -118,6 +118,10 @@ target_compile_options(${PROJECT_NAME} PRIVATE
         -Wextra
         -ffunction-sections
         -fdata-sections
+        # Silence only the noisy-but-harmless warnings
+        -Wno-sign-compare
+        -Wno-unused-parameter
+        -Wno-parentheses
 )
 
 target_link_options(${PROJECT_NAME} PRIVATE
