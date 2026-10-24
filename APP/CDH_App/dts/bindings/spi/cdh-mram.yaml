@@ -1,5 +1,12 @@
-description: CDH SPI MRAM test device
+description: SPI MRAM device
 
 compatible: "cdh,mram"
 
 include: spi-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  spi-max-frequency:
+    required: true

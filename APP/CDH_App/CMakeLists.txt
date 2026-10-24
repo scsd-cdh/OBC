@@ -17,7 +17,8 @@ target_sources(app
         src/lfp_i2c_single.c
         src/main.c
         ../../MIDDLEWARE/tinyprotocol/tinyprotocol.c
-        ../../../MIDDLEWARE/MRAM/mram.c
+        ../../MIDDLEWARE/MRAM/mram.c
+        ../../MIDDLEWARE/MRAM/mram_flash.c
 )
 
 target_include_directories(app PRIVATE

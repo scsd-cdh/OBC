@@ -15,6 +15,7 @@
 };
 &spi0 {
 	status = "okay";
+	cs-gpios = <&pioa 25 GPIO_ACTIVE_LOW>;
 
 	mram: mram@0 {
 		compatible = "cdh,mram";

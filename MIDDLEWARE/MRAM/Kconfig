@@ -1,0 +1,6 @@
+config MRAM
+    bool "SPI MRAM driver"
+    depends on SPI
+    select FLASH_HAS_DRIVER_ENABLED
+    help
+      Enable the SPI MRAM flash API driver.
