@@ -1,4 +1,12 @@
+#include "sam_v71_xult-pinctrl.dtsi"
+
 / {
+	aliases {
+		loopback-uart = &usart0;
+		transmitter = &uart2;
+		receiver = &uart4;
+		test = &uart3;
+	};
 };
 
 &ext1_i2c {
@@ -13,4 +21,65 @@
 		reg = < 0x09 >;
 	};
 
+};
+
+&spi0 {
+	status = "disabled";
+};
+
+&pwm0 {
+	status = "disabled";
+};
+
+&pwm_led0 {
+	status = "disabled";
+};
+
+
+&pinctrl {
+	transmitter_default: transmitter_default {
+		group1 {
+			pinmux = <PD25C_UART2_RXD>,
+					 <PD26C_UART2_TXD>;
+		};
+	};
+
+	loopback_default: loopback_default {
+		group1 {
+			pinmux = <PB0C_USART0_RXD>,
+					 <PB1C_USART0_TXD>;
+		};
+	};
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <500000>;
+
+	pinctrl-0 = <&transmitter_default>;
+	pinctrl-names = "default";
+};
+
+&uart3 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&loopback_default>;
+	pinctrl-names = "default";
 };

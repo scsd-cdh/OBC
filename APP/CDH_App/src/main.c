@@ -1,13 +1,15 @@
 #include "main.h"
-#include "cdh_pds_example.h"
+#include "cdh_comms.h"
 #include "zephyr/kernel.h"
+#include "zephyr/logging/log.h"
+
+LOG_MODULE_REGISTER(cdh);
+
 
 int main(void)
 {
     while (1) {
-        // get_pds_system_status();
-        // get_pds_health_check();
-        get_pds_converter();
-        k_msleep(500);
+        cdh_comms_local_loopback_test(transmitter);
+        k_msleep(200);
     }
 }
