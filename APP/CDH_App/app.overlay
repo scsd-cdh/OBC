@@ -1,5 +1,3 @@
-#include "sam_v71_xult-pinctrl.dtsi"
-
 / {
 	aliases {
 		loopback-uart = &usart0;
