@@ -32,8 +32,9 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # DRIVERS/ and MIDDLEWARE/, so this must be the directory containing them.
 MOUNT_DIR="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 
-# Path of the CMakeLists.txt folder relative to the mount point.
-SRC_REL="$(realpath --relative-to="$MOUNT_DIR" "$SCRIPT_DIR")"
+# SCRIPT_DIR is inside MOUNT_DIR. Strip that prefix using Bash so this also
+# works on macOS, where realpath does not support --relative-to.
+SRC_REL="${SCRIPT_DIR#"$MOUNT_DIR"/}"
 CONTAINER_SRC="/workspace/$SRC_REL"
 
 # Resolve Dockerfile path relative to this script.
