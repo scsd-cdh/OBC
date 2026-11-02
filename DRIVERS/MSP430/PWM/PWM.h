@@ -3,7 +3,7 @@
 #ifndef PWM_B_H_
 #define PWM_B_H_
 
-#include "include/timer_b.h"
+#include "timer_b.h"
 
 /******************************************************************************
  * @brief Used in the PWM_PinSelect() function as the CompareRegister parameter.

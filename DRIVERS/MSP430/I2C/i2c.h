@@ -9,7 +9,6 @@
 #include <msp430.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <include/timer_a.h>
 #include <lfp.h>
 
 #define I2C_IS_TRANSMITTING (UCB0CTLW0 & UCTR)

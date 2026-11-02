@@ -9,7 +9,8 @@ void PWM_PinSelect(uint8_t selectedPort, uint16_t selectedPin){
         );
 }
 
-void PWM_Generate(uint16_t Timer_Period, uint16_t Duty_Cycle, Compare_Register CompareRegister){
+void PWM_Generate(uint16_t Timer_Period, uint16_t Duty_Cycle, Compare_Register CompareRegister)
+{
     Timer_B_outputPWMParam param = {0};
     param.clockSource = TIMER_B_CLOCKSOURCE_SMCLK;
     param.clockSourceDivider = TIMER_B_CLOCKSOURCE_DIVIDER_1;

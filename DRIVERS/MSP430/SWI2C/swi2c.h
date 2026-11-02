@@ -8,13 +8,13 @@
  * @details
  * This module provides a minimal software I²C master using GPIO pins for SDA/SCL
  * and a hardware timer to pace edges. Timing is controlled via
- * #SWI2C_TIMER_PERIOD and the TIMER_ITERATION() macro. The application supplies
+ * #SWI2C_TIMER_PERIOD and internal Timer_A driver calls. The application supplies
  * GPIO register pointers and pin masks through #SWI2C_Descriptor, then calls
  * SWI2C_Init() followed by SWI2C_Read()/SWI2C_Write() for transfers.
  *
- * @note The example TIMER_ITERATION() macro below references MSP430 Timer_B0
- *       (TB0CCTL0, CCIFG). If you target a different MCU/timer, redefine this
- *       macro to clear/wait on your platform's compare flag.
+ * @note This driver exclusively owns Timer_A1 and CCR0. It polls the compare
+ *       flag without interrupts and does not configure any timer output pins.
+ *       Other code must not reconfigure TA1 while software I2C is in use.
  */
 
 #include <stdint.h>
@@ -25,23 +25,10 @@ extern "C" {
 
 /**
  * @def SWI2C_TIMER_PERIOD
- * @brief Timer compare period used to pace I²C bit transitions.
+ * @brief TA1 CCR0 period in SMCLK ticks, used to pace I²C bit transitions.
+ *       Software execution also contributes to the actual SCL period.
  */
 #define SWI2C_TIMER_PERIOD  5
-
-/**
- * @def TIMER_ITERATION
- * @brief Clear and wait for one timer compare interval.
- *
- * @details
- * This macro blocks until the timer compare flag indicates one period has
- * elapsed. It is used internally by the driver to generate I²C low/high times.
- *
- * @note The default implementation assumes MSP430 Timer_B0 and uses the CCTL0
- *       CCIFG flag. Port to your platform by redefining this macro.
- */
-#define TIMER_ITERATION()            TB0CCTL0 &= ~(CCIFG);           \
-                                     while(!(TB0CCTL0 & CCIFG));
 
 /**
  * @struct SWI2C_Descriptor
