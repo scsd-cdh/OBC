@@ -15,7 +15,7 @@ DEBUG_MODE=0            # 0 = flash, 1 = interactive mspdebug, 2 = gdb server
 BUSID=""
 USBIPD=""
 GDB_SERVER_NAME=""
-GDB_PORT=""
+GDB_PORT="${GDB_PORT:-}"
 GDB_NETWORK=""
 MSPDEBUG_TIMEOUT="${MSPDEBUG_TIMEOUT:-150}"
 
@@ -30,8 +30,18 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --help|-h)
-            echo "usage: $0 [firmware] [--mcu msp430fr5989|msp430fr5969|msp430fr6989] [--debug|--gdb-server]"
+            echo "usage: $0 [firmware] [--mcu msp430fr5989|msp430fr5969|msp430fr6989] [--probe device] [--debug|--gdb-server]"
+            echo "macOS: native mspdebug + TI MSPDebugStack required; --probe /dev/cu.usbmodem... selects the debug interface."
+            echo "Environment: MSPDEBUG (executable), MSPDEBUG_TILIB_PATH (TI library directory), PROBE_DEV (same as --probe)."
             exit 0
+            ;;
+        --probe)
+            [[ $# -ge 2 && -n "$2" ]] || {
+                echo "error: --probe requires a device path" >&2
+                exit 2
+            }
+            PROBE_DEV="$2"
+            shift 2
             ;;
         --debug)
             DEBUG_MODE=1
@@ -54,10 +64,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ "$FIRMWARE" != /* ]]; then
-    FIRMWARE="$(cd -- "$(dirname -- "$FIRMWARE")" && pwd)/$(basename -- "$FIRMWARE")"
-fi
-FIRMWARE_CONTAINER="/workspace/$(realpath --relative-to="$REPO_ROOT" "$FIRMWARE")"
 case "$MCU" in
     msp430fr5989|msp430fr5969|msp430fr6989) ;;
     *)
@@ -90,14 +96,121 @@ fi
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) PLATFORM="windows" ;;
     Linux*)                PLATFORM="linux" ;;
+    Darwin*)               PLATFORM="macos" ;;
     *)
         echo "error: unsupported platform: $(uname -s)" >&2
-        echo "       supported: Windows (Git Bash), Linux" >&2
+        echo "       supported: macOS, Windows (Git Bash), Linux" >&2
         exit 1
         ;;
 esac
 
 echo "==> Platform: $PLATFORM"
+
+# Validate firmware before opening a probe. Debug modes do not need a file.
+if [[ "$DEBUG_MODE" -eq 0 ]]; then
+    if [[ ! -f "$FIRMWARE" ]]; then
+        echo "error: firmware not found: $FIRMWARE" >&2
+        echo "hint: run ./build.sh $MCU first" >&2
+        exit 1
+    fi
+    FIRMWARE="$(cd -- "$(dirname -- "$FIRMWARE")" && pwd)/$(basename -- "$FIRMWARE")"
+fi
+
+# mspdebug parses the prog command itself, so quote its filename separately
+# from the shell's argument quoting (repository paths may contain spaces).
+quote_mspdebug_path() {
+    local path="$1"
+    path="${path//\\/\\\\}"
+    path="${path//\"/\\\"}"
+    printf '"%s"' "$path"
+}
+
+# Docker's Linux USB device paths cannot be used on macOS. Run a host-native
+# debugger and TI library instead; no Docker daemon or Linux USB nodes needed.
+if [[ "$PLATFORM" == "macos" ]]; then
+    MSPDEBUG="${MSPDEBUG:-mspdebug}"
+    if ! command -v "$MSPDEBUG" >/dev/null 2>&1; then
+        echo "error: native mspdebug not found: $MSPDEBUG" >&2
+        echo "hint: install it with: brew install mspdebug" >&2
+        echo "      Also install the macOS TI MSPDebugStack library; see APP/BMS/README.md." >&2
+        exit 1
+    fi
+
+    # TI probes may expose both debug and application UART interfaces. Let the
+    # caller choose the debug interface instead of guessing from serial names.
+    if [[ -z "$PROBE_DEV" ]]; then
+        echo "error: select the MSP debug interface with --probe /dev/cu.usbmodem..." >&2
+        echo "Available USB modem interfaces (one may be the application UART):" >&2
+        for dev in /dev/cu.usbmodem*; do
+            [[ -e "$dev" ]] && printf '  %s\n' "$dev" >&2
+        done
+        echo "hint: PROBE_DEV=/dev/cu.usbmodem... ./flash.sh --mcu $MCU" >&2
+        exit 1
+    fi
+    if [[ ! -c "$PROBE_DEV" ]]; then
+        echo "error: probe is not a serial device: $PROBE_DEV" >&2
+        exit 1
+    fi
+
+    # TI's macOS stack enumerates names such as "usbmodem14101", rather
+    # than BSD device paths. Passing /dev/cu.* directly causes TI error 57.
+    TILIB_PORT="$PROBE_DEV"
+    case "$PROBE_DEV" in
+        /dev/cu.*)  TILIB_PORT="${PROBE_DEV#/dev/cu.}" ;;
+        /dev/tty.*) TILIB_PORT="${PROBE_DEV#/dev/tty.}" ;;
+    esac
+
+    # Honor an explicit library location, otherwise check our local TI install
+    # before common native paths. Keep the installer payload out of Git.
+    if [[ -z "${MSPDEBUG_TILIB_PATH:-}" ]]; then
+        for libdir in "$REPO_ROOT/toolchain/mspflasher-macos" /usr/local/lib /opt/homebrew/lib; do
+            if [[ -f "$libdir/libmsp430.dylib" || -f "$libdir/libmsp430.so" ]]; then
+                export MSPDEBUG_TILIB_PATH="$libdir"
+                break
+            fi
+        done
+    fi
+
+    echo "==> Using native mspdebug (tilib), probe: $PROBE_DEV"
+    echo "==> TI port name: $TILIB_PORT"
+    if [[ -n "${MSPDEBUG_TILIB_PATH:-}" ]]; then
+        echo "==> TI library directory: $MSPDEBUG_TILIB_PATH"
+    fi
+    case "$DEBUG_MODE" in
+        0)
+            echo "==> Flashing $FIRMWARE (built for $MCU)"
+            COMMANDS=("prog $(quote_mspdebug_path "$FIRMWARE")")
+            ;;
+        1) COMMANDS=() ;;
+        2)
+            echo "==> Starting native GDB server on port ${GDB_PORT:-2000}"
+            COMMANDS=("gdb ${GDB_PORT:-2000}")
+            ;;
+    esac
+    # Bash 3.2 on macOS cannot expand an empty array under nounset.
+    if [[ "$DEBUG_MODE" -eq 1 ]]; then
+        "$MSPDEBUG" -d "$TILIB_PORT" tilib && exit 0
+    else
+        "$MSPDEBUG" -d "$TILIB_PORT" tilib "${COMMANDS[@]}" && exit 0
+    fi
+    status=$?
+    echo "error: native mspdebug failed (status $status)." >&2
+    echo "hint: if TI reports a port/communication error, check the debug interface, close other debuggers, and reconnect the probe." >&2
+    echo "      Only library-loading errors require checking MSPDEBUG_TILIB_PATH or CPU architecture; see APP/BMS/README.md." >&2
+    exit "$status"
+fi
+
+# Container firmware must be within the repository mount. Bash prefix removal
+# avoids GNU-only realpath flags and also works in Git Bash.
+if [[ "$DEBUG_MODE" -eq 0 ]]; then
+    case "$FIRMWARE" in
+        "$REPO_ROOT"/*) FIRMWARE_CONTAINER="/workspace/${FIRMWARE#"$REPO_ROOT"/}" ;;
+        *)
+            echo "error: firmware must be inside the repository for Docker flashing: $FIRMWARE" >&2
+            exit 1
+            ;;
+    esac
+fi
 
 # ---------------------------------------------------------------------------
 # Cleanup (registered once at top level)
@@ -311,14 +424,6 @@ if ! docker run --rm --device="$PROBE_DEV" alpine test -e "$PROBE_DEV" 2>/dev/nu
     exit 1
 fi
 
-if [[ "$DEBUG_MODE" -eq 0 ]]; then
-    if [[ ! -f "$FIRMWARE" ]]; then
-        echo "error: firmware not found: $FIRMWARE" >&2
-        echo "hint: run ./build.sh first" >&2
-        exit 1
-    fi
-fi
-
 # ---- Flash / debug / gdb-server -----------------------------------------
 if [[ "$DEBUG_MODE" -eq 2 ]]; then
     GDB_SERVER_NAME="${GDB_SERVER_NAME:-msp430-gdb-server}"
@@ -387,7 +492,7 @@ else
         -v "$REPO_ROOT":/workspace \
         -w /workspace \
         "$IMAGE_NAME" \
-        mspdebug tilib "prog $FIRMWARE_CONTAINER"
+        mspdebug tilib "prog $(quote_mspdebug_path "$FIRMWARE_CONTAINER")"
 fi
 
 echo "==> Done"

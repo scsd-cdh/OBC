@@ -3,25 +3,6 @@ BMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
 -- Convert to voltage with ((float)val * 3.3) / (1 &lt;&lt; 12)
 BMSADCValue ::= INTEGER(0..65535)
 
-
-
-
-lfpIdBMSSystemStatusRequest INTEGER ::= 0
-BMSSystemStatusRequest ::= SEQUENCE {
-    placeholder INTEGER(0) -- Empty struct placeholder
-}
-
-lfpIdBMSSystemStatusResponse INTEGER ::= 1
-BMSSystemStatusResponse ::= SEQUENCE {
-    -- Version of the firmware running on BMS.
-    version INTEGER(0..255),
-    -- Number of seconds since processor start-up.
-    uptime INTEGER(0..4294967295)
-}
-
-
-
-
 -- Status of an individual cell
 BMSCellStatus ::= SEQUENCE {
     -- Cell Over Voltage
@@ -64,7 +45,7 @@ BMSPowerStatusResponse ::= SEQUENCE {
 
 
 
-
+-- Override Heater output (BMS Self control heaters)
 lfpIdBMSSetHeaterDutyRequest INTEGER ::= 4
 BMSSetHeaterDutyRequest ::= SEQUENCE {
     -- Duty Cycle of PWM Wave for Heater 1
@@ -79,7 +60,7 @@ BMSSetHeaterDutyRequest ::= SEQUENCE {
 
 lfpIdBMSSetHeaterDutyResponse INTEGER ::= 5
 BMSSetHeaterDutyResponse ::= SEQUENCE {
-    placeholder INTEGER(0) -- Empty struct placeholder
+    responseCode INTEGER(0..1) -- Response status (failure/sucess)
 }
 
 
