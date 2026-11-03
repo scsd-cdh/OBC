@@ -49,20 +49,20 @@ typedef struct {
 // 1 and 2 does in fact refer to battery number
 
 // Current sensing VUR = Discharge current.
-// Pin numbers are FR5989 64-pin PM/RGC; FR6989 numbers are 100-pin PZ / 80-pin PN.
-#define I_SENSE_VUR_1_CP_PIN      ADC12_B_INPUT_A10 // FR5989 P4.2 pin 42; FR6989 P9.2 pin 69 / 54
+// Pin numbers are FR5989-EP 64-pin RGC; FR6989 numbers are 100-pin PZ / 80-pin PN.
+#define I_SENSE_VUR_1_CP_PIN      ADC12_B_INPUT_A10 // P9.2; FR5989-EP pin 42; FR6989 pin 69 / 54
 #define I_SENSE_VUR_2_CP_PIN      ADC12_B_INPUT_A0  // FR5989 P1.0 pin 39; FR6989 P1.0 pin 66 / 51
 
 // Current sensing CHR = Charge current.
-#define I_SENSE_CHR_1_CP_PIN      ADC12_B_INPUT_A9  // FR5989 P4.1 pin 41; FR6989 P9.1 pin 68 / 53
-#define I_SENSE_CHR_2_CP_PIN      ADC12_B_INPUT_A8  // FR5989 P4.0 pin 40; FR6989 P9.0 pin 67 / 52
+#define I_SENSE_CHR_1_CP_PIN      ADC12_B_INPUT_A9  // P9.1; FR5989-EP pin 41; FR6989 pin 68 / 53
+#define I_SENSE_CHR_2_CP_PIN      ADC12_B_INPUT_A8  // P9.0; FR5989-EP pin 40; FR6989 pin 67 / 52
 
 // Voltage sensing.
-#define V_CELL_1A_CP_PIN          ADC12_B_INPUT_A13 // FR5989 P3.1 pin 45; FR6989 P9.5 pin 72 / 57
-#define V_CELL_1B_CP_PIN          ADC12_B_INPUT_A12 // FR5989 P3.0 pin 44; FR6989 P9.4 pin 71 / 56
+#define V_CELL_1A_CP_PIN          ADC12_B_INPUT_A13 // P9.5; FR5989-EP pin 45; FR6989 pin 72 / 57
+#define V_CELL_1B_CP_PIN          ADC12_B_INPUT_A12 // P9.4; FR5989-EP pin 44; FR6989 pin 71 / 56
 #define V_CELL_2A_CP_PIN          ADC12_B_INPUT_A3  // FR5989 P1.3 pin 36; FR6989 P1.3 pin 63 / 48
 #define V_CELL_2B_CP_PIN          ADC12_B_INPUT_A2  // FR5989 P1.2 pin 37; FR6989 P1.2 pin 64 / 49
-#define V_BATTPACK_1_CP_PIN       ADC12_B_INPUT_A11 // FR5989 P4.3 pin 43; FR6989 P9.3 pin 70 / 55
+#define V_BATTPACK_1_CP_PIN       ADC12_B_INPUT_A11 // P9.3; FR5989-EP pin 43; FR6989 pin 70 / 55
 #define V_BATTPACK_2_CP_PIN       ADC12_B_INPUT_A1  // FR5989 P1.1 pin 38; FR6989 P1.1 pin 65 / 50
 
 // ADC memory buffers
@@ -318,16 +318,12 @@ static void gpio_init() {
     P3SEL1 &= ~(BIT1 | BIT2);
 #endif
 
-    // Disable the GPIO power-on default high-impedance mode to activate
-    // previously configured port settings
-    PM5CTL0 &= ~LOCKLPM5;
-
     // Set flag pins
     // MSP430FR5989 Pins 10 through 13 use GPIO_PORT_P5
     GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 10 P5.0
     GPIO_setAsInputPin(GPIO_PORT_P5, UVP_FLAG_1B_PIN); // MSP430FR5989 11
-    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 12
-    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1A_PIN); // MSP430FR5989 13
+    GPIO_setAsInputPin(GPIO_PORT_P5, UVP_FLAG_1A_PIN); // MSP430FR5989 12 P5.2
+    GPIO_setAsInputPin(GPIO_PORT_P5, OVP_FLAG_1B_PIN); // MSP430FR5989 13 P5.3
     // MSP430FR5989 Pins 14, 25 through 29 use GPIO_PORT_P3
     GPIO_setAsInputPin(GPIO_PORT_P3, OCP_FLAG_1_PIN);  // MSP430FR5989 14 P3.0
     GPIO_setAsInputPin(GPIO_PORT_P3, OVP_FLAG_2A_PIN); // MSP430FR5989 25
@@ -341,6 +337,24 @@ static void gpio_init() {
     PWM_PinSelect(HEATER_PWM_PORT, HEATER2_PWM_PIN);
     PWM_PinSelect(HEATER_PWM_PORT, HEATER3_PWM_PIN);
     PWM_PinSelect(HEATER_PWM_PORT, HEATER4_PWM_PIN);
+
+#if defined(__MSP430FR5989__) || defined(__MSP430FR6989__)
+    // Internal voltage/current ADC inputs: A0-A3 on P1.0-P1.3 and
+    // A8-A13 on P9.0-P9.5. ADC_PinSelect() only configures the ADC mux.
+    const uint8_t p1_analog_pins = BIT0 | BIT1 | BIT2 | BIT3;
+    const uint8_t p9_analog_pins = BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5;
+    P1DIR &= ~p1_analog_pins;
+    P1REN &= ~p1_analog_pins;
+    P1SEL0 |= p1_analog_pins;
+    P1SEL1 |= p1_analog_pins;
+    P9DIR &= ~p9_analog_pins;
+    P9REN &= ~p9_analog_pins;
+    P9SEL0 |= p9_analog_pins;
+    P9SEL1 |= p9_analog_pins;
+#endif
+
+    // Activate port settings after analog, digital and PWM pins are configured.
+    PM5CTL0 &= ~LOCKLPM5;
 }
 
 
@@ -366,13 +380,13 @@ static void comm_init() {
     s_swi2c_descriptor.scl_port_in =    &P4IN;
     s_swi2c_descriptor.scl_port_dir =   &P4DIR;
 #if defined (__MSP430FR5989__) || defined (__MSP430FR6989__)
+    // As-built local ADC bus: SDA=P4.1, SCL=P4.0 (schematic labels are reversed).
     s_swi2c_descriptor.sda_pin =        GPIO_PIN1;
     s_swi2c_descriptor.scl_pin =        GPIO_PIN0;
 #elif defined (__MSP430FR5969__)
     s_swi2c_descriptor.sda_pin =        GPIO_PIN2;
     s_swi2c_descriptor.scl_pin =        GPIO_PIN3;
 #endif
-    P1DIR |= BIT0 | BIT1; // Set 1.0 and 1.1 direction to "output". I have no idea why this is here
     // Select general purpose IO for port 4
     P4SEL0 &= ~(BIT0 | BIT1);
     P4SEL1 &= ~(BIT0 | BIT1);
@@ -389,19 +403,20 @@ static void comm_init() {
 }
 
 #ifndef MOCK_POWER
-static void collect_power_status() {
+static ADC_Status collect_power_status() {
     // Collect voltage and current ADC values
     // Must do this this way (all at once) if using SEQOFCHANNELS mode
+    // Do not reconfigure a previous conversion if it is still stuck busy.
+    if (ADC_waitForConversion() != ADC_STATUS_OK) {
+        return ADC_STATUS_TIMEOUT;
+    }
     // trigger the ten‑channel sweep
     ADC12_B_startConversion(ADC12_B_BASE,
         ADC12_B_START_AT_ADC12MEM0,
         ADC12_B_SEQOFCHANNELS);        // ENC+SC, walk MEM0->MEM9
 
-    // Profile this irl... can probably get away with having this in callback so we can get most accurate data immediately on asking
-    // I'm not sure how possible it is for this to spin forever if at all.
-    uint16_t counter = 0;
-    while (ADC12_B_isBusy(ADC12_B_BASE)) {
-        counter++;
+    if (ADC_waitForConversion() != ADC_STATUS_OK) {
+        return ADC_STATUS_TIMEOUT;
     }
 
     // Current
@@ -432,6 +447,7 @@ static void collect_power_status() {
     s_powerstatus.batteryPack2.cellB.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2B_PIN);
     s_powerstatus.batteryPack2.cellB.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2B_PIN);
     s_powerstatus.batteryPack2.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
+    return ADC_STATUS_OK;
 }
 
 #else
@@ -481,14 +497,32 @@ void bms_collectdata() {
 #ifdef MOCK_POWER
     collect_power_status_mock();
 #else
-    collect_power_status();
+    if (collect_power_status() != ADC_STATUS_OK) {
+        s_isr_triggered = false;
+        return;
+    }
 #endif
 
     // TI ADS7138IRTER EXTERNAL ADC DATA  (THERMISTORS)
     // NOTE: Profile this.. might be able to ask for this directly in callback
     for (uint8_t i = 0 ; i < ADC_NUM_CHANNELS; i++) {
-        ADS7138IRTER_SingleRegisterWrite(&s_swi2c_descriptor, ADS7138_CHANNEL_SEL_REGISTER, i);
-        s_temperature_status.thermistors.arr[i] = ADS7138IRTER_Read(&s_swi2c_descriptor);
+        ADS7138_Status status = ADS7138IRTER_SingleRegisterWrite(&s_swi2c_descriptor,
+                ADS7138_CHANNEL_SEL_REGISTER, i);
+        if (status == ADS7138_STATUS_TIMEOUT) {
+            break;
+        }
+        if (status != ADS7138_STATUS_OK) {
+            continue;
+        }
+
+        uint16_t reading;
+        status = ADS7138IRTER_Read(&s_swi2c_descriptor, &reading);
+        if (status == ADS7138_STATUS_TIMEOUT) {
+            break;
+        }
+        if (status == ADS7138_STATUS_OK) {
+            s_temperature_status.thermistors.arr[i] = reading;
+        }
     }
 
     s_isr_triggered = false;

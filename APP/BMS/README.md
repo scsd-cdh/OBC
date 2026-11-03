@@ -91,3 +91,18 @@ python3 -m unittest discover -s tests -v
 ```
 
 These checks mock the debugger and Docker; they do not program a device.
+
+## Acquisition timeouts
+
+Internal ADC waits have a 10,000-poll budget (`ADC_CONVERSION_POLL_LIMIT`).
+Software I2C timer waits have a 5,000-poll budget (`SWI2C_TIMER_POLL_LIMIT`);
+existing clock-stretch waits are also bounded. These are iteration limits,
+not fixed millisecond deadlines, and remain finite if the peripheral clock stops.
+
+A timeout aborts the current acquisition without changing heater PWM or blocking
+heater commands. Failed readings are not published; telemetry does not yet include
+validity or age fields. Later acquisition attempts are still allowed.
+
+The shared `Read_ADC()` helper returns `ADC_READ_INVALID` (`UINT16_MAX`) on timeout.
+Checked ADS7138 operations return `ADS7138_STATUS_TIMEOUT`; software I2C returns
+`SWI2C_ERROR_TIMEOUT`. A NACK remains a transfer failure.
