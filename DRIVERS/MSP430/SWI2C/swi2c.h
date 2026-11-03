@@ -18,6 +18,11 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
+
+/* Negative status is distinct from a NACK/partial-transfer byte count. */
+#define SWI2C_ERROR_TIMEOUT (-1)
+#define SWI2C_TIMER_POLL_LIMIT 5000u
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,7 +88,9 @@ void SWI2C_Init(SWI2C_Descriptor *descriptor);
  * @param[in]  len         Number of bytes to read.
  *
  * @return
- *  The iteration the read made it to - int32_t -- treat as boolean 
+ *  Exactly len on success; a smaller loop index on NACK;
+ *  SWI2C_ERROR_TIMEOUT on a timer or detected clock-stretch timeout.
+ *  A nonzero partial read is still a failure: compare the return value to len.
  *
  */
 int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len);
@@ -96,7 +103,8 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len);
  * @param[in] len         Number of bytes to write.
  *
  * @return
- *   The iteration the write made it to - int32_t -- treat as boolean 
+ *   Exactly len on success; a smaller loop index on NACK;
+ *   SWI2C_ERROR_TIMEOUT on a timer or detected clock-stretch timeout.
  */
 int32_t SWI2C_Write(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len);
 

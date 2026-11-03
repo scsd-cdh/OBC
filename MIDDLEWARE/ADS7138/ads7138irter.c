@@ -23,10 +23,17 @@ int32_t ADS7138IRTER_SW_Reset(SWI2C_Descriptor *descriptor) {
     return status;
 }
 
-uint16_t ADS7138IRTER_Read(SWI2C_Descriptor *descriptor) {
+ADS7138_Status ADS7138IRTER_Read(SWI2C_Descriptor *descriptor, uint16_t *value) {
     uint8_t read_buffer[2];
-    SWI2C_Read(descriptor, read_buffer, 2);
-    return ((uint16_t)read_buffer[0] << 4) | (read_buffer[1] >> 4);
+    int32_t received = SWI2C_Read(descriptor, read_buffer, sizeof(read_buffer));
+    if (received == SWI2C_ERROR_TIMEOUT) {
+        return ADS7138_STATUS_TIMEOUT;
+    }
+    if (received != sizeof(read_buffer)) {
+        return ADS7138_STATUS_TRANSFER_FAILED;
+    }
+    *value = ((uint16_t)read_buffer[0] << 4) | (read_buffer[1] >> 4);
+    return ADS7138_STATUS_OK;
 }
 
 uint8_t ADS7138IRTER_SingleRegisterRead(SWI2C_Descriptor *descriptor, ADS7138_Register reg_addr) {
@@ -37,9 +44,13 @@ uint8_t ADS7138IRTER_SingleRegisterRead(SWI2C_Descriptor *descriptor, ADS7138_Re
     return rbuffer[0];
 }
 
-int32_t ADS7138IRTER_SingleRegisterWrite(SWI2C_Descriptor *descriptor, ADS7138_Register reg_addr, uint8_t reg_data) {
+ADS7138_Status ADS7138IRTER_SingleRegisterWrite(SWI2C_Descriptor *descriptor, ADS7138_Register reg_addr, uint8_t reg_data) {
     uint8_t wbuffer[3] = { ADS7138_SNG_REG_WRITE, reg_addr, reg_data };
-    return SWI2C_Write(descriptor, wbuffer, 3);
+    int32_t written = SWI2C_Write(descriptor, wbuffer, sizeof(wbuffer));
+    if (written == SWI2C_ERROR_TIMEOUT) {
+        return ADS7138_STATUS_TIMEOUT;
+    }
+    return written == sizeof(wbuffer) ? ADS7138_STATUS_OK : ADS7138_STATUS_TRANSFER_FAILED;
 }
 
 int32_t ADS7138IRTER_ClearBit(SWI2C_Descriptor *descriptor, ADS7138_Register reg_addr, uint8_t clear_bits) {

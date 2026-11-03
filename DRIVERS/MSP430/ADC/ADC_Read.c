@@ -57,12 +57,26 @@ void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex){
     ADC12_B_configureMemory(ADC12_B_BASE, &memoryParams);
 }
 
+ADC_Status ADC_waitForConversion(void) {
+    for (uint16_t polls = 0; polls < ADC_CONVERSION_POLL_LIMIT; polls++) {
+        if (!ADC12_B_isBusy(ADC12_B_BASE)) {
+            return ADC_STATUS_OK;
+        }
+    }
+    return ADC_STATUS_TIMEOUT;
+}
+
 uint16_t Read_ADC(uint8_t memoryBufferIndex){
+    if (ADC_waitForConversion() != ADC_STATUS_OK) {
+        return ADC_READ_INVALID;
+    }
     ADC12_B_startConversion(ADC12_B_BASE,
         ADC12_B_START_AT_ADC12MEM0,
         ADC12_B_SINGLECHANNEL);
 
-    while (ADC12_B_isBusy(ADC12_B_BASE));
+    if (ADC_waitForConversion() != ADC_STATUS_OK) {
+        return ADC_READ_INVALID;
+    }
 
     volatile uint16_t result = ADC12_B_getResults(ADC12_B_BASE, memoryBufferIndex);
 
