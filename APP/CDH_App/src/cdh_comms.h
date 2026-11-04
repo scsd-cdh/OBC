@@ -29,6 +29,9 @@ static const struct device *uart3 = DEVICE_DT_GET(DT_ALIAS(test));
 #error "Unsupported board: uart3 devicetree alias is not defined"
 #endif
 
+#define LOG_MESSAGE_SIZE 256
+#define LOG_ENCODED_SIZE ASN1_LFP_SEND_BUF_SIZE(CommsTelemetryTransmission)
+
 void cdh_comms_local_loopback_test(const struct device* lp_uart);
 void cdh_comms_d2d_loopback_test(const struct device *lp_txuart, const struct device *lp_rxuart);
 void cdh_comms_lfp_uart_lp(

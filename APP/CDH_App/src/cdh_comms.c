@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(cdh_comms);
 #define UART2_TX 0 // used for loopback transmitter
 #define UART2_RX 1 // used for loopback receiver
 #define DUMMY_ENDPOINT 2
-#define CDH_COMMS_UART_RX_BUFFER_SIZE 512
+#define CDH_COMMS_UART_RX_BUFFER_SIZE 1024
 
 RING_BUF_DECLARE(uart_rx_ring, CDH_COMMS_UART_RX_BUFFER_SIZE);
 static struct k_sem uart_rx_available;
@@ -125,7 +125,6 @@ static bool on_message(const lfp_header_t * p_header,
         p_body);
     return true;
 }
-
 
 void cdh_comms_lfp_uart_lp(
     const struct device *lp_txuart,
@@ -245,7 +244,6 @@ int cdh_comms_uart_open(const struct device *rx_dev)
     return 0;
 }
 
-
 // Non blocking interrupt driven UART read
 int cdh_comms_uart_read(
     uint8_t *rxdata,
@@ -261,14 +259,15 @@ int cdh_comms_uart_read(
         return -EINVAL;
     }
 
-    // Allow main thread to sleep until we get an interrupt or timeout
+    // Allow main thread to sleep until we get an interrupt, populating the semaphore, or timeout
     if (k_sem_take(&uart_rx_available, timeout) != 0) {
         return 0;
     }
 
+    // read from the ring buffer
     size_t read = ring_buf_get(&uart_rx_ring, rxdata, rxlen);
     // Drain the semaphore for any additional bytes that were received in the ring buffer
-    // If for whateve reason we don't drain the full amount of bytes in the ring buffer, we will just block on the next read until we get an interrupt
+    // If more bytes are available in the ring buffer than the requested read length, the next read is able to wake up correctly
     for (size_t i = 1; i < read; ++i) {
         (void)k_sem_take(&uart_rx_available, K_NO_WAIT);
     }

@@ -12,6 +12,8 @@
 
 #include "cdh_bms.h"
 
+#include <asn1/comms.h>
+
 #include "cdh_comms.h"
 
 LOG_MODULE_REGISTER(cdh_bms);
@@ -58,6 +60,43 @@ static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const i
         p_pack->cellB.overvoltage, p_pack->cellB.undervoltage
     );
 
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "BMS Battery %d: Voltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
+        "BMS Cell A: Voltage: %.3f | OV/UV: %d/%d\n"
+        "BMS Cell B: Voltage: %.3f | OV/UV: %d/%d\n",
+        pack_id,
+        bms_adc_to_float(p_pack->voltage), bms_adc_to_float(p_pack->currentDraw),
+        bms_adc_to_float(p_pack->currentCharge),
+        p_pack->overcurrent,
+
+        bms_adc_to_float(p_pack->cellA.voltage),
+        p_pack->cellA.overvoltage, p_pack->cellA.undervoltage,
+
+        bms_adc_to_float(p_pack->cellB.voltage),
+        p_pack->cellB.overvoltage, p_pack->cellB.undervoltage
+    );
+
+    if (length < 0 || (size_t)length >= sizeof(message)) {
+        LOG_ERR("Failed to format battery log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0) {
+        LOG_ERR("Failed to encode battery log message: %d", encoded_length);
+        return;
+    }
+    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
+
 }
 
 static void bms_logging_log_systemstatus(const BMSSystemStatusResponse * p_status) {
@@ -66,6 +105,32 @@ static void bms_logging_log_systemstatus(const BMSSystemStatusResponse * p_statu
         p_status->version,
         p_status->uptime
     );
+
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "BMS System Status: Version: %d | Uptime: 0x%x\n",
+        p_status->version,
+        p_status->uptime
+    );
+    if (length < 0 || (size_t)length >= sizeof(message)) {
+        LOG_ERR("Failed to format system status log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0) {
+        LOG_ERR("Failed to encode system status log message: %d", encoded_length);
+        return;
+    }
+    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void bms_logging_battery_callback(BMSPowerStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
@@ -90,8 +155,6 @@ void get_bms_system_status(void)
         return;
     }
 
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
-
     const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send system status request: %d", ret);
@@ -112,20 +175,6 @@ void get_bms_system_status(void)
 
     (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
                               bms_logging_systemstatus_callback);
-
-    // FIXME: We do not need to decode and reencode the message. We still need logs for now  so we have to.
-    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
-    int encode_res = cdh_comms_encode_lfp_msg(
-        &data,
-        lfp_fwd_buf,
-        sizeof(lfp_fwd_buf)
-    );
-    if (encode_res < 0) {
-        LOG_ERR("Failed to encode LFP message: %d", encode_res);
-        return;
-    }
-
-    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }
 
 void get_bms_power_status(void) {
@@ -135,8 +184,6 @@ void get_bms_power_status(void) {
             ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
         return;
     }
-
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
 
     const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
@@ -158,17 +205,4 @@ void get_bms_power_status(void) {
 
     (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
                               bms_logging_battery_callback);
-
-    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
-    int encode_res = cdh_comms_encode_lfp_msg(
-        &data,
-        lfp_fwd_buf,
-        sizeof(lfp_fwd_buf)
-    );
-    if (encode_res < 0){
-        LOG_ERR("Failed to encode LFP message: %d", encode_res);
-        return;
-    }
-
-    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }

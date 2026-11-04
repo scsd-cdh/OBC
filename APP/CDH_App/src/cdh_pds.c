@@ -11,6 +11,8 @@
 
 #include "cdh_pds.h"
 
+#include <asn1/comms.h>
+
 #include "cdh_comms.h"
 
 LOG_MODULE_REGISTER(cdh_pds);
@@ -45,6 +47,34 @@ static void pds_logging_log_systemstatus(const PDSSystemStatusResponse * p_statu
         p_status->version,
         p_status->uptime
     );
+
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "PDS System Status: Version: %d | Uptime: 0x%x\n",
+        p_status->version,
+        p_status->uptime
+    );
+    if (length < 0 || (size_t)length >= sizeof(message))
+    {
+        LOG_ERR("Failed to format system status log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0)
+    {
+        LOG_ERR("Failed to encode system status log message: %d", encoded_length);
+        return;
+    }
+    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void pds_logging_log_healthcheck(const PDSHealthCheckResponse * p_status) {
@@ -55,6 +85,36 @@ static void pds_logging_log_healthcheck(const PDSHealthCheckResponse * p_status)
     }
 
     LOG_HEXDUMP_INF(hash, sizeof(hash), "PDS Health Check Hash:");
+
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "PDS Health Check Hash: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+        hash[0], hash[1], hash[2], hash[3],
+        hash[4], hash[5], hash[6], hash[7],
+        hash[8], hash[9], hash[10], hash[11],
+        hash[12], hash[13], hash[14], hash[15]
+    );
+    if (length < 0 || (size_t)length >= sizeof(message))
+    {
+        LOG_ERR("Failed to format health check log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0)
+    {
+        LOG_ERR("Failed to encode health check log message: %d", encoded_length);
+        return;
+    }
+    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void pds_logging_log_converter_monitor(const PDSConverterMonitorResponse * p_status) {
@@ -71,6 +131,37 @@ static void pds_logging_log_converter_monitor(const PDSConverterMonitorResponse 
         bms_adc_to_float(p_status->converterB5vVs),
         bms_adc_to_float(p_status->temperatureSense)
     );
+
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "PDS Converter Monitor: int5vVs: %.3f V | reg5vVs: %.3f V | converterA5vVs: %.3f V | converterB5vVs: %.3f V | temperatureSense: %.3f V\n",
+        bms_adc_to_float(p_status->int5vVs),
+        bms_adc_to_float(p_status->reg5vVs),
+        bms_adc_to_float(p_status->converterA5vVs),
+        bms_adc_to_float(p_status->converterB5vVs),
+        bms_adc_to_float(p_status->temperatureSense)
+    );
+    if (length < 0 || (size_t)length >= sizeof(message))
+    {
+        LOG_ERR("Failed to format converter monitor log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0)
+    {
+        LOG_ERR("Failed to encode converter monitor log message: %d", encoded_length);
+        return;
+    }
+    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void pds_logging_systemstatus_callback(PDSSystemStatusResponse * p_payload,
@@ -126,15 +217,6 @@ void get_pds_system_status(void) {
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
                               pds_logging_systemstatus_callback);
-
-    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(PDSSystemStatusResponse)];
-    int encode_res = cdh_comms_encode_lfp_msg(&data, lfp_fwd_buf, sizeof(lfp_fwd_buf));
-    if (encode_res < 0) {
-        LOG_ERR("Failed to encode LFP message: %d", encode_res);
-        return;
-    }
-
-    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }
 
 void get_pds_health_check(void) {
@@ -169,15 +251,6 @@ void get_pds_health_check(void) {
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSHealthCheckResponse,
                               pds_logging_healthcheck_callback);
-
-    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(PDSHealthCheckResponse)];
-    int encode_res = cdh_comms_encode_lfp_msg(&data, lfp_fwd_buf, sizeof(lfp_fwd_buf));
-    if (encode_res < 0) {
-        LOG_ERR("Failed to encode LFP message: %d", encode_res);
-        return;
-    }
-
-    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }
 
 void get_pds_converter(void) {
@@ -212,13 +285,4 @@ void get_pds_converter(void) {
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
                               pds_logging_converter_monitor_callback);
-
-    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(PDSConverterMonitorResponse)];
-    int encode_res = cdh_comms_encode_lfp_msg(&data, lfp_fwd_buf, sizeof(lfp_fwd_buf));
-    if (encode_res < 0) {
-        LOG_ERR("Failed to encode LFP message: %d", encode_res);
-        return;
-    }
-
-    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }
