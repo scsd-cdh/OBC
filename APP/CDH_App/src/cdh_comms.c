@@ -37,7 +37,9 @@ static void cdh_comms_uart_irq_handler(const struct device *dev, void *user_data
             break;
         }
 
+        // when we get an interrupt we update the semaphore once the ring buffer is filled with the number of bytes
         uint32_t written = ring_buf_put(&uart_rx_ring, fifo_buffer, received);
+        // use counting semaphore to tolerate partial reads
         for (uint32_t i = 0; i < written; ++i) {
             k_sem_give(&uart_rx_available);
         }
@@ -243,6 +245,8 @@ int cdh_comms_uart_open(const struct device *rx_dev)
     return 0;
 }
 
+
+// Non blocking interrupt driven UART read
 int cdh_comms_uart_read(
     uint8_t *rxdata,
     size_t rxlen,
@@ -257,11 +261,14 @@ int cdh_comms_uart_read(
         return -EINVAL;
     }
 
+    // Allow main thread to sleep until we get an interrupt or timeout
     if (k_sem_take(&uart_rx_available, timeout) != 0) {
         return 0;
     }
 
     size_t read = ring_buf_get(&uart_rx_ring, rxdata, rxlen);
+    // Drain the semaphore for any additional bytes that were received in the ring buffer
+    // If for whateve reason we don't drain the full amount of bytes in the ring buffer, we will just block on the next read until we get an interrupt
     for (size_t i = 1; i < read; ++i) {
         (void)k_sem_take(&uart_rx_available, K_NO_WAIT);
     }
