@@ -10,9 +10,11 @@
 
 #include "lfp_i2c_single.h"
 
-#include "cdh_bms_example.h"
+#include "cdh_bms.h"
 
-LOG_MODULE_REGISTER(cdh_bms_example);
+#include "cdh_comms.h"
+
+LOG_MODULE_REGISTER(cdh_bms);
 
 static const struct i2c_dt_spec dev_bms = I2C_DT_SPEC_GET(DT_NODELABEL(bms_i2c));
 
@@ -79,7 +81,8 @@ static void bms_logging_systemstatus_callback(BMSSystemStatusResponse * p_payloa
     bms_logging_log_systemstatus(p_payload);
 }
 
-void get_bms_system_status(void) {
+void get_bms_system_status(void)
+{
     const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusRequest, lfp_send_buf, sizeof(lfp_send_buf), {});
     if (!size) {
         LOG_WRN("Failed to serialize system status request: a:%d l:%d",
@@ -95,11 +98,11 @@ void get_bms_system_status(void) {
         return;
     }
 
-    lfp_header_t header;
-    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &header, .p_body = lfp_recv_buf};
+    lfp_header_t recv_header;
+    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &recv_header, .p_body = lfp_recv_buf};
     data.body_length = lfp_i2c_single_receive(
         &dev_bms,
-        &header,
+        &recv_header,
         lfp_recv_buf, sizeof(lfp_recv_buf),
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
@@ -107,9 +110,22 @@ void get_bms_system_status(void) {
         return;
     }
 
-    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse, bms_logging_systemstatus_callback)) {
+    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
+                              bms_logging_systemstatus_callback);
+
+    // FIXME: We do not need to decode and reencode the message. We still need logs for now  so we have to.
+    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
+    int encode_res = cdh_comms_encode_lfp_msg(
+        &data,
+        lfp_fwd_buf,
+        sizeof(lfp_fwd_buf)
+    );
+    if (encode_res < 0) {
+        LOG_ERR("Failed to encode LFP message: %d", encode_res);
         return;
     }
+
+    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }
 
 void get_bms_power_status(void) {
@@ -140,7 +156,19 @@ void get_bms_power_status(void) {
         return;
     }
 
-    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse, bms_logging_battery_callback)) {
+    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
+                              bms_logging_battery_callback);
+
+    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
+    int encode_res = cdh_comms_encode_lfp_msg(
+        &data,
+        lfp_fwd_buf,
+        sizeof(lfp_fwd_buf)
+    );
+    if (encode_res < 0){
+        LOG_ERR("Failed to encode LFP message: %d", encode_res);
         return;
     }
+
+    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }

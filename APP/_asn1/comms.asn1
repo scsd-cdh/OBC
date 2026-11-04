@@ -1,0 +1,9 @@
+COMMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+lfpIdCommsTelemetryTransmission INTEGER ::= 0
+CommsTelemetryTransmission ::= SEQUENCE {
+    data OCTET STRING(SIZE(0..255))
+}
+
+
+END

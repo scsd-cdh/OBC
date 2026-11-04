@@ -9,9 +9,11 @@
 
 #include "lfp_i2c_single.h"
 
-#include "cdh_pds_example.h"
+#include "cdh_pds.h"
 
-LOG_MODULE_REGISTER(cdh_pds_example);
+#include "cdh_comms.h"
+
+LOG_MODULE_REGISTER(cdh_pds);
 
 static const struct i2c_dt_spec dev_pds = I2C_DT_SPEC_GET(DT_NODELABEL(pds_i2c));
 
@@ -124,6 +126,15 @@ void get_pds_system_status(void) {
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
                               pds_logging_systemstatus_callback);
+
+    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(PDSSystemStatusResponse)];
+    int encode_res = cdh_comms_encode_lfp_msg(&data, lfp_fwd_buf, sizeof(lfp_fwd_buf));
+    if (encode_res < 0) {
+        LOG_ERR("Failed to encode LFP message: %d", encode_res);
+        return;
+    }
+
+    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }
 
 void get_pds_health_check(void) {
@@ -158,6 +169,15 @@ void get_pds_health_check(void) {
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSHealthCheckResponse,
                               pds_logging_healthcheck_callback);
+
+    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(PDSHealthCheckResponse)];
+    int encode_res = cdh_comms_encode_lfp_msg(&data, lfp_fwd_buf, sizeof(lfp_fwd_buf));
+    if (encode_res < 0) {
+        LOG_ERR("Failed to encode LFP message: %d", encode_res);
+        return;
+    }
+
+    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }
 
 void get_pds_converter(void) {
@@ -192,4 +212,13 @@ void get_pds_converter(void) {
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
                               pds_logging_converter_monitor_callback);
+
+    static uint8_t lfp_fwd_buf[ASN1_LFP_SEND_BUF_SIZE(PDSConverterMonitorResponse)];
+    int encode_res = cdh_comms_encode_lfp_msg(&data, lfp_fwd_buf, sizeof(lfp_fwd_buf));
+    if (encode_res < 0) {
+        LOG_ERR("Failed to encode LFP message: %d", encode_res);
+        return;
+    }
+
+    cdh_comms_send_msg(transmitter, lfp_fwd_buf, encode_res);
 }
