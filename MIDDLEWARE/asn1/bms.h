@@ -159,69 +159,6 @@ flag BMSTemperatureStatusResponse_Encode(const BMSTemperatureStatusResponse* pVa
 #define ERR_UPER_DECODE_BMSTEMPERATURESTATUSRESPONSE_THERMISTORS		108  /**/
 #define ERR_UPER_DECODE_BMSTEMPERATURESTATUSRESPONSE_THERMISTORS_ELM_2		103  /**/
 flag BMSTemperatureStatusResponse_Decode(BMSTemperatureStatusResponse* pVal, BitStream* pBitStrm, int* pErrCode);
-/*-- BMSSystemStatusRequest --------------------------------------------*/
-typedef uint8_t BMSSystemStatusRequest_placeholder;
-
-typedef struct {
-    BMSSystemStatusRequest_placeholder placeholder;
-
-} BMSSystemStatusRequest;
-
-#define ERR_BMSSYSTEMSTATUSREQUEST_PLACEHOLDER		116  /*(0)*/
-flag BMSSystemStatusRequest_placeholder_IsConstraintValid(const BMSSystemStatusRequest_placeholder* pVal, int* pErrCode);
-
-#define ERR_BMSSYSTEMSTATUSREQUEST		121  /**/
-flag BMSSystemStatusRequest_IsConstraintValid(const BMSSystemStatusRequest* pVal, int* pErrCode);
-
-void BMSSystemStatusRequest_placeholder_Initialize(BMSSystemStatusRequest_placeholder* pVal);
-void BMSSystemStatusRequest_Initialize(BMSSystemStatusRequest* pVal);
-
-#define ERR_UPER_ENCODE_BMSSYSTEMSTATUSREQUEST		122  /**/
-#define ERR_UPER_ENCODE_BMSSYSTEMSTATUSREQUEST_PLACEHOLDER		117  /**/
-#define BMSSystemStatusRequest_REQUIRED_BYTES_FOR_ENCODING       0
-#define BMSSystemStatusRequest_REQUIRED_BITS_FOR_ENCODING        0
-
-flag BMSSystemStatusRequest_Encode(const BMSSystemStatusRequest* pVal, BitStream* pBitStrm, int* pErrCode, flag bCheckConstraints);
-
-#define ERR_UPER_DECODE_BMSSYSTEMSTATUSREQUEST		123  /**/
-#define ERR_UPER_DECODE_BMSSYSTEMSTATUSREQUEST_PLACEHOLDER		118  /**/
-flag BMSSystemStatusRequest_Decode(BMSSystemStatusRequest* pVal, BitStream* pBitStrm, int* pErrCode);
-/*-- BMSSystemStatusResponse --------------------------------------------*/
-typedef uint8_t BMSSystemStatusResponse_version;
-
-typedef uint32_t BMSSystemStatusResponse_uptime;
-
-typedef struct {
-    BMSSystemStatusResponse_version version;
-    BMSSystemStatusResponse_uptime uptime;
-
-} BMSSystemStatusResponse;
-
-#define ERR_BMSSYSTEMSTATUSRESPONSE_VERSION		126  /*(0..255)*/
-flag BMSSystemStatusResponse_version_IsConstraintValid(const BMSSystemStatusResponse_version* pVal, int* pErrCode);
-
-#define ERR_BMSSYSTEMSTATUSRESPONSE_UPTIME		131  /*(0..4294967295)*/
-flag BMSSystemStatusResponse_uptime_IsConstraintValid(const BMSSystemStatusResponse_uptime* pVal, int* pErrCode);
-
-#define ERR_BMSSYSTEMSTATUSRESPONSE		136  /**/
-flag BMSSystemStatusResponse_IsConstraintValid(const BMSSystemStatusResponse* pVal, int* pErrCode);
-
-void BMSSystemStatusResponse_version_Initialize(BMSSystemStatusResponse_version* pVal);
-void BMSSystemStatusResponse_uptime_Initialize(BMSSystemStatusResponse_uptime* pVal);
-void BMSSystemStatusResponse_Initialize(BMSSystemStatusResponse* pVal);
-
-#define ERR_UPER_ENCODE_BMSSYSTEMSTATUSRESPONSE		137  /**/
-#define ERR_UPER_ENCODE_BMSSYSTEMSTATUSRESPONSE_VERSION		127  /**/
-#define ERR_UPER_ENCODE_BMSSYSTEMSTATUSRESPONSE_UPTIME		132  /**/
-#define BMSSystemStatusResponse_REQUIRED_BYTES_FOR_ENCODING       5
-#define BMSSystemStatusResponse_REQUIRED_BITS_FOR_ENCODING        40
-
-flag BMSSystemStatusResponse_Encode(const BMSSystemStatusResponse* pVal, BitStream* pBitStrm, int* pErrCode, flag bCheckConstraints);
-
-#define ERR_UPER_DECODE_BMSSYSTEMSTATUSRESPONSE		138  /**/
-#define ERR_UPER_DECODE_BMSSYSTEMSTATUSRESPONSE_VERSION		128  /**/
-#define ERR_UPER_DECODE_BMSSYSTEMSTATUSRESPONSE_UPTIME		133  /**/
-flag BMSSystemStatusResponse_Decode(BMSSystemStatusResponse* pVal, BitStream* pBitStrm, int* pErrCode);
 /*-- BMSPowerStatusRequest --------------------------------------------*/
 typedef uint8_t BMSPowerStatusRequest_placeholder;
 
@@ -230,24 +167,24 @@ typedef struct {
 
 } BMSPowerStatusRequest;
 
-#define ERR_BMSPOWERSTATUSREQUEST_PLACEHOLDER		141  /*(0)*/
+#define ERR_BMSPOWERSTATUSREQUEST_PLACEHOLDER		116  /*(0)*/
 flag BMSPowerStatusRequest_placeholder_IsConstraintValid(const BMSPowerStatusRequest_placeholder* pVal, int* pErrCode);
 
-#define ERR_BMSPOWERSTATUSREQUEST		146  /**/
+#define ERR_BMSPOWERSTATUSREQUEST		121  /**/
 flag BMSPowerStatusRequest_IsConstraintValid(const BMSPowerStatusRequest* pVal, int* pErrCode);
 
 void BMSPowerStatusRequest_placeholder_Initialize(BMSPowerStatusRequest_placeholder* pVal);
 void BMSPowerStatusRequest_Initialize(BMSPowerStatusRequest* pVal);
 
-#define ERR_UPER_ENCODE_BMSPOWERSTATUSREQUEST		147  /**/
-#define ERR_UPER_ENCODE_BMSPOWERSTATUSREQUEST_PLACEHOLDER		142  /**/
+#define ERR_UPER_ENCODE_BMSPOWERSTATUSREQUEST		122  /**/
+#define ERR_UPER_ENCODE_BMSPOWERSTATUSREQUEST_PLACEHOLDER		117  /**/
 #define BMSPowerStatusRequest_REQUIRED_BYTES_FOR_ENCODING       0
 #define BMSPowerStatusRequest_REQUIRED_BITS_FOR_ENCODING        0
 
 flag BMSPowerStatusRequest_Encode(const BMSPowerStatusRequest* pVal, BitStream* pBitStrm, int* pErrCode, flag bCheckConstraints);
 
-#define ERR_UPER_DECODE_BMSPOWERSTATUSREQUEST		148  /**/
-#define ERR_UPER_DECODE_BMSPOWERSTATUSREQUEST_PLACEHOLDER		143  /**/
+#define ERR_UPER_DECODE_BMSPOWERSTATUSREQUEST		123  /**/
+#define ERR_UPER_DECODE_BMSPOWERSTATUSREQUEST_PLACEHOLDER		118  /**/
 flag BMSPowerStatusRequest_Decode(BMSPowerStatusRequest* pVal, BitStream* pBitStrm, int* pErrCode);
 /*-- BMSSetHeaterDutyRequest --------------------------------------------*/
 typedef uint8_t BMSSetHeaterDutyRequest_heater1;
@@ -274,19 +211,19 @@ typedef struct {
 
 } BMSSetHeaterDutyRequest;
 
-#define ERR_BMSSETHEATERDUTYREQUEST_HEATER1		151  /*(0..99)*/
+#define ERR_BMSSETHEATERDUTYREQUEST_HEATER1		126  /*(0..99)*/
 flag BMSSetHeaterDutyRequest_heater1_IsConstraintValid(const BMSSetHeaterDutyRequest_heater1* pVal, int* pErrCode);
 
-#define ERR_BMSSETHEATERDUTYREQUEST_HEATER2		156  /*(0..99)*/
+#define ERR_BMSSETHEATERDUTYREQUEST_HEATER2		131  /*(0..99)*/
 flag BMSSetHeaterDutyRequest_heater2_IsConstraintValid(const BMSSetHeaterDutyRequest_heater2* pVal, int* pErrCode);
 
-#define ERR_BMSSETHEATERDUTYREQUEST_HEATER3		161  /*(0..99)*/
+#define ERR_BMSSETHEATERDUTYREQUEST_HEATER3		136  /*(0..99)*/
 flag BMSSetHeaterDutyRequest_heater3_IsConstraintValid(const BMSSetHeaterDutyRequest_heater3* pVal, int* pErrCode);
 
-#define ERR_BMSSETHEATERDUTYREQUEST_HEATER4		166  /*(0..99)*/
+#define ERR_BMSSETHEATERDUTYREQUEST_HEATER4		141  /*(0..99)*/
 flag BMSSetHeaterDutyRequest_heater4_IsConstraintValid(const BMSSetHeaterDutyRequest_heater4* pVal, int* pErrCode);
 
-#define ERR_BMSSETHEATERDUTYREQUEST		171  /**/
+#define ERR_BMSSETHEATERDUTYREQUEST		146  /**/
 flag BMSSetHeaterDutyRequest_IsConstraintValid(const BMSSetHeaterDutyRequest* pVal, int* pErrCode);
 
 void BMSSetHeaterDutyRequest_heater1_Initialize(BMSSetHeaterDutyRequest_heater1* pVal);
@@ -295,48 +232,48 @@ void BMSSetHeaterDutyRequest_heater3_Initialize(BMSSetHeaterDutyRequest_heater3*
 void BMSSetHeaterDutyRequest_heater4_Initialize(BMSSetHeaterDutyRequest_heater4* pVal);
 void BMSSetHeaterDutyRequest_Initialize(BMSSetHeaterDutyRequest* pVal);
 
-#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST		172  /**/
-#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST_HEATER1		152  /**/
-#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST_HEATER2		157  /**/
-#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST_HEATER3		162  /**/
-#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST_HEATER4		167  /**/
+#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST		147  /**/
+#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST_HEATER1		127  /**/
+#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST_HEATER2		132  /**/
+#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST_HEATER3		137  /**/
+#define ERR_UPER_ENCODE_BMSSETHEATERDUTYREQUEST_HEATER4		142  /**/
 #define BMSSetHeaterDutyRequest_REQUIRED_BYTES_FOR_ENCODING       4
 #define BMSSetHeaterDutyRequest_REQUIRED_BITS_FOR_ENCODING        32
 
 flag BMSSetHeaterDutyRequest_Encode(const BMSSetHeaterDutyRequest* pVal, BitStream* pBitStrm, int* pErrCode, flag bCheckConstraints);
 
-#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST		173  /**/
-#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST_HEATER1		153  /**/
-#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST_HEATER2		158  /**/
-#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST_HEATER3		163  /**/
-#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST_HEATER4		168  /**/
+#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST		148  /**/
+#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST_HEATER1		128  /**/
+#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST_HEATER2		133  /**/
+#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST_HEATER3		138  /**/
+#define ERR_UPER_DECODE_BMSSETHEATERDUTYREQUEST_HEATER4		143  /**/
 flag BMSSetHeaterDutyRequest_Decode(BMSSetHeaterDutyRequest* pVal, BitStream* pBitStrm, int* pErrCode);
 /*-- BMSSetHeaterDutyResponse --------------------------------------------*/
-typedef uint8_t BMSSetHeaterDutyResponse_placeholder;
+typedef uint8_t BMSSetHeaterDutyResponse_responseCode;
 
 typedef struct {
-    BMSSetHeaterDutyResponse_placeholder placeholder;
+    BMSSetHeaterDutyResponse_responseCode responseCode;
 
 } BMSSetHeaterDutyResponse;
 
-#define ERR_BMSSETHEATERDUTYRESPONSE_PLACEHOLDER		176  /*(0)*/
-flag BMSSetHeaterDutyResponse_placeholder_IsConstraintValid(const BMSSetHeaterDutyResponse_placeholder* pVal, int* pErrCode);
+#define ERR_BMSSETHEATERDUTYRESPONSE_RESPONSECODE		151  /*(0..1)*/
+flag BMSSetHeaterDutyResponse_responseCode_IsConstraintValid(const BMSSetHeaterDutyResponse_responseCode* pVal, int* pErrCode);
 
-#define ERR_BMSSETHEATERDUTYRESPONSE		181  /**/
+#define ERR_BMSSETHEATERDUTYRESPONSE		156  /**/
 flag BMSSetHeaterDutyResponse_IsConstraintValid(const BMSSetHeaterDutyResponse* pVal, int* pErrCode);
 
-void BMSSetHeaterDutyResponse_placeholder_Initialize(BMSSetHeaterDutyResponse_placeholder* pVal);
+void BMSSetHeaterDutyResponse_responseCode_Initialize(BMSSetHeaterDutyResponse_responseCode* pVal);
 void BMSSetHeaterDutyResponse_Initialize(BMSSetHeaterDutyResponse* pVal);
 
-#define ERR_UPER_ENCODE_BMSSETHEATERDUTYRESPONSE		182  /**/
-#define ERR_UPER_ENCODE_BMSSETHEATERDUTYRESPONSE_PLACEHOLDER		177  /**/
-#define BMSSetHeaterDutyResponse_REQUIRED_BYTES_FOR_ENCODING       0
-#define BMSSetHeaterDutyResponse_REQUIRED_BITS_FOR_ENCODING        0
+#define ERR_UPER_ENCODE_BMSSETHEATERDUTYRESPONSE		157  /**/
+#define ERR_UPER_ENCODE_BMSSETHEATERDUTYRESPONSE_RESPONSECODE		152  /**/
+#define BMSSetHeaterDutyResponse_REQUIRED_BYTES_FOR_ENCODING       1
+#define BMSSetHeaterDutyResponse_REQUIRED_BITS_FOR_ENCODING        1
 
 flag BMSSetHeaterDutyResponse_Encode(const BMSSetHeaterDutyResponse* pVal, BitStream* pBitStrm, int* pErrCode, flag bCheckConstraints);
 
-#define ERR_UPER_DECODE_BMSSETHEATERDUTYRESPONSE		183  /**/
-#define ERR_UPER_DECODE_BMSSETHEATERDUTYRESPONSE_PLACEHOLDER		178  /**/
+#define ERR_UPER_DECODE_BMSSETHEATERDUTYRESPONSE		158  /**/
+#define ERR_UPER_DECODE_BMSSETHEATERDUTYRESPONSE_RESPONSECODE		153  /**/
 flag BMSSetHeaterDutyResponse_Decode(BMSSetHeaterDutyResponse* pVal, BitStream* pBitStrm, int* pErrCode);
 /*-- BMSTemperatureStatusRequest --------------------------------------------*/
 typedef uint8_t BMSTemperatureStatusRequest_placeholder;
@@ -346,28 +283,26 @@ typedef struct {
 
 } BMSTemperatureStatusRequest;
 
-#define ERR_BMSTEMPERATURESTATUSREQUEST_PLACEHOLDER		186  /*(0)*/
+#define ERR_BMSTEMPERATURESTATUSREQUEST_PLACEHOLDER		161  /*(0)*/
 flag BMSTemperatureStatusRequest_placeholder_IsConstraintValid(const BMSTemperatureStatusRequest_placeholder* pVal, int* pErrCode);
 
-#define ERR_BMSTEMPERATURESTATUSREQUEST		191  /**/
+#define ERR_BMSTEMPERATURESTATUSREQUEST		166  /**/
 flag BMSTemperatureStatusRequest_IsConstraintValid(const BMSTemperatureStatusRequest* pVal, int* pErrCode);
 
 void BMSTemperatureStatusRequest_placeholder_Initialize(BMSTemperatureStatusRequest_placeholder* pVal);
 void BMSTemperatureStatusRequest_Initialize(BMSTemperatureStatusRequest* pVal);
 
-#define ERR_UPER_ENCODE_BMSTEMPERATURESTATUSREQUEST		192  /**/
-#define ERR_UPER_ENCODE_BMSTEMPERATURESTATUSREQUEST_PLACEHOLDER		187  /**/
+#define ERR_UPER_ENCODE_BMSTEMPERATURESTATUSREQUEST		167  /**/
+#define ERR_UPER_ENCODE_BMSTEMPERATURESTATUSREQUEST_PLACEHOLDER		162  /**/
 #define BMSTemperatureStatusRequest_REQUIRED_BYTES_FOR_ENCODING       0
 #define BMSTemperatureStatusRequest_REQUIRED_BITS_FOR_ENCODING        0
 
 flag BMSTemperatureStatusRequest_Encode(const BMSTemperatureStatusRequest* pVal, BitStream* pBitStrm, int* pErrCode, flag bCheckConstraints);
 
-#define ERR_UPER_DECODE_BMSTEMPERATURESTATUSREQUEST		193  /**/
-#define ERR_UPER_DECODE_BMSTEMPERATURESTATUSREQUEST_PLACEHOLDER		188  /**/
+#define ERR_UPER_DECODE_BMSTEMPERATURESTATUSREQUEST		168  /**/
+#define ERR_UPER_DECODE_BMSTEMPERATURESTATUSREQUEST_PLACEHOLDER		163  /**/
 flag BMSTemperatureStatusRequest_Decode(BMSTemperatureStatusRequest* pVal, BitStream* pBitStrm, int* pErrCode);
 
-extern const asn1SccSint lfpIdBMSSystemStatusRequest;
-extern const asn1SccSint lfpIdBMSSystemStatusResponse;
 extern const asn1SccSint lfpIdBMSPowerStatusRequest;
 extern const asn1SccSint lfpIdBMSPowerStatusResponse;
 extern const asn1SccSint lfpIdBMSSetHeaterDutyRequest;

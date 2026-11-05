@@ -60,7 +60,7 @@ BMSSetHeaterDutyRequest ::= SEQUENCE {
 
 lfpIdBMSSetHeaterDutyResponse INTEGER ::= 5
 BMSSetHeaterDutyResponse ::= SEQUENCE {
-    responseCode INTEGER(0..1) -- Response status (failure/sucess)
+    responseCode INTEGER(0..1) -- 0 = success (command applied), 1 = failure
 }
 
 
