@@ -14,6 +14,11 @@
 
 LOG_MODULE_REGISTER(cdh, LOG_LEVEL_DBG);
 
+typedef struct
+{
+    lfp_header_t *p_header;
+} user_ctx_t;
+
 static inline double cdh_adc_to_float(const uint16_t value)
 {
     return ((double)value * 3.3) / (1 << 12);
@@ -135,13 +140,49 @@ static void cdh_pds_converter_monitor_callback(
     );
 }
 
+void target_to_str(uint8_t target, char *buf, size_t buf_size)
+{
+    if (target == cdhSystemId) {
+        snprintf(buf, buf_size, "CDH(%d)", target);
+    } else if (target == bmsSystemId) {
+        snprintf(buf, buf_size, "BMS(%d)", target);
+    } else if (target == pdsSystemId) {
+        snprintf(buf, buf_size, "PDS(%d)", target);
+    } else {
+        snprintf(buf, buf_size, "Unknown(%d)", target);
+    }
+}
+
+void endpoint_to_str(uint8_t endpoint, char *buf, size_t buf_size)
+{
+    if (endpoint == lfpIdBMSPowerStatusResponse) {
+        snprintf(buf, buf_size, "BMSPowerStatusResponse");
+    } else if (endpoint == lfpIdBMSSystemStatusResponse) {
+        snprintf(buf, buf_size, "BMSSystemStatusResponse");
+    } else if (endpoint == lfpIdBMSTemperatureStatusResponse) {
+        snprintf(buf, buf_size, "BMSTemperatureStatusResponse");
+    } else if (endpoint == lfpIdPDSSystemStatusResponse) {
+        snprintf(buf, buf_size, "PDSSystemStatusResponse");
+    } else if (endpoint == lfpIdPDSHealthCheckResponse) {
+        snprintf(buf, buf_size, "PDSHealthCheckResponse");
+    } else if (endpoint == lfpIdPDSConverterMonitorResponse) {
+        snprintf(buf, buf_size, "PDSConverterMonitorResponse");
+    } else {
+        snprintf(buf, buf_size, "Unknown(%d)", endpoint);
+    }
+}
+
 static void cdh_asn1_error_callback(
     int error_code,
     const asn1_lfp_decode_data_t *data
 )
 {
-    ARG_UNUSED(data);
-    LOG_WRN("CDH ASN.1 parse failed: %d", error_code);
+
+    char target[16];
+    char endpoint[16];
+    target_to_str(data->p_header->target, target, sizeof(target));
+    endpoint_to_str(data->p_header->endpoint, endpoint, sizeof(endpoint));
+    LOG_WRN("CDH ASN.1 parse failed, error_code=%d, target=%s, endpoint=%s", error_code, target, endpoint);
 }
 
 #define ASN1_RESPONSE_MESSAGES(X) \
@@ -166,7 +207,8 @@ static bool decode_message(asn1_lfp_decode_data_t *data)
 static bool loopback_on_header(const lfp_header_t *header, void *user_data)
 {
     ARG_UNUSED(user_data);
-
+    user_ctx_t* ctx = user_data;
+    ctx->p_header = (lfp_header_t*)header;
     return true;
 }
 
@@ -194,10 +236,15 @@ static void loopback_on_message(
     decode_message(&data);
 }
 
+
 static void loopback_on_error(lfp_code_t reason, void *user_data)
 {
-    ARG_UNUSED(user_data);
-    LOG_WRN("Loopback LFP decode failed: %d", reason);
+    char target[16];
+    char endpoint[16];
+    user_ctx_t *ctx = user_data;
+    target_to_str(ctx->p_header->target, target, sizeof(target));
+    endpoint_to_str(ctx->p_header->endpoint, endpoint, sizeof(endpoint));
+    LOG_WRN("Loopback LFP decode failed: %d, target=%s, endpoint=%s", reason, target, endpoint);
 }
 
 int main(void)
@@ -205,6 +252,8 @@ int main(void)
     static uint8_t uart_rx_buffer[256];
     static uint8_t lfp_body_buffer[256];
     lfp_stream_ctx_t lfp_stream;
+    user_ctx_t usr_ctx;
+
 
     lfp_stream_init(
         &lfp_stream,
@@ -213,7 +262,7 @@ int main(void)
         loopback_on_header,
         loopback_on_message,
         loopback_on_error,
-        NULL
+        &usr_ctx
     );
 
     int ret = uart_transport_open(transmitter);
