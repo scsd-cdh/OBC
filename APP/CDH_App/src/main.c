@@ -239,12 +239,8 @@ static void loopback_on_message(
 
 static void loopback_on_error(lfp_code_t reason, void *user_data)
 {
-    char target[16];
-    char endpoint[16];
-    user_ctx_t *ctx = user_data;
-    target_to_str(ctx->p_header->target, target, sizeof(target));
-    endpoint_to_str(ctx->p_header->endpoint, endpoint, sizeof(endpoint));
-    LOG_WRN("Loopback LFP decode failed: %d, target=%s, endpoint=%s", reason, target, endpoint);
+    ARG_UNUSED(user_data);
+    LOG_WRN("Loopback LFP stream error detected: %d", reason);
 }
 
 int main(void)
