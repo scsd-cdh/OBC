@@ -29,11 +29,12 @@
 #include "i2c.h"
 #include "lfp_i2c.h"
 #include "msp_utils.h"
-
-#if defined (__MSP430FR5989__) || defined (__MSP430FR6989__)
-#include "rtc_c.h"
-#elif defined (__MSP430FR5969__)
+#if defined(__MSP430FR5969__)
 #include "rtc_b.h"
+#define BMS_RTC(name) RTC_B_ ## name
+#else
+#include "rtc_c.h"
+#define BMS_RTC(name) RTC_C_ ## name
 #endif
 
 typedef struct {
@@ -121,23 +122,29 @@ typedef struct {
 // number of external ADS7138IRTER channels. Corresponds to thermistors -> heaters
 #define ADC_NUM_CHANNELS 8
 
-// private isr triggered flag for access only
+// RTC read-ready events schedule one-second scans; RT1PS supplies retry slots.
 static volatile bool s_isr_triggered = false;
+static volatile bool s_power_pending = false;
+static volatile bool s_temperature_pending = false;
 
 // Static serialized structs to be populated periodically from sensor data etc...
 static const BMSSystemStatusResponse s_systemstatus = {
     .uptime = 0xDEADBEEF,
     .version = 12
 };
-static volatile BMSPowerStatusResponse s_powerstatus;
-static volatile BMSTemperatureStatusResponse s_temperature_status;
-static BMSSetHeaterDutyResponse s_heaterduty_response; // this
+typedef struct {
+    BMSPowerStatusResponse power;
+    BMSTemperatureStatusResponse temperature;
+} bms_telemetry_t;
+
+// Acquisition owns reading_buffer; CDH serializes only comm_buffer.
+static volatile bms_telemetry_t s_reading_buffer;
+static volatile bms_telemetry_t s_comm_buffer;
+static BMSSetHeaterDutyResponse s_heaterduty_response;
 
 // Static asn1 encoded data buffers to be sent back to CDH on request
 static volatile uint8_t s_systemstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
-static volatile uint16_t s_powerstatus_size = 0;
 static volatile uint8_t s_powerstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
-static volatile uint16_t s_temperature_status_size = 0;
 static volatile uint8_t s_temperature_status_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusResponse)];
 static uint16_t s_heaterduty_response_size = 0;
 static uint8_t s_heaterduty_response_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyResponse)];
@@ -164,15 +171,9 @@ static bool on_header(const lfp_header_t* p_header, void* p_ctx) {
 static void on_error(int error_code, const struct asn1_lfp_decode_data_t * p_data) {
 }
 
-// NOTE!! If we don't copy buffers into a seperate i2c transfer buffer, idk if it's possible for buffers to be updated mid transfer or not
-// I don't think so, but wouldn't hurt testing this just in casee
-// NOTE2: these callbacks are technically doing work in the isr, but on_msg only ever gets called on the last byte of the write
-// TODO: Make put them in helper function
 static inline void bms_system_status_req_cb(const BMSSystemStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     (void)p_payload;
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
-    // GIE -- this is technically in the i2c isr, we don't want getting stuck here to stall BMS
-    __enable_interrupt();
 
     uint16_t size = ASN1_LFP_SERIALIZE(
         p_data->p_header->initiator, bmsSystemId,
@@ -180,36 +181,33 @@ static inline void bms_system_status_req_cb(const BMSSystemStatusRequest * p_pay
         (unsigned char*)s_systemstatus_tx_buf, sizeof(s_systemstatus_tx_buf),
         s_systemstatus
     );
-    __disable_interrupt();
     lfp_i2c_set_txbuf(s_systemstatus_tx_buf, size);
 }
 
 static inline void bms_power_status_req_cb(const BMSPowerStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     (void)p_payload;
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
-    __enable_interrupt();
+    s_comm_buffer.power = s_reading_buffer.power;
     uint16_t size = ASN1_LFP_SERIALIZE(
         p_data->p_header->initiator, bmsSystemId,
         BMSPowerStatusResponse,
         (unsigned char*)s_powerstatus_tx_buf, sizeof(s_powerstatus_tx_buf),
-        s_powerstatus
+        s_comm_buffer.power
     );
-    __disable_interrupt();
     lfp_i2c_set_txbuf(s_powerstatus_tx_buf, size);
 }
 
 static inline void bms_temperature_status_req_cb(const BMSTemperatureStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     (void)p_payload;
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
-    __enable_interrupt();
+    s_comm_buffer.temperature = s_reading_buffer.temperature;
     uint16_t size = ASN1_LFP_SERIALIZE(
         p_data->p_header->initiator, bmsSystemId,
         BMSTemperatureStatusResponse,
         (unsigned char*)s_temperature_status_tx_buf,
         sizeof(s_temperature_status_tx_buf),
-        s_temperature_status
+        s_comm_buffer.temperature
     );
-    __disable_interrupt();
     lfp_i2c_set_txbuf(s_temperature_status_tx_buf, size);
 }
 
@@ -353,17 +351,22 @@ static void gpio_init() {
     P9SEL1 |= p9_analog_pins;
 #endif
 
+    // Y2 (32.768 kHz): PJ.4/LFXIN and PJ.5/LFXOUT on FR5989/FR6989.
+    // FR5989-EP RGC physical pins 57/58; FR6989 PZ pins 84/85.
+    PJSEL1 &= ~(BIT4 | BIT5);
+    PJSEL0 |= BIT4 | BIT5;
+    PJREN &= ~(BIT4 | BIT5);
+
     // Activate port settings after analog, digital and PWM pins are configured.
     PM5CTL0 &= ~LOCKLPM5;
 }
 
 
-// Hardware initialization. Initializes MSP430 specific device modules for I2C, ADC, GPIO, Clock, and RTC
+// Initialize GPIO, the 16 MHz clock, and the internal ADC.
 static void hardware_init() {
     WDTCTL = WDTPW | WDTHOLD;                                // Stop WDT
     gpio_init();
     clock_init_16mhz();
-    rtc_init();
     adc_init();
 }
 
@@ -402,13 +405,15 @@ static void comm_init() {
     lfp_stream_init(&s_lfp_ctx, s_rx_body_buffer, sizeof(s_rx_body_buffer), on_header, on_msg, on_error, &s_user_ctx);
 }
 
+// Each collection builds a complete local result and publishes only on success.
+static bool collect_power_status(void) {
+    BMSPowerStatusResponse power;
 #ifndef MOCK_POWER
-static ADC_Status collect_power_status() {
     // Collect voltage and current ADC values
     // Must do this this way (all at once) if using SEQOFCHANNELS mode
     // Do not reconfigure a previous conversion if it is still stuck busy.
     if (ADC_waitForConversion() != ADC_STATUS_OK) {
-        return ADC_STATUS_TIMEOUT;
+        return false;
     }
     // trigger the ten‑channel sweep
     ADC12_B_startConversion(ADC12_B_BASE,
@@ -416,124 +421,197 @@ static ADC_Status collect_power_status() {
         ADC12_B_SEQOFCHANNELS);        // ENC+SC, walk MEM0->MEM9
 
     if (ADC_waitForConversion() != ADC_STATUS_OK) {
-        return ADC_STATUS_TIMEOUT;
+        return false;
     }
 
     // Current
-    s_powerstatus.batteryPack1.currentDraw        = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_1_CP_MEM);
-    s_powerstatus.batteryPack2.currentDraw        = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_2_CP_MEM);
-    s_powerstatus.batteryPack1.currentCharge      = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_1_CP_MEM);
-    s_powerstatus.batteryPack2.currentCharge      = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_2_CP_MEM);
+    power.batteryPack1.currentDraw        = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_1_CP_MEM);
+    power.batteryPack2.currentDraw        = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_VUR_2_CP_MEM);
+    power.batteryPack1.currentCharge      = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_1_CP_MEM);
+    power.batteryPack2.currentCharge      = ADC12_B_getResults(ADC12_B_BASE, I_SENSE_CHR_2_CP_MEM);
 
     // Voltage per cell
-    s_powerstatus.batteryPack1.cellA.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1A_CP_MEM);
-    s_powerstatus.batteryPack1.cellB.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1B_CP_MEM);
-    s_powerstatus.batteryPack2.cellA.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2A_CP_MEM);
-    s_powerstatus.batteryPack2.cellB.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2B_CP_MEM);
+    power.batteryPack1.cellA.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1A_CP_MEM);
+    power.batteryPack1.cellB.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_1B_CP_MEM);
+    power.batteryPack2.cellA.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2A_CP_MEM);
+    power.batteryPack2.cellB.voltage      = ADC12_B_getResults(ADC12_B_BASE, V_CELL_2B_CP_MEM);
 
     // Combined voltage per battery
-    s_powerstatus.batteryPack1.voltage            = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
-    s_powerstatus.batteryPack2.voltage            = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
+    power.batteryPack1.voltage            = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_1_CP_MEM);
+    power.batteryPack2.voltage            = ADC12_B_getResults(ADC12_B_BASE, V_BATTPACK_2_CP_MEM);
 
     // Collect voltage and current flags
-    s_powerstatus.batteryPack1.cellA.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
-    s_powerstatus.batteryPack1.cellA.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1A_PIN);
-    s_powerstatus.batteryPack1.cellB.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1B_PIN);
-    s_powerstatus.batteryPack1.cellB.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1B_PIN);
-    s_powerstatus.batteryPack1.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_1_PIN);
+    power.batteryPack1.cellA.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1A_PIN);
+    power.batteryPack1.cellA.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1A_PIN);
+    power.batteryPack1.cellB.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P5, OVP_FLAG_1B_PIN);
+    power.batteryPack1.cellB.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P5, UVP_FLAG_1B_PIN);
+    power.batteryPack1.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_1_PIN);
 
-    s_powerstatus.batteryPack2.cellA.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2A_PIN);
-    s_powerstatus.batteryPack2.cellA.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2A_PIN);
-    s_powerstatus.batteryPack2.cellB.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2B_PIN);
-    s_powerstatus.batteryPack2.cellB.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2B_PIN);
-    s_powerstatus.batteryPack2.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
-    return ADC_STATUS_OK;
-}
-
+    power.batteryPack2.cellA.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2A_PIN);
+    power.batteryPack2.cellA.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2A_PIN);
+    power.batteryPack2.cellB.overvoltage  = GPIO_getInputPinValue(GPIO_PORT_P3, OVP_FLAG_2B_PIN);
+    power.batteryPack2.cellB.undervoltage = GPIO_getInputPinValue(GPIO_PORT_P3, UVP_FLAG_2B_PIN);
+    power.batteryPack2.overcurrent        = GPIO_getInputPinValue(GPIO_PORT_P3, OCP_FLAG_2_PIN);
 #else
-// Mock version using easy-to-identify test values
-static inline void collect_power_status_mock() {
-    s_powerstatus.batteryPack1.currentDraw        = 0x11ee;
-    s_powerstatus.batteryPack1.currentCharge      = 0x12ee;
+    power.batteryPack1.currentDraw        = 0x11ee;
+    power.batteryPack1.currentCharge      = 0x12ee;
 
-    s_powerstatus.batteryPack1.cellA.voltage      = 0x1Aee;
-    s_powerstatus.batteryPack1.cellB.voltage      = 0x1Bee;
+    power.batteryPack1.cellA.voltage      = 0x1Aee;
+    power.batteryPack1.cellB.voltage      = 0x1Bee;
 
-    s_powerstatus.batteryPack1.voltage            = 0x1111;
+    power.batteryPack1.voltage            = 0x1111;
 
-    s_powerstatus.batteryPack1.cellA.overvoltage  = 0;
-    s_powerstatus.batteryPack1.cellA.undervoltage = 1;
-    s_powerstatus.batteryPack1.cellB.overvoltage  = 0;
-    s_powerstatus.batteryPack1.cellB.undervoltage = 0;
-    s_powerstatus.batteryPack1.overcurrent        = 1;
+    power.batteryPack1.cellA.overvoltage  = 0;
+    power.batteryPack1.cellA.undervoltage = 1;
+    power.batteryPack1.cellB.overvoltage  = 0;
+    power.batteryPack1.cellB.undervoltage = 0;
+    power.batteryPack1.overcurrent        = 1;
 
-    s_powerstatus.batteryPack2.currentDraw        = 0x21ee;
-    s_powerstatus.batteryPack2.currentCharge      = 0x22ee;
+    power.batteryPack2.currentDraw        = 0x21ee;
+    power.batteryPack2.currentCharge      = 0x22ee;
 
-    s_powerstatus.batteryPack2.cellA.voltage      = 0x2Aee;
-    s_powerstatus.batteryPack2.cellB.voltage      = 0x2Bee;
-    s_powerstatus.batteryPack2.voltage            = 0x2222;
+    power.batteryPack2.cellA.voltage      = 0x2Aee;
+    power.batteryPack2.cellB.voltage      = 0x2Bee;
+    power.batteryPack2.voltage            = 0x2222;
 
-    s_powerstatus.batteryPack2.cellA.overvoltage  = 1;
-    s_powerstatus.batteryPack2.cellA.undervoltage = 0;
-    s_powerstatus.batteryPack2.cellB.overvoltage  = 1;
-    s_powerstatus.batteryPack2.cellB.undervoltage = 0;
-    s_powerstatus.batteryPack2.overcurrent        = 0;
-}
+    power.batteryPack2.cellA.overvoltage  = 1;
+    power.batteryPack2.cellA.undervoltage = 0;
+    power.batteryPack2.cellB.overvoltage  = 1;
+    power.batteryPack2.cellB.undervoltage = 0;
+    power.batteryPack2.overcurrent        = 0;
 #endif
+    uint16_t gie = __get_SR_register() & GIE;
+    __disable_interrupt();
+    s_reading_buffer.power = power;
+    if (gie) __enable_interrupt();
+    return true;
+}
 
-// Public BMS initialization.
-void bms_init() {
+static bool collect_temperature_status(void) {
+    BMSTemperatureStatusResponse temperature;
+    for (uint8_t i = 0; i < ADC_NUM_CHANNELS; i++) {
+        if (ADS7138IRTER_SingleRegisterWrite(&s_swi2c_descriptor,
+                ADS7138_CHANNEL_SEL_REGISTER, i) != ADS7138_STATUS_OK ||
+            ADS7138IRTER_Read(&s_swi2c_descriptor,
+                &temperature.thermistors.arr[i]) != ADS7138_STATUS_OK) {
+            return false;
+        }
+    }
+
+    uint16_t gie = __get_SR_register() & GIE;
+    __disable_interrupt();
+    s_reading_buffer.temperature = temperature;
+    if (gie) __enable_interrupt();
+    return true;
+}
+
+// Calendar mode uses the 32.768 kHz crystal directly. RT1PS sees 128 Hz;
+// its /16 interrupt provides 125 ms retry slots without consuming Timer_A0.
+// Apply after the shared rtc_init(), before main enables global interrupts.
+static bool bms_rtc_config(void) {
+    const uint8_t interrupts = BMS_RTC(CLOCK_READ_READY_INTERRUPT) |
+        BMS_RTC(TIME_EVENT_INTERRUPT) | BMS_RTC(CLOCK_ALARM_INTERRUPT) |
+        BMS_RTC(PRESCALE_TIMER0_INTERRUPT) | BMS_RTC(PRESCALE_TIMER1_INTERRUPT) |
+        BMS_RTC(OSCILLATOR_FAULT_INTERRUPT);
+    BMS_RTC(holdClock)(BMS_RTC(BASE));
+    BMS_RTC(disableInterrupt)(BMS_RTC(BASE), interrupts);
+
+    CSCTL0_H = CSKEY_H;
+    CSCTL4 &= ~(LFXTOFF | LFXTBYPASS);
+    CSCTL4 |= LFXTDRIVE_3;
+    bool ready = false;
+    // At 16 MHz, each delay is 100 us: finite startup budget of about 1 s.
+    for (uint16_t attempt = 0; attempt < 10000u; attempt++) {
+        CSCTL5 &= ~LFXTOFFG;
+        SFRIFG1 &= ~OFIFG;
+        __delay_cycles(1600);
+        if (!(CSCTL5 & LFXTOFFG)) {
+            ready = true;
+            break;
+        }
+    }
+    CSCTL0_H = 0;
+    if (!ready) return false;
+
+#if !defined(__MSP430FR5969__)
+    RTCCTL0_H = RTCKEY_H;
+    RTCCTL13 |= RTCMODE;
+    RTCCTL0_H = 0;
+#endif
+    // Valid calendar seed; acquisition needs intervals, not wall-clock time.
+    Calendar calendar = { .Seconds = 0, .Minutes = 0, .Hours = 0,
+        .DayOfWeek = 6, .DayOfMonth = 1, .Month = 1, .Year = 2000 };
+    BMS_RTC(initCalendar)(BMS_RTC(BASE), &calendar, BMS_RTC(FORMAT_BINARY));
+    BMS_RTC(setPrescaleValue)(BMS_RTC(BASE), BMS_RTC(PRESCALE_0), 0);
+    BMS_RTC(setPrescaleValue)(BMS_RTC(BASE), BMS_RTC(PRESCALE_1), 0);
+    BMS_RTC(definePrescaleEvent)(BMS_RTC(BASE), BMS_RTC(PRESCALE_1),
+                               BMS_RTC(PSEVENTDIVIDER_16));
+    BMS_RTC(clearInterrupt)(BMS_RTC(BASE), interrupts);
+    BMS_RTC(enableInterrupt)(BMS_RTC(BASE), BMS_RTC(CLOCK_READ_READY_INTERRUPT));
+    BMS_RTC(startClock)(BMS_RTC(BASE));
+    return true;
+}
+
+// Called with interrupts disabled after publishing a pass. Keep the retry
+// interrupt off while healthy so idle wakeups occur only once per second.
+static void retry_interrupt_update(void) {
+    if (s_power_pending || s_temperature_pending) {
+        BMS_RTC(clearInterrupt)(BMS_RTC(BASE), BMS_RTC(PRESCALE_TIMER1_INTERRUPT));
+        BMS_RTC(enableInterrupt)(BMS_RTC(BASE), BMS_RTC(PRESCALE_TIMER1_INTERRUPT));
+    } else {
+        BMS_RTC(disableInterrupt)(BMS_RTC(BASE), BMS_RTC(PRESCALE_TIMER1_INTERRUPT));
+    }
+}
+
+void bms_init(void) {
     hardware_init();
     comm_init();
+    rtc_init();
+    (void)bms_rtc_config();
 }
-/* END INITIALIZATION LOGIC  */
 
-/*
- * RTC ISR and main program logic.
- */
-// Public interval data collection
-void bms_collectdata() {
-#ifdef MOCK_POWER
-    collect_power_status_mock();
-#else
-    if (collect_power_status() != ADC_STATUS_OK) {
-        s_isr_triggered = false;
+// Claim scheduled work atomically, then attempt each pending group once.
+// Pending flags are cleared before reading so a new RTC event during a scan
+// remains pending. A failed group is retried in full on the next 125 ms slot.
+void bms_collectdata(void) {
+    uint16_t gie = __get_SR_register() & GIE;
+
+    __disable_interrupt();
+    if (!s_isr_triggered) {
+        if (gie) {
+            __enable_interrupt();
+        }
         return;
     }
-#endif
 
-    // TI ADS7138IRTER EXTERNAL ADC DATA  (THERMISTORS)
-    // NOTE: Profile this.. might be able to ask for this directly in callback
-    for (uint8_t i = 0 ; i < ADC_NUM_CHANNELS; i++) {
-        ADS7138_Status status = ADS7138IRTER_SingleRegisterWrite(&s_swi2c_descriptor,
-                ADS7138_CHANNEL_SEL_REGISTER, i);
-        if (status == ADS7138_STATUS_TIMEOUT) {
-            break;
-        }
-        if (status != ADS7138_STATUS_OK) {
-            continue;
-        }
-
-        uint16_t reading;
-        status = ADS7138IRTER_Read(&s_swi2c_descriptor, &reading);
-        if (status == ADS7138_STATUS_TIMEOUT) {
-            break;
-        }
-        if (status == ADS7138_STATUS_OK) {
-            s_temperature_status.thermistors.arr[i] = reading;
-        }
+    bool power_due = s_power_pending;
+    bool temperature_due = s_temperature_pending;
+    s_isr_triggered = false;
+    s_power_pending = false;
+    s_temperature_pending = false;
+    if (gie) {
+        __enable_interrupt();
+    }
+    
+    if (power_due && !collect_power_status()) {
+        s_power_pending = true;
     }
 
-    s_isr_triggered = false;
+    if (temperature_due && !collect_temperature_status()) {
+        s_temperature_pending = true;
+    }
+
+    __disable_interrupt();
+    retry_interrupt_update();
+    if (gie) {
+        __enable_interrupt();
+    }
 }
 
-bool bms_isr_triggered() {
-    return (bool)s_isr_triggered;
+bool bms_isr_triggered(void) {
+    return s_isr_triggered;
 }
 
-/*ISR that maintains LPM until 30 minutes has passed*/
-// -- I have no idea what this means
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector=RTC_VECTOR
 __interrupt
@@ -545,13 +623,20 @@ void RTC_ISR (void)
     switch (__even_in_range(RTCIV, 16)) {
         case RTCIV_NONE:         break;
         case RTCIV_RTCRDYIFG:
+            s_power_pending = true;
+            s_temperature_pending = true;
             s_isr_triggered = true;
             break;
-        case RTCIV_RTCTEVIFG:    break;
-        case RTCIV_RTCAIFG:      /* alarm */ break;
-        case RTCIV_RT0PSIFG:     /* prescale 0 */ break;
-        case RTCIV_RT1PSIFG:     /* prescale 1 */ break;
-        case RTCIV_RTCOFIFG:     /* oscillator fault: clear fault, maybe restart LFXT */ break;
-        default:                 break;   // (should not happen)
+        case RTCIV_RT1PSIFG:
+            if (s_power_pending || s_temperature_pending) {
+                s_isr_triggered = true;
+            }
+            break;
+        default:
+            break;
+    }
+
+    if (bms_isr_triggered()) {
+        __bic_SR_register_on_exit(LPM0_bits);
     }
 }

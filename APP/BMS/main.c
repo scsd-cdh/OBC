@@ -17,21 +17,25 @@
  * --/COPYRIGHT--*/
 
 //******************************************************************************
-//  PDS Firmware
+//  BMS Firmware
 //******************************************************************************
 
 #include "BMS.h"
-#include "i2c.h"
 #include <msp430.h>
 
 int main(void)
 {
     bms_init();
-    __bis_SR_register(GIE);
     while (1) {
-        // Probably, I don't know if we can get here while transmitting i2c data or not
-        if (bms_isr_triggered() && !I2C_IS_TRANSMITTING) {
-            bms_collectdata();
+        // Checking work and setting CPUOFF are atomic with respect to ISRs.
+        // CDH I2C ISRs handle messages and return directly to LPM0; the
+        // sampling ISR clears CPUOFF on exit when main has acquisition work.
+        __disable_interrupt();
+        if (!bms_isr_triggered()) {
+            __bis_SR_register(LPM0_bits | GIE);
+        } else {
+            __enable_interrupt();
         }
+        bms_collectdata();
     }
 }

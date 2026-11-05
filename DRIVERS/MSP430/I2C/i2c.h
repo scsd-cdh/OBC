@@ -25,6 +25,8 @@ typedef void (*i2c_stt_cb_t)(i2c_module_t module);
 typedef void (*i2c_tx_cb_t)(i2c_module_t module);
 /** Called on receive, module doesn't matter */
 typedef void (*i2c_rx_cb_t)(uint8_t byte);
+/** Called on STOP; optional, including after a partial read. */
+typedef void (*i2c_stp_cb_t)(i2c_module_t module);
 
 typedef struct {
     i2c_stt_cb_t i2c_stt_cb; // on start condition, any module
@@ -32,6 +34,7 @@ typedef struct {
 
     i2c_rx_cb_t i2c_rx_cb; // on receive (module doesn't matter)
     uint8_t slave_addr;
+    i2c_stp_cb_t i2c_stp_cb;
 } i2c_ctx_t;
 
 /**

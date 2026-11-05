@@ -4,6 +4,9 @@
 static volatile uint8_t* p_txbuf = NULL;
 static uint16_t s_txbuf_len = 0;
 static uint16_t s_txidx = 0;
+static i2c_module_t s_txmodule;
+static bool s_response_completed;
+static lfp_i2c_response_complete_cb_t s_response_complete_cb;
 
 // state
 static lfp_i2c_state_t s_state;
@@ -31,6 +34,7 @@ static void i2c_stt_cb(i2c_module_t module) {
 }
 
 static void i2c_tx_cb(i2c_module_t module) {
+    s_txmodule = module;
     if (s_state != I2C_SLAVE_STATE_RESPONSE) { // Unless we are in response state, just return 0xFF
         i2c_write(module, 0xFF);
     } else if (!p_txbuf || s_txidx >= s_txbuf_len) { // if we are asked for more bytes than we have, send 0xFF. This should really never happen
@@ -45,6 +49,19 @@ static void i2c_tx_cb(i2c_module_t module) {
     }
 }
 
+static void i2c_stp_cb(i2c_module_t module) {
+    // TXIFG is raised when TXBUF moves into the shift register. An extra
+    // filler byte queued after the final payload byte proves that final byte
+    // reached the shift register. idx == len alone could be mere prefetch.
+    if (module == s_txmodule && s_state == I2C_SLAVE_STATE_RESPONSE &&
+            p_txbuf && s_txidx > s_txbuf_len && !s_response_completed) {
+        s_response_completed = true;
+        if (s_response_complete_cb) {
+            s_response_complete_cb(p_txbuf);
+        }
+    }
+}
+
 static void i2c_rx_cb(uint8_t data) {
     lfp_stream_update(p_ctx, data);
 }
@@ -55,6 +72,9 @@ void lfp_i2c_init(lfp_stream_ctx_t * p_lfp_ctx, i2c_module_t module_mask, uint8_
     s_txbuf_len = 0;
     s_txidx = 0;
     p_ctx = p_lfp_ctx;
+    s_txmodule = I2C_MODULE_NONE;
+    s_response_completed = false;
+    s_response_complete_cb = NULL;
 
     i2c_ctx_t i2c_ctx = {
         .i2c_stt_cb = i2c_stt_cb,
@@ -62,8 +82,13 @@ void lfp_i2c_init(lfp_stream_ctx_t * p_lfp_ctx, i2c_module_t module_mask, uint8_
 
         .i2c_rx_cb = i2c_rx_cb,
         .slave_addr = slave_addr,
+        .i2c_stp_cb = i2c_stp_cb,
     };
     i2c_init(module_mask, &i2c_ctx);
+}
+
+void lfp_i2c_set_response_complete_cb(lfp_i2c_response_complete_cb_t callback) {
+    s_response_complete_cb = callback;
 }
 
 void lfp_i2c_transition(lfp_i2c_state_t state) {
@@ -73,6 +98,8 @@ void lfp_i2c_transition(lfp_i2c_state_t state) {
         p_txbuf = NULL;
         s_txidx  = 0;
         s_txbuf_len  = 0;
+        s_response_completed = false;
+        s_txmodule = I2C_MODULE_NONE;
     }
 
     // NACK if we are in processing stage
@@ -97,6 +124,8 @@ int16_t lfp_i2c_set_txbuf(volatile uint8_t* data, uint8_t size) {
     p_txbuf = data;
     s_txbuf_len = size;
     s_txidx = 0;
+    s_response_completed = false;
+    s_txmodule = I2C_MODULE_NONE;
 
     // We're ready to start transmitting data
     lfp_i2c_transition(I2C_SLAVE_STATE_RESPONSE);
