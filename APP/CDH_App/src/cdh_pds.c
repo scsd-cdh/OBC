@@ -9,9 +9,14 @@
 
 #include "lfp_i2c_single.h"
 
-#include "cdh_pds_example.h"
+#include "cdh_pds.h"
 
-LOG_MODULE_REGISTER(cdh_pds_example);
+#include <asn1/comms.h>
+
+#include "cdh_comms.h"
+#include "threads.h"
+
+LOG_MODULE_REGISTER(cdh_pds);
 
 static const struct i2c_dt_spec dev_pds = I2C_DT_SPEC_GET(DT_NODELABEL(pds_i2c));
 
@@ -38,11 +43,39 @@ static void on_error(int error_code, const struct asn1_lfp_decode_data_t* p_data
 }
 
 static void pds_logging_log_systemstatus(const PDSSystemStatusResponse * p_status) {
-    LOG_INF(
-        "PDS System Status:\n\tVersion: %d\n\tUptime: 0x%x",
+    // LOG_INF(
+    //     "PDS System Status:\n\tVersion: %d\n\tUptime: 0x%x",
+    //     p_status->version,
+    //     p_status->uptime
+    // );
+
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "PDS System Status: Version: %d | Uptime: 0x%x\n",
         p_status->version,
         p_status->uptime
     );
+    if (length < 0 || (size_t)length >= sizeof(message))
+    {
+        LOG_ERR("Failed to format system status log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0)
+    {
+        LOG_ERR("Failed to encode system status log message: %d", encoded_length);
+        return;
+    }
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void pds_logging_log_healthcheck(const PDSHealthCheckResponse * p_status) {
@@ -52,23 +85,84 @@ static void pds_logging_log_healthcheck(const PDSHealthCheckResponse * p_status)
         hash[i] = (uint8_t)p_status->hash.arr[i];
     }
 
-    LOG_HEXDUMP_INF(hash, sizeof(hash), "PDS Health Check Hash:");
+    // LOG_HEXDUMP_INF(hash, sizeof(hash), "PDS Health Check Hash:");
+
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "PDS Health Check Hash: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+        hash[0], hash[1], hash[2], hash[3],
+        hash[4], hash[5], hash[6], hash[7],
+        hash[8], hash[9], hash[10], hash[11],
+        hash[12], hash[13], hash[14], hash[15]
+    );
+    if (length < 0 || (size_t)length >= sizeof(message))
+    {
+        LOG_ERR("Failed to format health check log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0)
+    {
+        LOG_ERR("Failed to encode health check log message: %d", encoded_length);
+        return;
+    }
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void pds_logging_log_converter_monitor(const PDSConverterMonitorResponse * p_status) {
-    LOG_INF(
-        "PDS Converter Monitor:\n"
-        "\tint5vVs: %.3f V\n"
-        "\treg5vVs: %.3f V\n"
-        "\tconverterA5vVs: %.3f V\n"
-        "\tconverterB5vVs: %.3f V\n"
-        "\ttemperatureSense: %.3f V\n",
+    // LOG_INF(
+    //     "PDS Converter Monitor:\n"
+    //     "\tint5vVs: %.3f V\n"
+    //     "\treg5vVs: %.3f V\n"
+    //     "\tconverterA5vVs: %.3f V\n"
+    //     "\tconverterB5vVs: %.3f V\n"
+    //     "\ttemperatureSense: %.3f V\n",
+    //     bms_adc_to_float(p_status->int5vVs),
+    //     bms_adc_to_float(p_status->reg5vVs),
+    //     bms_adc_to_float(p_status->converterA5vVs),
+    //     bms_adc_to_float(p_status->converterB5vVs),
+    //     bms_adc_to_float(p_status->temperatureSense)
+    // );
+
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "PDS Converter Monitor: int5vVs: %.3f V | reg5vVs: %.3f V | converterA5vVs: %.3f V | converterB5vVs: %.3f V | temperatureSense: %.3f V\n",
         bms_adc_to_float(p_status->int5vVs),
         bms_adc_to_float(p_status->reg5vVs),
         bms_adc_to_float(p_status->converterA5vVs),
         bms_adc_to_float(p_status->converterB5vVs),
         bms_adc_to_float(p_status->temperatureSense)
     );
+    if (length < 0 || (size_t)length >= sizeof(message))
+    {
+        LOG_ERR("Failed to format converter monitor log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0)
+    {
+        LOG_ERR("Failed to encode converter monitor log message: %d", encoded_length);
+        return;
+    }
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void pds_logging_systemstatus_callback(PDSSystemStatusResponse * p_payload,
@@ -102,7 +196,13 @@ void get_pds_system_status(void) {
         return;
     }
 
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
+    lfp_header_t header;
+    asn1_lfp_decode_data_t data = {
+        .p_on_error_cb = on_error,
+        .p_header = &header,
+        .p_body = lfp_recv_buf
+    };
+
 
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
@@ -110,8 +210,6 @@ void get_pds_system_status(void) {
         return;
     }
 
-    lfp_header_t header;
-    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &header, .p_body = lfp_recv_buf};
     data.body_length = lfp_i2c_single_receive(
         &dev_pds,
         &header,
@@ -119,7 +217,7 @@ void get_pds_system_status(void) {
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-        return;
+            return;
     }
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
@@ -136,7 +234,12 @@ void get_pds_health_check(void) {
         return;
     }
 
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
+    lfp_header_t header;
+    asn1_lfp_decode_data_t data = {
+        .p_on_error_cb = on_error,
+        .p_header = &header,
+        .p_body = lfp_recv_buf
+    };
 
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
@@ -144,8 +247,6 @@ void get_pds_health_check(void) {
         return;
     }
 
-    lfp_header_t header;
-    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &header, .p_body = lfp_recv_buf};
     data.body_length = lfp_i2c_single_receive(
         &dev_pds,
         &header,
@@ -170,7 +271,12 @@ void get_pds_converter(void) {
         return;
     }
 
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
+    lfp_header_t header;
+    asn1_lfp_decode_data_t data = {
+        .p_on_error_cb = on_error,
+        .p_header = &header,
+        .p_body = lfp_recv_buf
+    };
 
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
@@ -178,8 +284,6 @@ void get_pds_converter(void) {
         return;
     }
 
-    lfp_header_t header;
-    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &header, .p_body = lfp_recv_buf};
     data.body_length = lfp_i2c_single_receive(
         &dev_pds,
         &header,
@@ -193,3 +297,22 @@ void get_pds_converter(void) {
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
                               pds_logging_converter_monitor_callback);
 }
+
+static void pds_thread(const void *p_arg) {
+    ARG_UNUSED(p_arg);
+
+    while (1) {
+        LOG_INF("PDS thread running");
+        get_pds_system_status();
+        get_pds_health_check();
+        get_pds_converter();
+        // long timeouts make it easier to debug. Logging takes a long time, smaller timeouts seem to cause dropped messages.
+        // We will optimize later
+        k_msleep(2000);
+    }
+}
+
+// stagger for more clarity
+
+K_THREAD_DEFINE(p_pds_thread, 2024, pds_thread, NULL, NULL, NULL,
+        THREAD_PRIORITY_PDS, 0, 1000);

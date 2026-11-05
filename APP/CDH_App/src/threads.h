@@ -1,6 +1,10 @@
 #pragma once
 
-// Priorities are from 0 to 15, with 15 being the highest priority
+#include <zephyr/kernel.h>
 
-#define THREAD_PRIORITY_BMS_HEATER 8
-#define THREAD_PRIORITY_BMS_LOGGING 1
+// Lower numeric values have higher priority.
+#define THREAD_PRIORITY_BMS 1
+#define THREAD_PRIORITY_PDS 1
+#define THREAD_PRIORITY_COMMS_RX 1
+
+extern struct k_mutex uart_rx_lock;

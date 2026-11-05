@@ -6,6 +6,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
+#include "threads.h"
+
 LOG_MODULE_REGISTER(lfp_i2c_single);
 
 #define I2C_BUF_SIZE 32

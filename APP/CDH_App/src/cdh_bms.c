@@ -10,9 +10,14 @@
 
 #include "lfp_i2c_single.h"
 
-#include "cdh_bms_example.h"
+#include "cdh_bms.h"
 
-LOG_MODULE_REGISTER(cdh_bms_example);
+#include <asn1/comms.h>
+
+#include "cdh_comms.h"
+#include "threads.h"
+
+LOG_MODULE_REGISTER(cdh_bms);
 
 static const struct i2c_dt_spec dev_bms = I2C_DT_SPEC_GET(DT_NODELABEL(bms_i2c));
 
@@ -40,10 +45,27 @@ static inline double bms_adc_to_float(const uint16_t val) {
 }
 static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const int pack_id) {
 
-    LOG_INF(
-        "Battery %d:\n\tVoltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
-        "\tCell A:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d\n"
-        "\tCell B:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d",
+    // LOG_INF(
+    //     "Battery %d:\n\tVoltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
+    //     "\tCell A:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d\n"
+    //     "\tCell B:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d",
+    //     pack_id,
+    //     bms_adc_to_float(p_pack->voltage), bms_adc_to_float(p_pack->currentDraw),
+    //     bms_adc_to_float(p_pack->currentCharge),
+    //     p_pack->overcurrent,
+    //
+    //     bms_adc_to_float(p_pack->cellA.voltage),
+    //     p_pack->cellA.overvoltage, p_pack->cellA.undervoltage,
+    //
+    //     bms_adc_to_float(p_pack->cellB.voltage),
+    //     p_pack->cellB.overvoltage, p_pack->cellB.undervoltage
+    // );
+
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "BMS Battery %d: Voltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
+        "BMS Cell A: Voltage: %.3f | OV/UV: %d/%d\n"
+        "BMS Cell B: Voltage: %.3f | OV/UV: %d/%d\n",
         pack_id,
         bms_adc_to_float(p_pack->voltage), bms_adc_to_float(p_pack->currentDraw),
         bms_adc_to_float(p_pack->currentCharge),
@@ -56,14 +78,60 @@ static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const i
         p_pack->cellB.overvoltage, p_pack->cellB.undervoltage
     );
 
+    if (length < 0 || (size_t)length >= sizeof(message)) {
+        LOG_ERR("Failed to format battery log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0) {
+        LOG_ERR("Failed to encode battery log message: %d", encoded_length);
+        return;
+    }
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
+
 }
 
 static void bms_logging_log_systemstatus(const BMSSystemStatusResponse * p_status) {
-    LOG_INF(
-        "BMS System Status:\n\tVersion: %d\n\tUptime: 0x%x\n\t",
+    // LOG_INF(
+    //     "BMS System Status:\n\tVersion: %d\n\tUptime: 0x%x\n\t",
+    //     p_status->version,
+    //     p_status->uptime
+    // );
+
+    char message[LOG_MESSAGE_SIZE];
+    int length = snprintk(message, sizeof(message),
+        "BMS System Status: Version: %d | Uptime: 0x%x\n",
         p_status->version,
         p_status->uptime
     );
+    if (length < 0 || (size_t)length >= sizeof(message)) {
+        LOG_ERR("Failed to format system status log message");
+        return;
+    }
+
+    uint8_t encoded_message[LOG_ENCODED_SIZE];
+    int encoded_length = lfp_encode(
+        cdhSystemId,
+        commsSystemId,
+        lfpIdCommsTelemetryTransmission,
+        LFP_DIRECTION_TARGET,
+        (const uint8_t *)message, (size_t)length,
+        encoded_message, sizeof(encoded_message)
+    );
+    if (encoded_length <= 0) {
+        LOG_ERR("Failed to encode system status log message: %d", encoded_length);
+        return;
+    }
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void bms_logging_battery_callback(BMSPowerStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
@@ -79,7 +147,8 @@ static void bms_logging_systemstatus_callback(BMSSystemStatusResponse * p_payloa
     bms_logging_log_systemstatus(p_payload);
 }
 
-void get_bms_system_status(void) {
+void get_bms_system_status(void)
+{
     const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusRequest, lfp_send_buf, sizeof(lfp_send_buf), {});
     if (!size) {
         LOG_WRN("Failed to serialize system status request: a:%d l:%d",
@@ -87,19 +156,17 @@ void get_bms_system_status(void) {
         return;
     }
 
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
-
     const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send system status request: %d", ret);
         return;
     }
 
-    lfp_header_t header;
-    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &header, .p_body = lfp_recv_buf};
+    lfp_header_t recv_header;
+    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &recv_header, .p_body = lfp_recv_buf};
     data.body_length = lfp_i2c_single_receive(
         &dev_bms,
-        &header,
+        &recv_header,
         lfp_recv_buf, sizeof(lfp_recv_buf),
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
@@ -107,9 +174,8 @@ void get_bms_system_status(void) {
         return;
     }
 
-    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse, bms_logging_systemstatus_callback)) {
-        return;
-    }
+    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
+                              bms_logging_systemstatus_callback);
 }
 
 void get_bms_power_status(void) {
@@ -119,8 +185,6 @@ void get_bms_power_status(void) {
             ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
         return;
     }
-
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
 
     const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
@@ -140,7 +204,26 @@ void get_bms_power_status(void) {
         return;
     }
 
-    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse, bms_logging_battery_callback)) {
-        return;
+    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
+                              bms_logging_battery_callback);
+}
+
+
+static void bms_thread(const void *p_arg)
+{
+    ARG_UNUSED(p_arg);
+
+
+    while (1)
+    {
+        LOG_INF("BMS thread running");
+        get_bms_power_status();
+        get_bms_system_status();
+        // long timeouts make it easier to debug. Logging takes a long time, smaller timeouts seem to cause dropped messages.
+        // We will optimize later
+        k_msleep(2000);
     }
 }
+
+K_THREAD_DEFINE(p_bms_thread, 2024, bms_thread, NULL, NULL, NULL,
+        THREAD_PRIORITY_BMS, 0, 0);

@@ -7,22 +7,33 @@ project(CDH)
 
 target_sources(app
         PRIVATE FILE_SET HEADERS BASE_DIRS src FILES
-        src/cdh_pds_example.h
+        src/cdh_comms.h
+        src/cdh_bms.h
+        src/cdh_pds.h
         src/lfp_i2c_single.h
-        src/main.h
         src/threads.h
+        src/main.h
 
         PRIVATE
-        src/cdh_pds_example.c
+        src/cdh_comms.c
+        src/cdh_bms.c
+        src/cdh_pds.c
         src/lfp_i2c_single.c
         src/main.c
-        ../../MIDDLEWARE/tinyprotocol/tinyprotocol.c
+        src/threads.c
+        ../../MIDDLEWARE/UART/uart_transport.c
 )
 
 
 include("../../MIDDLEWARE/ASN1SCC/asn1scc.cmake")
 
-asn1scc_generate_c(app ../_asn1/_systems.asn1 ../_asn1/pds.asn1 EXTRA_OPTS --slim -sm)
+asn1scc_generate_c(app
+        ../_asn1/_systems.asn1
+        ../_asn1/bms.asn1
+        ../_asn1/pds.asn1
+        ../_asn1/comms.asn1
+        EXTRA_OPTS --slim -sm
+)
 
 add_custom_command(
         TARGET app
@@ -32,4 +43,5 @@ add_custom_command(
 )
 target_include_directories(app PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE/shared_types
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE/UART/include
 )
