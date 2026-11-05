@@ -156,16 +156,10 @@ void get_bms_system_status(void)
         return;
     }
 
-    bool handle_message = false;
-    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
-    if (mtxret != 0) {
-        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
-        return;
-    }
     const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send system status request: %d", ret);
-        goto unlock;
+        return;
     }
 
     lfp_header_t recv_header;
@@ -177,17 +171,11 @@ void get_bms_system_status(void)
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read BMS response");
-        goto unlock;
+        return;
     }
 
-    handle_message = true;
-unlock:
-    k_mutex_unlock(&i2c_bus_lock);
-
-    if (handle_message) {
-        (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
+    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
                               bms_logging_systemstatus_callback);
-    }
 }
 
 void get_bms_power_status(void) {
@@ -198,16 +186,10 @@ void get_bms_power_status(void) {
         return;
     }
 
-    bool handle_message = false;
-    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
-    if (mtxret != 0) {
-        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
-        return;
-    }
     const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send power status request: %d", ret);
-        goto unlock;
+        return;
     }
 
     lfp_header_t header;
@@ -219,17 +201,11 @@ void get_bms_power_status(void) {
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read BMS response");
-        goto unlock;
+        return;
     }
-    handle_message = true;
 
-unlock:
-    k_mutex_unlock(&i2c_bus_lock);
-
-    if (handle_message) {
-        (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
+    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
                               bms_logging_battery_callback);
-    }
 }
 
 
@@ -245,7 +221,7 @@ static void bms_thread(const void *p_arg)
         get_bms_system_status();
         // long timeouts make it easier to debug. Logging takes a long time, smaller timeouts seem to cause dropped messages.
         // We will optimize later
-        k_msleep(5000);
+        k_msleep(2000);
     }
 }
 

@@ -196,7 +196,6 @@ void get_pds_system_status(void) {
         return;
     }
 
-    bool handle_message = false;
     lfp_header_t header;
     asn1_lfp_decode_data_t data = {
         .p_on_error_cb = on_error,
@@ -204,16 +203,11 @@ void get_pds_system_status(void) {
         .p_body = lfp_recv_buf
     };
 
-    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
-    if (mtxret != 0) {
-        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
-        return;
-    }
 
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send system status request: %d", ret);
-        goto unlock;
+        return;
     }
 
     data.body_length = lfp_i2c_single_receive(
@@ -223,17 +217,11 @@ void get_pds_system_status(void) {
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-            goto unlock;
+            return;
     }
 
-        handle_message = true;
-unlock:
-        k_mutex_unlock(&i2c_bus_lock);
-
-        if (handle_message) {
-            (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
-                                      pds_logging_systemstatus_callback);
-        }
+    (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
+                              pds_logging_systemstatus_callback);
 }
 
 void get_pds_health_check(void) {
@@ -246,7 +234,6 @@ void get_pds_health_check(void) {
         return;
     }
 
-    bool handle_message = false;
     lfp_header_t header;
     asn1_lfp_decode_data_t data = {
         .p_on_error_cb = on_error,
@@ -254,16 +241,10 @@ void get_pds_health_check(void) {
         .p_body = lfp_recv_buf
     };
 
-    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
-    if (mtxret != 0) {
-        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
-        return;
-    }
-
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send health check request: %d", ret);
-        goto unlock;
+        return;
     }
 
     data.body_length = lfp_i2c_single_receive(
@@ -273,17 +254,11 @@ void get_pds_health_check(void) {
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-            goto unlock;
+        return;
     }
 
-        handle_message = true;
-unlock:
-        k_mutex_unlock(&i2c_bus_lock);
-
-        if (handle_message) {
-            (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSHealthCheckResponse,
-                                      pds_logging_healthcheck_callback);
-        }
+    (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSHealthCheckResponse,
+                              pds_logging_healthcheck_callback);
 }
 
 void get_pds_converter(void) {
@@ -296,7 +271,6 @@ void get_pds_converter(void) {
         return;
     }
 
-    bool handle_message = false;
     lfp_header_t header;
     asn1_lfp_decode_data_t data = {
         .p_on_error_cb = on_error,
@@ -304,16 +278,10 @@ void get_pds_converter(void) {
         .p_body = lfp_recv_buf
     };
 
-    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
-    if (mtxret != 0) {
-        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
-        return;
-    }
-
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send converter monitor request: %d", ret);
-        goto unlock;
+        return;
     }
 
     data.body_length = lfp_i2c_single_receive(
@@ -323,17 +291,11 @@ void get_pds_converter(void) {
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-            goto unlock;
+        return;
     }
 
-        handle_message = true;
-unlock:
-        k_mutex_unlock(&i2c_bus_lock);
-
-        if (handle_message) {
-            (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
-                                      pds_logging_converter_monitor_callback);
-        }
+    (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
+                              pds_logging_converter_monitor_callback);
 }
 
 static void pds_thread(const void *p_arg) {
@@ -346,11 +308,11 @@ static void pds_thread(const void *p_arg) {
         get_pds_converter();
         // long timeouts make it easier to debug. Logging takes a long time, smaller timeouts seem to cause dropped messages.
         // We will optimize later
-        k_msleep(5000);
+        k_msleep(2000);
     }
 }
 
 // stagger for more clarity
 
 K_THREAD_DEFINE(p_pds_thread, 2024, pds_thread, NULL, NULL, NULL,
-        THREAD_PRIORITY_PDS, 0, 2500);
+        THREAD_PRIORITY_PDS, 0, 1000);

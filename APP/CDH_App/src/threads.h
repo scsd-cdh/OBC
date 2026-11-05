@@ -7,5 +7,4 @@
 #define THREAD_PRIORITY_PDS 1
 #define THREAD_PRIORITY_COMMS_RX 1
 
-extern struct k_mutex i2c_bus_lock;
 extern struct k_mutex uart_rx_lock;
