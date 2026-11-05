@@ -164,7 +164,14 @@ static bool on_header(const lfp_header_t* p_header, void* p_ctx) {
 }
 
 // TODO: implement me?
-static void on_error(int error_code, const struct asn1_lfp_decode_data_t * p_data) {
+static void on_asn1_error(int error_code, const struct asn1_lfp_decode_data_t * p_data) {
+    (void)error_code;
+    (void)p_data;
+}
+
+static void on_lfp_error(lfp_code_t error_code, void *p_ctx) {
+    (void)error_code;
+    (void)p_ctx;
 }
 
 static inline void bms_power_status_req_cb(const BMSPowerStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
@@ -232,7 +239,7 @@ static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16
         .p_body = p_body,
         .p_ctx = p_ctx,
         .body_length = body_length,
-        .p_on_error_cb = on_error,
+        .p_on_error_cb = on_asn1_error,
     };
 
     if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusRequest, bms_power_status_req_cb)) {
@@ -382,7 +389,9 @@ static void comm_init() {
 
     ADS7138IRTER_Initialize(&s_swi2c_descriptor);
 
-    lfp_stream_init(&s_lfp_ctx, s_rx_body_buffer, sizeof(s_rx_body_buffer), on_header, on_msg, on_error, &s_user_ctx);
+    lfp_stream_init(&s_lfp_ctx, s_rx_body_buffer, 
+        sizeof(s_rx_body_buffer), on_header, on_msg, 
+        on_lfp_error, &s_user_ctx);
 }
 
 // Each collection builds a complete local result and publishes only on success.

@@ -13,12 +13,13 @@
 int32_t ADS7138IRTER_Initialize(SWI2C_Descriptor *descriptor) {
     descriptor->address = ADS7138_I2C_ADDRESS;
     SWI2C_Init(descriptor);
+    return 0;
 }
 
 int32_t ADS7138IRTER_SW_Reset(SWI2C_Descriptor *descriptor) {
     uint8_t write_buffer[1] = { ADS7138_SW_RESET };
     descriptor->address = ADS7138_GEN_CMD;
-    int32_t status = SWI2C_Write(descriptor, ADS7138_SW_RESET, 1);
+    int32_t status = SWI2C_Write(descriptor, write_buffer, sizeof(write_buffer));
     descriptor->address = ADS7138_I2C_ADDRESS;
     return status;
 }
