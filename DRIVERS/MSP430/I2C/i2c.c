@@ -19,7 +19,7 @@ void i2c_init_registers(uint8_t module_mask, uint8_t slave_addr)
         UCB0I2COA0 = slave_addr | UCOAEN;            // Own Address and enable
         UCB0CTLW0 &= ~UCSWRST;                       // clear reset register
 
-        UCB0IE |= UCSTTIE;                           // Enable START interrupt
+        UCB0IE |= UCSTTIE | UCSTPIE;                 // START/STOP interrupts
         UCB0IE |= UCRXIE;                            // Enable RX interrupt
         UCB0IE |= UCTXIE;                            // Enable TX interrupt
     }
@@ -32,7 +32,7 @@ void i2c_init_registers(uint8_t module_mask, uint8_t slave_addr)
         UCB1I2COA0 = slave_addr | UCOAEN;
         UCB1CTLW0 &= ~UCSWRST;
 
-        UCB1IE |= UCSTTIE;
+        UCB1IE |= UCSTTIE | UCSTPIE;
         UCB1IE |= UCRXIE;
         UCB1IE |= UCTXIE;
     }
@@ -45,6 +45,7 @@ void i2c_init(uint8_t module_mask, i2c_ctx_t* ctx)
     s_ctx.i2c_tx_cb = ctx->i2c_tx_cb;
     s_ctx.i2c_stt_cb = ctx->i2c_stt_cb;
     s_ctx.slave_addr = ctx->slave_addr;
+    s_ctx.i2c_stp_cb = ctx->i2c_stp_cb;
 
     i2c_init_registers(module_mask, ctx->slave_addr);
 }
@@ -111,6 +112,10 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCI_B0_ISR (void)
         if (s_ctx.i2c_stt_cb != NULL)
             s_ctx.i2c_stt_cb(I2C_MODULE_UCB0);
         break;
+    case USCI_I2C_UCSTPIFG:
+        if (s_ctx.i2c_stp_cb != NULL)
+            s_ctx.i2c_stp_cb(I2C_MODULE_UCB0);
+        break;
     case USCI_I2C_UCRXIFG0:                 // Vector 22: RXIFG0  -> Receive one byte from MASTER (SAMV71)
         // callback for processing incoming packet from master. Calls lfp_stream_update. This cannot be inlined as it is
         s_ctx.i2c_rx_cb(UCB0RXBUF);
@@ -144,6 +149,10 @@ void __attribute__ ((interrupt(USCI_B1_VECTOR))) USCI_B1_ISR (void)
     case USCI_I2C_UCSTTIFG:                 // Vector 6: STTIFG
         if (s_ctx.i2c_stt_cb != NULL)
             s_ctx.i2c_stt_cb(I2C_MODULE_UCB1);
+        break;
+    case USCI_I2C_UCSTPIFG:
+        if (s_ctx.i2c_stp_cb != NULL)
+            s_ctx.i2c_stp_cb(I2C_MODULE_UCB1);
         break;
     case USCI_I2C_UCRXIFG0:                 // Vector 22: RXIFG0  -> Receive one byte from MASTER (SAMV71)
         // callback for processing incoming packet from master. Calls lfp_stream_update. This cannot be inlined as it is

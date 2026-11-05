@@ -84,13 +84,69 @@ Windows requires Git Bash, Docker Desktop with WSL integration, usbipd-win,
 a running WSL distribution, and a shared probe. Firmware files for Docker
 flashing must be inside the repository.
 
-## Script checks without hardware
+## Checks without hardware
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-These checks mock the debugger and Docker; they do not program a device.
+These host checks use mocked hardware and do not program a device.
+
+## Sampling, retries, and low-power operation
+
+BMS uses the RTC read-ready interrupt to schedule a fresh voltage/current and
+eight-channel thermistor scan every second. The timebase is the board's Y2
+32.768 kHz crystal. Timer_A0 is not used for acquisition scheduling.
+
+Initialization calls the shared `rtc_init()` unchanged, then `bms_rtc_config()`
+for the BMS-specific setup. The latter holds the RTC while configuring it and
+restarts it after selecting the one-second and retry events. Global interrupts
+remain disabled until initialization finishes.
+
+The schematic connects Y2 correctly to PJ.4/LFXIN and PJ.5/LFXOUT: FR5989-EP
+64-pin RGC pins 57/58, or FR6989 LaunchPad 100-pin PZ pins 84/85. Firmware selects
+their crystal function before releasing LOCKLPM5, enables LFXT in crystal mode,
+and checks its fault flag with a bounded startup wait (about one second maximum).
+It initializes a valid calendar and enables only the one-second read-ready event
+while healthy. The calendar starts at an arbitrary valid epoch, not actual UTC.
+
+If startup fails, RTC acquisition is not started, and CDH communication can still
+run. There is no
+automatic fallback to Timer_A0. Crystal oscillation and loading must be verified
+on the assembled board; the schematic shows 15 pF capacitors C46/C47 on Y2.
+
+The interrupt schedules work; main calls separate power and temperature collection
+functions with interrupts enabled. Each function builds a local scan and publishes
+it only on full success. If any temperature channel fails, the incomplete scan is
+discarded and the next attempt starts again at channel 0. There is no per-channel
+retry mask or saved partial scan.
+
+Power and temperature have independent pending flags. A failed group is retried
+in full on 125 ms slots until it succeeds; a successful group waits for the next
+one-second scan. Power failure does not prevent a temperature attempt, and vice
+versa. CDH receives the preceding complete snapshot while a group is failing
+(initially zeros). Retry slots come from RTC prescaler 1 (128 Hz divided by 16);
+its interrupt is enabled only while a group is pending and disabled after recovery.
+
+Two telemetry buffers have fixed roles:
+
+- The reading buffer holds the latest successfully completed power and temperature
+  scans, published atomically. Incomplete scans are discarded.
+- At each CDH request, the communication buffer copies the latest completed scan
+  from the reading buffer before encoding the response. It remains fixed while
+  that response is read, including reads split into header/body chunks. A new
+  acquisition cannot change an in-flight response. Refresh no longer depends on
+  CDH consuming a preceding response or sending STOP.
+
+Each response is encoded into its own wire buffer, so acquisition cannot change
+an in-flight response. The existing main/redundant CDH buses still share a single
+protocol transaction context; masters should serialize their requests.
+
+Main sleeps in LPM0 while idle, with an atomic check-and-sleep sequence. Hardware
+I2C interrupts handle CDH traffic and return to sleep; scheduled acquisition wakes
+main. LPM0 preserves SMCLK for heater PWM. Timer_A1 remains reserved for software
+I2C and TB0 for heaters. Acquisition does not wait on UCB0's direction
+bit and errors do not shut down or inhibit heater PWM.
 
 ## Acquisition timeouts
 
@@ -99,9 +155,9 @@ Software I2C timer waits have a 5,000-poll budget (`SWI2C_TIMER_POLL_LIMIT`);
 existing clock-stretch waits are also bounded. These are iteration limits,
 not fixed millisecond deadlines, and remain finite if the peripheral clock stops.
 
-A timeout aborts the current acquisition without changing heater PWM or blocking
-heater commands. Failed readings are not published; telemetry does not yet include
-validity or age fields. Later acquisition attempts are still allowed.
+A timeout ends the failed operation without changing heater PWM or blocking
+heater commands. The group stays pending for the next retry slot. Failed
+readings are not published; telemetry does not yet include validity or age fields.
 
 The shared `Read_ADC()` helper returns `ADC_READ_INVALID` (`UINT16_MAX`) on timeout.
 Checked ADS7138 operations return `ADS7138_STATUS_TIMEOUT`; software I2C returns

@@ -21,6 +21,13 @@ typedef enum {
  */ 
 void lfp_i2c_init(lfp_stream_ctx_t * p_lfp_ctx, i2c_module_t module_mask, uint8_t slave_addr);
 
+/** Optional ISR callback after a complete response is read and STOP is received.
+ * Partial header/body reads do not complete the response. The buffer pointer
+ * identifies which response was consumed. Callback runs with interrupts disabled.
+ */
+typedef void (*lfp_i2c_response_complete_cb_t)(const volatile uint8_t *buffer);
+void lfp_i2c_set_response_complete_cb(lfp_i2c_response_complete_cb_t callback);
+
 /** 
  * Sets state to given lfp_i2c state. NACKS the master if I2C_SLAVE_STATE_PROCESSING and discards tx buffer and resets if I2C_SLAVE_STATE_REQUEST
  * NOTE: this is currently does not enforce strict state machine logic, user can transition from any state to any other state. Not set in stone 
