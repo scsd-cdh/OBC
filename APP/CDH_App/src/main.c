@@ -67,7 +67,7 @@ int main(void)
         NULL
     );
 
-    int ret = cdh_comms_uart_open(transmitter);
+    int ret = uart_transport_open(transmitter);
     if (ret != 0) {
         LOG_ERR("Failed to open UART2 RX: %d", ret);
         return ret;
@@ -78,7 +78,7 @@ int main(void)
     while (1) {
         get_bms_power_status();
 
-        ret = cdh_comms_uart_read(
+        ret = uart_transport_read(
             uart_rx_buffer,
             sizeof(uart_rx_buffer),
             K_MSEC(250)
@@ -86,7 +86,7 @@ int main(void)
         while (ret > 0) {
             lfp_stream_update_buf(&lfp_stream, uart_rx_buffer, ret);
 
-            ret = cdh_comms_uart_read(
+            ret = uart_transport_read(
                 uart_rx_buffer,
                 sizeof(uart_rx_buffer),
                 K_NO_WAIT

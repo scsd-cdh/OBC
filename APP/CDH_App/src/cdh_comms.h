@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <uart/uart_transport.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(loopback_uart), okay)
 static const struct device *uart = DEVICE_DT_GET(DT_ALIAS(loopback_uart));
@@ -47,18 +48,4 @@ int cdh_comms_encode_lfp_msg(
     const asn1_lfp_decode_data_t *data,
     uint8_t *send_buf,
     size_t send_buf_size
-);
-
-void cdh_comms_send_msg(
-    const struct device *tx_dev,
-    const uint8_t *txdata,
-    size_t txlen
-);
-
-int cdh_comms_uart_open(const struct device *rx_dev);
-
-int cdh_comms_uart_read(
-    uint8_t *rxdata,
-    size_t rxlen,
-    k_timeout_t timeout
 );

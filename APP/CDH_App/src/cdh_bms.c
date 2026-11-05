@@ -95,7 +95,7 @@ static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const i
         LOG_ERR("Failed to encode battery log message: %d", encoded_length);
         return;
     }
-    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
 
 }
 
@@ -130,7 +130,7 @@ static void bms_logging_log_systemstatus(const BMSSystemStatusResponse * p_statu
         LOG_ERR("Failed to encode system status log message: %d", encoded_length);
         return;
     }
-    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void bms_logging_battery_callback(BMSPowerStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {

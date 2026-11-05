@@ -74,7 +74,7 @@ static void pds_logging_log_systemstatus(const PDSSystemStatusResponse * p_statu
         LOG_ERR("Failed to encode system status log message: %d", encoded_length);
         return;
     }
-    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void pds_logging_log_healthcheck(const PDSHealthCheckResponse * p_status) {
@@ -114,7 +114,7 @@ static void pds_logging_log_healthcheck(const PDSHealthCheckResponse * p_status)
         LOG_ERR("Failed to encode health check log message: %d", encoded_length);
         return;
     }
-    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void pds_logging_log_converter_monitor(const PDSConverterMonitorResponse * p_status) {
@@ -161,7 +161,7 @@ static void pds_logging_log_converter_monitor(const PDSConverterMonitorResponse 
         LOG_ERR("Failed to encode converter monitor log message: %d", encoded_length);
         return;
     }
-    cdh_comms_send_msg(transmitter, encoded_message, (size_t)encoded_length);
+    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
 }
 
 static void pds_logging_systemstatus_callback(PDSSystemStatusResponse * p_payload,

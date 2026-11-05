@@ -20,6 +20,7 @@ target_sources(app
         src/cdh_pds.c
         src/lfp_i2c_single.c
         src/main.c
+        ../../MIDDLEWARE/UART/uart_transport.c
 )
 
 
@@ -41,4 +42,5 @@ add_custom_command(
 )
 target_include_directories(app PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE/shared_types
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE/UART/include
 )
