@@ -43,29 +43,16 @@ static void on_error(int error_code, const struct asn1_lfp_decode_data_t* p_data
 static inline double bms_adc_to_float(const uint16_t val) {
     return ((double)val * 3.3) / (1 << 12);
 }
-static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const int pack_id) {
 
-    // LOG_INF(
-    //     "Battery %d:\n\tVoltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
-    //     "\tCell A:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d\n"
-    //     "\tCell B:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d",
-    //     pack_id,
-    //     bms_adc_to_float(p_pack->voltage), bms_adc_to_float(p_pack->currentDraw),
-    //     bms_adc_to_float(p_pack->currentCharge),
-    //     p_pack->overcurrent,
-    //
-    //     bms_adc_to_float(p_pack->cellA.voltage),
-    //     p_pack->cellA.overvoltage, p_pack->cellA.undervoltage,
-    //
-    //     bms_adc_to_float(p_pack->cellB.voltage),
-    //     p_pack->cellB.overvoltage, p_pack->cellB.undervoltage
-    // );
+// We don't build zephyr with log level DBG by default. To enable logs pass -DCONFIG_CDH_LOG_LEVEL=4
+// This feels like the easiest way to toggle debug logging without crowding the code with #ifdefs
+//
 
-    char message[LOG_MESSAGE_SIZE];
-    int length = snprintk(message, sizeof(message),
-        "BMS Battery %d: Voltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
-        "BMS Cell A: Voltage: %.3f | OV/UV: %d/%d\n"
-        "BMS Cell B: Voltage: %.3f | OV/UV: %d/%d\n",
+static inline void bms_battery_handler(const BMSBatteryPackStatus * p_pack, const int pack_id) {
+    LOG_DBG(
+        "Battery %d:\n\tVoltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
+        "\tCell A:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d\n"
+        "\tCell B:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d",
         pack_id,
         bms_adc_to_float(p_pack->voltage), bms_adc_to_float(p_pack->currentDraw),
         bms_adc_to_float(p_pack->currentCharge),
@@ -78,73 +65,30 @@ static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const i
         p_pack->cellB.overvoltage, p_pack->cellB.undervoltage
     );
 
-    if (length < 0 || (size_t)length >= sizeof(message)) {
-        LOG_ERR("Failed to format battery log message");
-        return;
-    }
-
-    uint8_t encoded_message[LOG_ENCODED_SIZE];
-    int encoded_length = lfp_encode(
-        cdhSystemId,
-        commsSystemId,
-        lfpIdCommsTelemetryTransmission,
-        LFP_DIRECTION_TARGET,
-        (const uint8_t *)message, (size_t)length,
-        encoded_message, sizeof(encoded_message)
-    );
-    if (encoded_length <= 0) {
-        LOG_ERR("Failed to encode battery log message: %d", encoded_length);
-        return;
-    }
-    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
-
+    // TODO: handle flags ?
 }
 
-static void bms_logging_log_systemstatus(const BMSSystemStatusResponse * p_status) {
-    // LOG_INF(
-    //     "BMS System Status:\n\tVersion: %d\n\tUptime: 0x%x\n\t",
-    //     p_status->version,
-    //     p_status->uptime
-    // );
-
-    char message[LOG_MESSAGE_SIZE];
-    int length = snprintk(message, sizeof(message),
-        "BMS System Status: Version: %d | Uptime: 0x%x\n",
+static inline void bms_systemstatus_handler(const BMSSystemStatusResponse * p_status) {
+    LOG_DBG(
+        "BMS System Status:\n\tVersion: %d\n\tUptime: 0x%x\n\t",
         p_status->version,
         p_status->uptime
     );
-    if (length < 0 || (size_t)length >= sizeof(message)) {
-        LOG_ERR("Failed to format system status log message");
-        return;
-    }
 
-    uint8_t encoded_message[LOG_ENCODED_SIZE];
-    int encoded_length = lfp_encode(
-        cdhSystemId,
-        commsSystemId,
-        lfpIdCommsTelemetryTransmission,
-        LFP_DIRECTION_TARGET,
-        (const uint8_t *)message, (size_t)length,
-        encoded_message, sizeof(encoded_message)
-    );
-    if (encoded_length <= 0) {
-        LOG_ERR("Failed to encode system status log message: %d", encoded_length);
-        return;
-    }
-    uart_transport_write(transmitter, encoded_message, (size_t)encoded_length);
+    // TODO: Handle?
 }
 
-static void bms_logging_battery_callback(BMSPowerStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
+static inline void bms_battery_callback(BMSPowerStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
     ARG_UNUSED(p_data);
 
-    bms_logging_log_battery(&p_payload->batteryPack1, 1);
-    bms_logging_log_battery(&p_payload->batteryPack2, 2);
+    bms_battery_handler(&p_payload->batteryPack1, 1);
+    bms_battery_handler(&p_payload->batteryPack2, 2);
 }
 
-static void bms_logging_systemstatus_callback(BMSSystemStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
+static inline void bms_systemstatus_callback(BMSSystemStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
     ARG_UNUSED(p_data);
 
-    bms_logging_log_systemstatus(p_payload);
+    bms_systemstatus_handler(p_payload);
 }
 
 void get_bms_system_status(void)
@@ -175,7 +119,22 @@ void get_bms_system_status(void)
     }
 
     (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
-                              bms_logging_systemstatus_callback);
+                              bms_systemstatus_callback);
+
+
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
+    int fwd_ret = cdh_comms_fwd_lfp_msg(
+        &data,
+        encode_buf,
+        sizeof(encode_buf)
+    );
+
+    if (fwd_ret < 0) {
+        LOG_WRN("Failed to forward BMS system status response: %d", fwd_ret);
+        return;
+    }
+
+    uart_transport_write(transmitter, encode_buf, fwd_ret);
 }
 
 void get_bms_power_status(void) {
@@ -205,9 +164,20 @@ void get_bms_power_status(void) {
     }
 
     (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
-                              bms_logging_battery_callback);
-}
+                              bms_battery_callback);
 
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
+    int fwd_ret = cdh_comms_fwd_lfp_msg(
+        &data,
+        encode_buf,
+        sizeof(encode_buf)
+    );
+    if (fwd_ret < 0) {
+        LOG_WRN("Failed to forward BMS power status response: %d", fwd_ret);
+        return;
+    }
+    uart_transport_write(transmitter, encode_buf, fwd_ret);
+}
 
 static void bms_thread(const void *p_arg)
 {

@@ -1,12 +1,167 @@
 #include "main.h"
 
+#include <asn1_lfp.h>
+#include <asn1/bms.h>
+#include <asn1/pds.h>
+#include <asn1/_systems.h>
+
 #include "cdh_bms.h"
+#include "cdh_pds.h"
 #include "cdh_comms.h"
 #include "lfp/stream.h"
 #include "zephyr/kernel.h"
 #include "zephyr/logging/log.h"
 
-LOG_MODULE_REGISTER(cdh);
+LOG_MODULE_REGISTER(cdh, LOG_LEVEL_DBG);
+
+static inline double cdh_adc_to_float(const uint16_t value)
+{
+    return ((double)value * 3.3) / (1 << 12);
+}
+
+static void cdh_bms_system_status_callback(
+    BMSSystemStatusResponse *payload,
+    asn1_lfp_decode_data_t *data
+)
+{
+    ARG_UNUSED(data);
+    LOG_DBG(
+        "BMS System Status:\n\tVersion: %d\n\tUptime: 0x%x",
+        payload->version,
+        payload->uptime
+    );
+}
+
+static void cdh_bms_power_status_callback(
+    BMSPowerStatusResponse *payload,
+    asn1_lfp_decode_data_t *data
+)
+{
+    ARG_UNUSED(data);
+
+    for (int pack_id = 1; pack_id <= 2; ++pack_id) {
+        const BMSBatteryPackStatus *pack = pack_id == 1
+            ? &payload->batteryPack1
+            : &payload->batteryPack2;
+
+        LOG_DBG(
+            "Battery %d:\n\tVoltage: %.3f | Current Draw: %.3f | "
+            "Current Charge: %.3f | Overcurrent: %d\n"
+            "\tCell A:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d\n"
+            "\tCell B:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d",
+            pack_id,
+            cdh_adc_to_float(pack->voltage),
+            cdh_adc_to_float(pack->currentDraw),
+            cdh_adc_to_float(pack->currentCharge),
+            pack->overcurrent,
+            cdh_adc_to_float(pack->cellA.voltage),
+            pack->cellA.overvoltage,
+            pack->cellA.undervoltage,
+            cdh_adc_to_float(pack->cellB.voltage),
+            pack->cellB.overvoltage,
+            pack->cellB.undervoltage
+        );
+    }
+}
+
+static void cdh_bms_temperature_status_callback(
+    BMSTemperatureStatusResponse *payload,
+    asn1_lfp_decode_data_t *data
+)
+{
+    ARG_UNUSED(data);
+    LOG_DBG(
+        "BMS Temperature Status: "
+        "T1=%u T2=%u T3=%u T4=%u T5=%u T6=%u T7=%u T8=%u",
+        payload->thermistors.arr[0],
+        payload->thermistors.arr[1],
+        payload->thermistors.arr[2],
+        payload->thermistors.arr[3],
+        payload->thermistors.arr[4],
+        payload->thermistors.arr[5],
+        payload->thermistors.arr[6],
+        payload->thermistors.arr[7]
+    );
+}
+
+static void cdh_pds_system_status_callback(
+    PDSSystemStatusResponse *payload,
+    asn1_lfp_decode_data_t *data
+)
+{
+    ARG_UNUSED(data);
+    LOG_DBG(
+        "PDS System Status:\n\tVersion: %d\n\tUptime: 0x%x",
+        payload->version,
+        payload->uptime
+    );
+}
+
+static void cdh_pds_health_check_callback(
+    PDSHealthCheckResponse *payload,
+    asn1_lfp_decode_data_t *data
+)
+{
+    ARG_UNUSED(data);
+#ifdef LOG_LEVEL_DBG
+    uint8_t hash[sizeof(payload->hash.arr) / sizeof(payload->hash.arr[0])];
+
+    for (size_t i = 0; i < sizeof(hash); ++i) {
+        hash[i] = (uint8_t)payload->hash.arr[i];
+    }
+
+    LOG_HEXDUMP_DBG(hash, sizeof(hash), "PDS Health Check Hash:");
+#endif
+}
+
+static void cdh_pds_converter_monitor_callback(
+    PDSConverterMonitorResponse *payload,
+    asn1_lfp_decode_data_t *data
+)
+{
+    ARG_UNUSED(data);
+    LOG_DBG(
+        "PDS Converter Monitor:\n"
+        "\tint5vVs: %.3f V\n"
+        "\treg5vVs: %.3f V\n"
+        "\tconverterA5vVs: %.3f V\n"
+        "\tconverterB5vVs: %.3f V\n"
+        "\ttemperatureSense: %.3f V\n",
+        cdh_adc_to_float(payload->int5vVs),
+        cdh_adc_to_float(payload->reg5vVs),
+        cdh_adc_to_float(payload->converterA5vVs),
+        cdh_adc_to_float(payload->converterB5vVs),
+        cdh_adc_to_float(payload->temperatureSense)
+    );
+}
+
+static void cdh_asn1_error_callback(
+    int error_code,
+    const asn1_lfp_decode_data_t *data
+)
+{
+    ARG_UNUSED(data);
+    LOG_WRN("CDH ASN.1 parse failed: %d", error_code);
+}
+
+#define ASN1_RESPONSE_MESSAGES(X) \
+X(bmsSystemId, BMSSystemStatusResponse, cdh_bms_system_status_callback) \
+X(bmsSystemId, BMSPowerStatusResponse, cdh_bms_power_status_callback) \
+X(bmsSystemId, BMSTemperatureStatusResponse, cdh_bms_temperature_status_callback) \
+X(pdsSystemId, PDSSystemStatusResponse, cdh_pds_system_status_callback) \
+X(pdsSystemId, PDSHealthCheckResponse, cdh_pds_health_check_callback) \
+X(pdsSystemId, PDSConverterMonitorResponse, cdh_pds_converter_monitor_callback)
+
+#define TRY_ASN1_MESSAGE(target, type, callback) \
+if (ASN1_LFP_HANDLE_MSG(tmp, target, type, callback)) return true;
+
+static bool decode_message(asn1_lfp_decode_data_t *data)
+{
+    asn1_lfp_decode_data_t tmp = *data;
+    ASN1_RESPONSE_MESSAGES(TRY_ASN1_MESSAGE)
+
+    return false;
+}
 
 static bool loopback_on_header(const lfp_header_t *header, void *user_data)
 {
@@ -24,17 +179,19 @@ static void loopback_on_message(
 {
     ARG_UNUSED(user_data);
 
-    char message[256];
-    size_t message_length = MIN(body_length, sizeof(message) - 1);
-    memcpy(message, body, message_length);
-    message[message_length] = '\0';
-
     LOG_INF(
-        "Loopback telemetry: target=%d endpoint=%d body=%s",
+        "Loopback telemetry: target=%d endpoint=%d",
         header->target,
-        header->endpoint,
-        message
+        header->endpoint
     );
+
+    asn1_lfp_decode_data_t data = {
+        .p_on_error_cb = cdh_asn1_error_callback,
+        .p_header = header,
+        .p_body = body,
+        .body_length = body_length
+    };
+    decode_message(&data);
 }
 
 static void loopback_on_error(lfp_code_t reason, void *user_data)
