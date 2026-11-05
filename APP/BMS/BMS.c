@@ -29,6 +29,7 @@
 #include "i2c.h"
 #include "lfp_i2c.h"
 #include "msp_utils.h"
+#include "utils.h"
 #if defined(__MSP430FR5969__)
 #include "rtc_b.h"
 #define BMS_RTC(name) RTC_B_ ## name
@@ -128,10 +129,6 @@ static volatile bool s_power_pending = false;
 static volatile bool s_temperature_pending = false;
 
 // Static serialized structs to be populated periodically from sensor data etc...
-static const BMSSystemStatusResponse s_systemstatus = {
-    .uptime = 0xDEADBEEF,
-    .version = 12
-};
 typedef struct {
     BMSPowerStatusResponse power;
     BMSTemperatureStatusResponse temperature;
@@ -140,13 +137,10 @@ typedef struct {
 // Acquisition owns reading_buffer; CDH serializes only comm_buffer.
 static volatile bms_telemetry_t s_reading_buffer;
 static volatile bms_telemetry_t s_comm_buffer;
-static BMSSetHeaterDutyResponse s_heaterduty_response;
 
 // Static asn1 encoded data buffers to be sent back to CDH on request
-static volatile uint8_t s_systemstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
 static volatile uint8_t s_powerstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
 static volatile uint8_t s_temperature_status_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusResponse)];
-static uint16_t s_heaterduty_response_size = 0;
 static uint8_t s_heaterduty_response_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyResponse)];
 
 
@@ -156,8 +150,10 @@ static lfp_stream_ctx_t s_lfp_ctx;
 static SWI2C_Descriptor s_swi2c_descriptor;
 
 // LFP
-// FIXME: arbitrary temporary size
-#define RX_BODY_BUFFER_SIZE 16
+#define RX_BODY_BUFFER_SIZE \
+    MAX(ASN1_LFP_RECV_BUF_SIZE(BMSSetHeaterDutyRequest), \
+    MAX(ASN1_LFP_RECV_BUF_SIZE(BMSPowerStatusRequest), \
+        ASN1_LFP_RECV_BUF_SIZE(BMSTemperatureStatusRequest)))
 
 static uint8_t s_rx_body_buffer[RX_BODY_BUFFER_SIZE];
 static user_ctx_t s_user_ctx;
@@ -169,19 +165,6 @@ static bool on_header(const lfp_header_t* p_header, void* p_ctx) {
 
 // TODO: implement me?
 static void on_error(int error_code, const struct asn1_lfp_decode_data_t * p_data) {
-}
-
-static inline void bms_system_status_req_cb(const BMSSystemStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
-    (void)p_payload;
-    lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
-
-    uint16_t size = ASN1_LFP_SERIALIZE(
-        p_data->p_header->initiator, bmsSystemId,
-        BMSSystemStatusResponse,
-        (unsigned char*)s_systemstatus_tx_buf, sizeof(s_systemstatus_tx_buf),
-        s_systemstatus
-    );
-    lfp_i2c_set_txbuf(s_systemstatus_tx_buf, size);
 }
 
 static inline void bms_power_status_req_cb(const BMSPowerStatusRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
@@ -227,8 +210,15 @@ static inline void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payl
         PWM_Generate(100-1, p_payload->heater4, HEATER4_CCR);
     }
 
-    // Send response (Empty body basically an ACK)
-    lfp_i2c_set_txbuf(s_heaterduty_response_tx_buf, s_heaterduty_response_size);
+    // Success acknowledges applying the requested PWM duties, not heater health.
+    const BMSSetHeaterDutyResponse response = { .responseCode = 0 };
+    uint16_t size = ASN1_LFP_SERIALIZE(
+        p_data->p_header->initiator, bmsSystemId,
+        BMSSetHeaterDutyResponse,
+        s_heaterduty_response_tx_buf, sizeof(s_heaterduty_response_tx_buf),
+        response
+    );
+    lfp_i2c_set_txbuf(s_heaterduty_response_tx_buf, size);
 }
 
 // bit silly to try to inline this. asm output at i2c.asm confirms a call with max optimizations (line 657): CALLA &s_ctx+0
@@ -244,10 +234,6 @@ static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16
         .body_length = body_length,
         .p_on_error_cb = on_error,
     };
-
-    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusRequest, bms_system_status_req_cb)) {
-        return;
-    }
 
     if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusRequest, bms_power_status_req_cb)) {
         return;
@@ -395,12 +381,6 @@ static void comm_init() {
     P4SEL1 &= ~(BIT0 | BIT1);
 
     ADS7138IRTER_Initialize(&s_swi2c_descriptor);
-
-    // We only every have to do this once since it's just an empty body used as an ACK.
-    s_heaterduty_response_size = ASN1_LFP_SERIALIZE(bmsSystemId, cdhSystemId, BMSSetHeaterDutyResponse, s_heaterduty_response_tx_buf, sizeof(s_heaterduty_response_tx_buf), s_heaterduty_response);
-    if (!s_heaterduty_response_size) {
-        __no_operation();
-    }
 
     lfp_stream_init(&s_lfp_ctx, s_rx_body_buffer, sizeof(s_rx_body_buffer), on_header, on_msg, on_error, &s_user_ctx);
 }
@@ -592,7 +572,7 @@ void bms_collectdata(void) {
     if (gie) {
         __enable_interrupt();
     }
-    
+
     if (power_due && !collect_power_status()) {
         s_power_pending = true;
     }

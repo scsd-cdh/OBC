@@ -30,13 +30,11 @@ static inline uint16_t bms_float_to_adc(const double val) {
 static uint8_t lfp_send_buf[MAX_FROM_LIST( // NOLINT(bugprone-branch-clone)
     ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusRequest),
     ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusRequest),
-    ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusRequest),
     ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyRequest)
 )];
 static uint8_t lfp_recv_buf[MAX_FROM_LIST( // NOLINT(bugprone-branch-clone)
     ASN1_LFP_RECV_BUF_SIZE(BMSPowerStatusResponse),
     ASN1_LFP_RECV_BUF_SIZE(BMSTemperatureStatusResponse),
-    ASN1_LFP_RECV_BUF_SIZE(BMSSystemStatusResponse),
     ASN1_LFP_RECV_BUF_SIZE(BMSSetHeaterDutyResponse)
 )];
 
