@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(uart_transport);
 #define UART_TRANSPORT_RX_BUFFER_SIZE 1024
 
 RING_BUF_DECLARE(uart_rx_ring, UART_TRANSPORT_RX_BUFFER_SIZE);
+K_MUTEX_DEFINE(uart_tx_lock);
 static struct k_sem uart_rx_available;
 static const struct device *uart_rx_dev;
 
@@ -110,9 +111,15 @@ int uart_transport_write(
         return -EINVAL;
     }
 
+    int ret = k_mutex_lock(&uart_tx_lock, K_FOREVER);
+    if (ret != 0) {
+        return ret;
+    }
+
     for (size_t i = 0; i < txlen; ++i) {
         uart_poll_out(tx_dev, txdata[i]);
     }
 
+    k_mutex_unlock(&uart_tx_lock);
     return (int)txlen;
 }

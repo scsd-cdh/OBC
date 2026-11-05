@@ -12,14 +12,6 @@ static bool loopback_on_header(const lfp_header_t *header, void *user_data)
 {
     ARG_UNUSED(user_data);
 
-    LOG_DBG(
-        "Loopback LFP header: length=%d initiator=%d target=%d endpoint=%d direction=%d",
-        header->encoded_length,
-        header->initiator,
-        header->target,
-        header->endpoint,
-        header->direction
-    );
     return true;
 }
 
@@ -76,26 +68,23 @@ int main(void)
     LOG_INF("Starting BMS I2C to UART2 loopback test");
 
     while (1) {
-        get_bms_power_status();
-
         ret = uart_transport_read(
             uart_rx_buffer,
             sizeof(uart_rx_buffer),
-            K_MSEC(250)
+            K_FOREVER
         );
-        while (ret > 0) {
-            lfp_stream_update_buf(&lfp_stream, uart_rx_buffer, ret);
+        if (ret < 0) {
+            LOG_WRN("Failed to read from UART2: %d", ret);
+            continue;
+        }
+        lfp_stream_update_buf(&lfp_stream, uart_rx_buffer, ret);
 
-            ret = uart_transport_read(
+        while ((ret = uart_transport_read(
                 uart_rx_buffer,
                 sizeof(uart_rx_buffer),
                 K_NO_WAIT
-            );
+            )) > 0) {
+            lfp_stream_update_buf(&lfp_stream, uart_rx_buffer, ret);
         }
-        if (ret < 0) {
-            LOG_WRN("Failed to read from UART2: %d", ret);
-        }
-
-        k_msleep(1000);
     }
 }

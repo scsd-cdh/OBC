@@ -14,6 +14,7 @@
 #include <asn1/comms.h>
 
 #include "cdh_comms.h"
+#include "threads.h"
 
 LOG_MODULE_REGISTER(cdh_pds);
 
@@ -42,11 +43,11 @@ static void on_error(int error_code, const struct asn1_lfp_decode_data_t* p_data
 }
 
 static void pds_logging_log_systemstatus(const PDSSystemStatusResponse * p_status) {
-    LOG_INF(
-        "PDS System Status:\n\tVersion: %d\n\tUptime: 0x%x",
-        p_status->version,
-        p_status->uptime
-    );
+    // LOG_INF(
+    //     "PDS System Status:\n\tVersion: %d\n\tUptime: 0x%x",
+    //     p_status->version,
+    //     p_status->uptime
+    // );
 
     char message[LOG_MESSAGE_SIZE];
     int length = snprintk(message, sizeof(message),
@@ -84,7 +85,7 @@ static void pds_logging_log_healthcheck(const PDSHealthCheckResponse * p_status)
         hash[i] = (uint8_t)p_status->hash.arr[i];
     }
 
-    LOG_HEXDUMP_INF(hash, sizeof(hash), "PDS Health Check Hash:");
+    // LOG_HEXDUMP_INF(hash, sizeof(hash), "PDS Health Check Hash:");
 
     char message[LOG_MESSAGE_SIZE];
     int length = snprintk(message, sizeof(message),
@@ -118,19 +119,19 @@ static void pds_logging_log_healthcheck(const PDSHealthCheckResponse * p_status)
 }
 
 static void pds_logging_log_converter_monitor(const PDSConverterMonitorResponse * p_status) {
-    LOG_INF(
-        "PDS Converter Monitor:\n"
-        "\tint5vVs: %.3f V\n"
-        "\treg5vVs: %.3f V\n"
-        "\tconverterA5vVs: %.3f V\n"
-        "\tconverterB5vVs: %.3f V\n"
-        "\ttemperatureSense: %.3f V\n",
-        bms_adc_to_float(p_status->int5vVs),
-        bms_adc_to_float(p_status->reg5vVs),
-        bms_adc_to_float(p_status->converterA5vVs),
-        bms_adc_to_float(p_status->converterB5vVs),
-        bms_adc_to_float(p_status->temperatureSense)
-    );
+    // LOG_INF(
+    //     "PDS Converter Monitor:\n"
+    //     "\tint5vVs: %.3f V\n"
+    //     "\treg5vVs: %.3f V\n"
+    //     "\tconverterA5vVs: %.3f V\n"
+    //     "\tconverterB5vVs: %.3f V\n"
+    //     "\ttemperatureSense: %.3f V\n",
+    //     bms_adc_to_float(p_status->int5vVs),
+    //     bms_adc_to_float(p_status->reg5vVs),
+    //     bms_adc_to_float(p_status->converterA5vVs),
+    //     bms_adc_to_float(p_status->converterB5vVs),
+    //     bms_adc_to_float(p_status->temperatureSense)
+    // );
 
     char message[LOG_MESSAGE_SIZE];
     int length = snprintk(message, sizeof(message),
@@ -195,16 +196,26 @@ void get_pds_system_status(void) {
         return;
     }
 
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
+    bool handle_message = false;
+    lfp_header_t header;
+    asn1_lfp_decode_data_t data = {
+        .p_on_error_cb = on_error,
+        .p_header = &header,
+        .p_body = lfp_recv_buf
+    };
+
+    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
+    if (mtxret != 0) {
+        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
+        return;
+    }
 
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send system status request: %d", ret);
-        return;
+        goto unlock;
     }
 
-    lfp_header_t header;
-    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &header, .p_body = lfp_recv_buf};
     data.body_length = lfp_i2c_single_receive(
         &dev_pds,
         &header,
@@ -212,11 +223,17 @@ void get_pds_system_status(void) {
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-        return;
+            goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
-                              pds_logging_systemstatus_callback);
+        handle_message = true;
+unlock:
+        k_mutex_unlock(&i2c_bus_lock);
+
+        if (handle_message) {
+            (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
+                                      pds_logging_systemstatus_callback);
+        }
 }
 
 void get_pds_health_check(void) {
@@ -229,16 +246,26 @@ void get_pds_health_check(void) {
         return;
     }
 
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
+    bool handle_message = false;
+    lfp_header_t header;
+    asn1_lfp_decode_data_t data = {
+        .p_on_error_cb = on_error,
+        .p_header = &header,
+        .p_body = lfp_recv_buf
+    };
+
+    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
+    if (mtxret != 0) {
+        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
+        return;
+    }
 
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send health check request: %d", ret);
-        return;
+        goto unlock;
     }
 
-    lfp_header_t header;
-    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &header, .p_body = lfp_recv_buf};
     data.body_length = lfp_i2c_single_receive(
         &dev_pds,
         &header,
@@ -246,11 +273,17 @@ void get_pds_health_check(void) {
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-        return;
+            goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSHealthCheckResponse,
-                              pds_logging_healthcheck_callback);
+        handle_message = true;
+unlock:
+        k_mutex_unlock(&i2c_bus_lock);
+
+        if (handle_message) {
+            (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSHealthCheckResponse,
+                                      pds_logging_healthcheck_callback);
+        }
 }
 
 void get_pds_converter(void) {
@@ -263,16 +296,26 @@ void get_pds_converter(void) {
         return;
     }
 
-    LOG_HEXDUMP_INF(lfp_send_buf, size, "Sending:");
+    bool handle_message = false;
+    lfp_header_t header;
+    asn1_lfp_decode_data_t data = {
+        .p_on_error_cb = on_error,
+        .p_header = &header,
+        .p_body = lfp_recv_buf
+    };
+
+    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
+    if (mtxret != 0) {
+        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
+        return;
+    }
 
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send converter monitor request: %d", ret);
-        return;
+        goto unlock;
     }
 
-    lfp_header_t header;
-    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &header, .p_body = lfp_recv_buf};
     data.body_length = lfp_i2c_single_receive(
         &dev_pds,
         &header,
@@ -280,9 +323,34 @@ void get_pds_converter(void) {
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-        return;
+            goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
-                              pds_logging_converter_monitor_callback);
+        handle_message = true;
+unlock:
+        k_mutex_unlock(&i2c_bus_lock);
+
+        if (handle_message) {
+            (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
+                                      pds_logging_converter_monitor_callback);
+        }
 }
+
+static void pds_thread(const void *p_arg) {
+    ARG_UNUSED(p_arg);
+
+    while (1) {
+        LOG_INF("PDS thread running");
+        get_pds_system_status();
+        get_pds_health_check();
+        get_pds_converter();
+        // long timeouts make it easier to debug. Logging takes a long time, smaller timeouts seem to cause dropped messages.
+        // We will optimize later
+        k_msleep(5000);
+    }
+}
+
+// stagger for more clarity
+
+K_THREAD_DEFINE(p_pds_thread, 2024, pds_thread, NULL, NULL, NULL,
+        THREAD_PRIORITY_PDS, 0, 2500);

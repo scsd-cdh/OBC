@@ -15,6 +15,7 @@
 #include <asn1/comms.h>
 
 #include "cdh_comms.h"
+#include "threads.h"
 
 LOG_MODULE_REGISTER(cdh_bms);
 
@@ -44,21 +45,21 @@ static inline double bms_adc_to_float(const uint16_t val) {
 }
 static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const int pack_id) {
 
-    LOG_INF(
-        "Battery %d:\n\tVoltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
-        "\tCell A:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d\n"
-        "\tCell B:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d",
-        pack_id,
-        bms_adc_to_float(p_pack->voltage), bms_adc_to_float(p_pack->currentDraw),
-        bms_adc_to_float(p_pack->currentCharge),
-        p_pack->overcurrent,
-
-        bms_adc_to_float(p_pack->cellA.voltage),
-        p_pack->cellA.overvoltage, p_pack->cellA.undervoltage,
-
-        bms_adc_to_float(p_pack->cellB.voltage),
-        p_pack->cellB.overvoltage, p_pack->cellB.undervoltage
-    );
+    // LOG_INF(
+    //     "Battery %d:\n\tVoltage: %.3f | Current Draw: %.3f | Current Charge: %.3f | Overcurrent: %d\n"
+    //     "\tCell A:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d\n"
+    //     "\tCell B:\n\t\tVoltage: %.3f\n\t\tOV/UV: %d/%d",
+    //     pack_id,
+    //     bms_adc_to_float(p_pack->voltage), bms_adc_to_float(p_pack->currentDraw),
+    //     bms_adc_to_float(p_pack->currentCharge),
+    //     p_pack->overcurrent,
+    //
+    //     bms_adc_to_float(p_pack->cellA.voltage),
+    //     p_pack->cellA.overvoltage, p_pack->cellA.undervoltage,
+    //
+    //     bms_adc_to_float(p_pack->cellB.voltage),
+    //     p_pack->cellB.overvoltage, p_pack->cellB.undervoltage
+    // );
 
     char message[LOG_MESSAGE_SIZE];
     int length = snprintk(message, sizeof(message),
@@ -100,11 +101,11 @@ static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const i
 }
 
 static void bms_logging_log_systemstatus(const BMSSystemStatusResponse * p_status) {
-    LOG_INF(
-        "BMS System Status:\n\tVersion: %d\n\tUptime: 0x%x\n\t",
-        p_status->version,
-        p_status->uptime
-    );
+    // LOG_INF(
+    //     "BMS System Status:\n\tVersion: %d\n\tUptime: 0x%x\n\t",
+    //     p_status->version,
+    //     p_status->uptime
+    // );
 
     char message[LOG_MESSAGE_SIZE];
     int length = snprintk(message, sizeof(message),
@@ -155,10 +156,16 @@ void get_bms_system_status(void)
         return;
     }
 
+    bool handle_message = false;
+    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
+    if (mtxret != 0) {
+        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
+        return;
+    }
     const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send system status request: %d", ret);
-        return;
+        goto unlock;
     }
 
     lfp_header_t recv_header;
@@ -170,11 +177,17 @@ void get_bms_system_status(void)
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read BMS response");
-        return;
+        goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
+    handle_message = true;
+unlock:
+    k_mutex_unlock(&i2c_bus_lock);
+
+    if (handle_message) {
+        (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
                               bms_logging_systemstatus_callback);
+    }
 }
 
 void get_bms_power_status(void) {
@@ -185,10 +198,16 @@ void get_bms_power_status(void) {
         return;
     }
 
+    bool handle_message = false;
+    int mtxret = k_mutex_lock(&i2c_bus_lock, K_FOREVER);
+    if (mtxret != 0) {
+        LOG_WRN("Failed to lock I2C bus mutex: %d", mtxret);
+        return;
+    }
     const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send power status request: %d", ret);
-        return;
+        goto unlock;
     }
 
     lfp_header_t header;
@@ -200,9 +219,35 @@ void get_bms_power_status(void) {
         K_MSEC(100));
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read BMS response");
-        return;
+        goto unlock;
     }
+    handle_message = true;
 
-    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
+unlock:
+    k_mutex_unlock(&i2c_bus_lock);
+
+    if (handle_message) {
+        (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
                               bms_logging_battery_callback);
+    }
 }
+
+
+static void bms_thread(const void *p_arg)
+{
+    ARG_UNUSED(p_arg);
+
+
+    while (1)
+    {
+        LOG_INF("BMS thread running");
+        get_bms_power_status();
+        get_bms_system_status();
+        // long timeouts make it easier to debug. Logging takes a long time, smaller timeouts seem to cause dropped messages.
+        // We will optimize later
+        k_msleep(5000);
+    }
+}
+
+K_THREAD_DEFINE(p_bms_thread, 2024, bms_thread, NULL, NULL, NULL,
+        THREAD_PRIORITY_BMS, 0, 0);

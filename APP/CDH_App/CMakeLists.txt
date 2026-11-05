@@ -20,6 +20,7 @@ target_sources(app
         src/cdh_pds.c
         src/lfp_i2c_single.c
         src/main.c
+        src/threads.c
         ../../MIDDLEWARE/UART/uart_transport.c
 )
 

@@ -149,20 +149,4 @@ void cdh_comms_lfp_uart_lp(
     }
 }
 
-int cdh_comms_encode_lfp_msg(
-    const asn1_lfp_decode_data_t *data,
-    uint8_t *send_buf,
-    size_t send_buf_size
-)
-{
-    return lfp_encode(
-        data->p_header->initiator,
-        data->p_header->target,
-        data->p_header->endpoint,
-        data->p_header->direction,
-        data->p_body,
-        data->body_length,
-        send_buf,
-        send_buf_size
-    );
-}
+

@@ -43,9 +43,3 @@ void cdh_comms_lfp_uart_lp(
     uint8_t *rxdata,
     size_t rxlen
 );
-
-int cdh_comms_encode_lfp_msg(
-    const asn1_lfp_decode_data_t *data,
-    uint8_t *send_buf,
-    size_t send_buf_size
-);
