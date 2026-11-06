@@ -93,7 +93,7 @@ static inline void bms_systemstatus_callback(BMSSystemStatusResponse * p_payload
     bms_systemstatus_handler(p_payload);
 }
 
-void get_bms_system_status(void)
+void request_bms_system_status(void)
 {
     const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusRequest, lfp_send_buf, sizeof(lfp_send_buf), {});
     if (!size) {
@@ -139,7 +139,7 @@ void get_bms_system_status(void)
     uart_transport_write(transmitter, encode_buf, fwd_ret);
 }
 
-void get_bms_power_status(void) {
+void request_bms_power_status(void) {
     const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSPowerStatusRequest, lfp_send_buf, sizeof(lfp_send_buf), {});
     if (!size) {
         LOG_WRN("Failed to serialize power status request: a:%d l:%d",
@@ -189,8 +189,8 @@ static void bms_thread(const void *p_arg)
     while (1)
     {
         LOG_DBG("BMS thread getting power status");
-        get_bms_power_status();
-        get_bms_system_status();
+        request_bms_power_status();
+        request_bms_system_status();
         k_msleep(2000);
     }
 }

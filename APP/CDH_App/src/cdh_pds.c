@@ -100,7 +100,7 @@ static inline void pds_converter_monitor_callback(PDSConverterMonitorResponse * 
     pds_converter_monitor_handler(p_payload);
 }
 
-void get_pds_system_status(void) {
+void request_pds_system_status(void) {
     const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, pdsSystemId,
                                              PDSSystemStatusRequest, lfp_send_buf,
                                              sizeof(lfp_send_buf), {});
@@ -151,7 +151,7 @@ void get_pds_system_status(void) {
     uart_transport_write(transmitter, encode_buf, fwd_ret);
 }
 
-void get_pds_health_check(void) {
+void request_pds_health_check(void) {
     const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, pdsSystemId,
                                              PDSHealthCheckRequest, lfp_send_buf,
                                              sizeof(lfp_send_buf), {});
@@ -201,7 +201,7 @@ void get_pds_health_check(void) {
     uart_transport_write(transmitter, encode_buf, fwd_ret);
 }
 
-void get_pds_converter(void) {
+void request_pds_converter_monitor(void) {
     const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, pdsSystemId,
                                              PDSConverterMonitorRequest, lfp_send_buf,
                                              sizeof(lfp_send_buf), {});
@@ -256,16 +256,16 @@ static void pds_thread(const void *p_arg) {
 
     while (1) {
         LOG_DBG("PDS thread running, getting pds system status");
-        get_pds_system_status();
-        get_pds_health_check();
-        get_pds_converter();
+        request_pds_system_status();
+        request_pds_health_check();
+        request_pds_converter_monitor();
         // long timeouts make it easier to debug. Logging takes a long time, smaller timeouts seem to cause dropped messages.
         // We will optimize later
-        k_msleep(1000);
+        k_msleep(2000);
     }
 }
 
 // stagger for more clarity
 
 K_THREAD_DEFINE(p_pds_thread, 2024, pds_thread, NULL, NULL, NULL,
-        THREAD_PRIORITY_PDS, 0, 0);
+        THREAD_PRIORITY_PDS, 0, 1000);
