@@ -52,7 +52,8 @@
 
 &uart2 {
 	status = "okay";
-	current-speed = <500000>;
+	// Setting this to 500000 was causing the UART to drop bytes, so it was changed to 115200 for now. This may need to be revisited in the future.
+	current-speed = <115200>;
 
 	pinctrl-0 = <&transmitter_default>;
 	pinctrl-names = "default";
