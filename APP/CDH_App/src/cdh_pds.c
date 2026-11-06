@@ -16,6 +16,8 @@
 #include "cdh_comms.h"
 #include "threads.h"
 
+#define I2C_TIMEOUT_MS K_FOREVER
+
 LOG_MODULE_REGISTER(cdh_pds);
 
 static const struct i2c_dt_spec dev_pds = I2C_DT_SPEC_GET(DT_NODELABEL(pds_i2c));
@@ -126,7 +128,7 @@ void get_pds_system_status(void) {
         &dev_pds,
         &header,
         lfp_recv_buf, sizeof(lfp_recv_buf),
-        K_MSEC(100));
+        I2C_TIMEOUT_MS);
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
             return;
@@ -176,7 +178,7 @@ void get_pds_health_check(void) {
         &dev_pds,
         &header,
         lfp_recv_buf, sizeof(lfp_recv_buf),
-        K_MSEC(100));
+        I2C_TIMEOUT_MS);
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
         return;
@@ -226,7 +228,7 @@ void get_pds_converter(void) {
         &dev_pds,
         &header,
         lfp_recv_buf, sizeof(lfp_recv_buf),
-        K_MSEC(100));
+        I2C_TIMEOUT_MS);
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
         return;
@@ -259,11 +261,11 @@ static void pds_thread(const void *p_arg) {
         get_pds_converter();
         // long timeouts make it easier to debug. Logging takes a long time, smaller timeouts seem to cause dropped messages.
         // We will optimize later
-        k_msleep(2000);
+        k_msleep(1000);
     }
 }
 
 // stagger for more clarity
 
 K_THREAD_DEFINE(p_pds_thread, 2024, pds_thread, NULL, NULL, NULL,
-        THREAD_PRIORITY_PDS, 0, 1000);
+        THREAD_PRIORITY_PDS, 0, 0);

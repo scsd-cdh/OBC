@@ -17,6 +17,8 @@
 #include "cdh_comms.h"
 #include "threads.h"
 
+#define I2C_TIMEOUT_MS K_FOREVER
+
 LOG_MODULE_REGISTER(cdh_bms);
 
 static const struct i2c_dt_spec dev_bms = I2C_DT_SPEC_GET(DT_NODELABEL(bms_i2c));
@@ -112,7 +114,7 @@ void get_bms_system_status(void)
         &dev_bms,
         &recv_header,
         lfp_recv_buf, sizeof(lfp_recv_buf),
-        K_MSEC(100));
+        I2C_TIMEOUT_MS);
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read BMS response");
         return;
@@ -157,7 +159,7 @@ void get_bms_power_status(void) {
         &dev_bms,
         &header,
         lfp_recv_buf, sizeof(lfp_recv_buf),
-        K_MSEC(100));
+        I2C_TIMEOUT_MS);
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read BMS response");
         return;
