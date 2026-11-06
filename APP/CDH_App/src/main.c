@@ -245,7 +245,7 @@ static void loopback_on_error(lfp_code_t reason, void *user_data)
 
 int main(void)
 {
-    static uint8_t uart_rx_buffer[256];
+    uint8_t uart_rx_byte;
     static uint8_t lfp_body_buffer[256];
     lfp_stream_ctx_t lfp_stream;
     user_ctx_t usr_ctx;
@@ -271,22 +271,18 @@ int main(void)
 
     while (1) {
         ret = uart_transport_read(
-            uart_rx_buffer,
-            sizeof(uart_rx_buffer),
+            &uart_rx_byte,
+            sizeof(uart_rx_byte),
             K_FOREVER
         );
         if (ret < 0) {
             LOG_WRN("Failed to read from UART2: %d", ret);
             continue;
         }
-        lfp_stream_update_buf(&lfp_stream, uart_rx_buffer, ret);
-
-        while ((ret = uart_transport_read(
-                uart_rx_buffer,
-                sizeof(uart_rx_buffer),
-                K_NO_WAIT
-            )) > 0) {
-            lfp_stream_update_buf(&lfp_stream, uart_rx_buffer, ret);
+        if (ret == 0) {
+            continue;
         }
+
+        lfp_stream_update(&lfp_stream, uart_rx_byte);
     }
 }
