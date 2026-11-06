@@ -182,5 +182,5 @@ static void bms_heater_thread(const void *p1, const void *p2, const void *p3) {
 // K_THREAD_DEFINE(p_bms_heater_thread, 1024, bms_heater_thread, NULL, NULL, NULL,
 //         THREAD_PRIORITY_BMS_HEATER, 0, 0);
 // Stagger the threads so that they don't fight over the device
-K_THREAD_DEFINE(p_bms_logging_thread, 2024, bms_logging_thread, NULL, NULL, NULL,
+K_THREAD_DEFINE(p_bms_thread, 2024, bms_logging_thread, NULL, NULL, NULL,
         THREAD_PRIORITY_BMS_LOGGING, 0, 0);

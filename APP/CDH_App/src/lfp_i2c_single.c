@@ -6,6 +6,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
+#include "threads.h"
+
 LOG_MODULE_REGISTER(lfp_i2c_single);
 
 #define I2C_BUF_SIZE 32
@@ -100,6 +102,7 @@ lfp_size_or_fail_t lfp_i2c_single_receive(
 
         // Couldn't do that
         if (read_ret != 0) {
+            LOG_WRN("Failed to read %d bytes from I2C device %s: %d", next_chunk_size, p_device->bus->name, read_ret);
             continue;
         }
 
