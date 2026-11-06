@@ -2,17 +2,23 @@
 
 #include <errno.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/ring_buffer.h>
 
-LOG_MODULE_REGISTER(uart_transport);
+LOG_MODULE_REGISTER(uart_transport, LOG_LEVEL_DBG);
 
 #define UART_TRANSPORT_RX_BUFFER_SIZE 1024
+#define UART_TRANSPORT_DEBUG_HISTORY_SIZE 128
 
 RING_BUF_DECLARE(uart_rx_ring, UART_TRANSPORT_RX_BUFFER_SIZE);
 K_MUTEX_DEFINE(uart_tx_lock);
 static struct k_sem uart_rx_available;
 static const struct device *uart_rx_dev;
+static uint8_t uart_debug_history[UART_TRANSPORT_DEBUG_HISTORY_SIZE];
+static size_t uart_debug_history_next;
+static size_t uart_debug_history_count;
+static uint32_t uart_debug_dropped;
 
 static void uart_transport_irq_handler(const struct device *dev, void *user_data)
 {
@@ -29,6 +35,16 @@ static void uart_transport_irq_handler(const struct device *dev, void *user_data
             break;
         }
 
+        // FIXME: This is a (potentially) temporary debug measure to help see what is being received over UART. It may be removed in the future or wrapped in a debug flag.
+        for (int i = 0; i < received; ++i) {
+            uart_debug_history[uart_debug_history_next] = fifo_buffer[i];
+            uart_debug_history_next =
+                (uart_debug_history_next + 1) % UART_TRANSPORT_DEBUG_HISTORY_SIZE;
+            if (uart_debug_history_count < UART_TRANSPORT_DEBUG_HISTORY_SIZE) {
+                uart_debug_history_count++;
+            }
+        }
+
         uint32_t written = ring_buf_put(&uart_rx_ring, fifo_buffer, received);
         // Increment the semaphore for each byte written to the ring buffer.
         for (uint32_t i = 0; i < written; ++i) {
@@ -36,9 +52,36 @@ static void uart_transport_irq_handler(const struct device *dev, void *user_data
         }
 
         if (written < (uint32_t)received) {
-            LOG_WRN("UART RX buffer full; dropped %d bytes", received - written);
+            uart_debug_dropped += received - written;
         }
     }
+}
+
+size_t uart_transport_debug_snapshot(uint8_t *buffer, size_t buffer_size)
+{
+    if (buffer == NULL || buffer_size == 0) {
+        return 0;
+    }
+
+    unsigned int key = irq_lock();
+    const size_t count = MIN(uart_debug_history_count, buffer_size);
+    const size_t start =
+        (uart_debug_history_next + UART_TRANSPORT_DEBUG_HISTORY_SIZE
+         - count) % UART_TRANSPORT_DEBUG_HISTORY_SIZE;
+
+    for (size_t i = 0; i < count; ++i) {
+        buffer[i] = uart_debug_history[(start + i) % UART_TRANSPORT_DEBUG_HISTORY_SIZE];
+    }
+    irq_unlock(key);
+    return count;
+}
+
+uint32_t uart_transport_debug_dropped(void)
+{
+    unsigned int key = irq_lock();
+    const uint32_t dropped = uart_debug_dropped;
+    irq_unlock(key);
+    return dropped;
 }
 
 int uart_transport_open(const struct device *rx_dev)

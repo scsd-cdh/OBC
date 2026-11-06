@@ -17,6 +17,9 @@ LOG_MODULE_REGISTER(cdh, LOG_LEVEL_DBG);
 typedef struct
 {
     lfp_header_t *p_header;
+    uint8_t rx_history[32];
+    uint8_t rx_history_next;
+    uint8_t rx_history_count;
 } user_ctx_t;
 
 static inline double cdh_adc_to_float(const uint16_t value)
@@ -209,6 +212,12 @@ static bool loopback_on_header(const lfp_header_t *header, void *user_data)
     ARG_UNUSED(user_data);
     user_ctx_t* ctx = user_data;
     ctx->p_header = (lfp_header_t*)header;
+    LOG_DBG("Received header: length=%d initiator=%d target=%d endpoint=%d",
+        header->encoded_length,
+        header->initiator,
+        header->target,
+        header->endpoint
+    );
     return true;
 }
 
@@ -239,8 +248,31 @@ static void loopback_on_message(
 
 static void loopback_on_error(lfp_code_t reason, void *user_data)
 {
-    ARG_UNUSED(user_data);
+    user_ctx_t *ctx = user_data;
     LOG_WRN("Loopback LFP stream error detected: %d", reason);
+
+    // Print the last 32 bytes received over UART
+    uint8_t history[sizeof(ctx->rx_history)];
+    for (size_t i = 0; i < ctx->rx_history_count; ++i) {
+        const size_t index = (ctx->rx_history_next + sizeof(ctx->rx_history)
+                              - ctx->rx_history_count + i)
+                             % sizeof(ctx->rx_history);
+        history[i] = ctx->rx_history[index];
+    }
+    LOG_HEXDUMP_WRN(history, ctx->rx_history_count,
+                    "UART bytes preceding and including error:");
+
+    // Print the last 128 bytes captured by the UART RX ISR for comparison
+    uint8_t raw_history[128];
+    const size_t raw_count = uart_transport_debug_snapshot(
+        raw_history, sizeof(raw_history));
+    LOG_HEXDUMP_WRN(raw_history, raw_count,
+                    "Raw UART bytes captured by RX ISR:");
+
+    const uint32_t dropped = uart_transport_debug_dropped();
+    if (dropped != 0) {
+        LOG_WRN("UART RX ring has dropped %u bytes", dropped);
+    }
 }
 
 int main(void)
@@ -248,7 +280,7 @@ int main(void)
     uint8_t uart_rx_byte;
     static uint8_t lfp_body_buffer[256];
     lfp_stream_ctx_t lfp_stream;
-    user_ctx_t usr_ctx;
+    user_ctx_t usr_ctx = {0};
 
 
     lfp_stream_init(
@@ -281,6 +313,13 @@ int main(void)
         }
         if (ret == 0) {
             continue;
+        }
+
+        usr_ctx.rx_history[usr_ctx.rx_history_next] = uart_rx_byte;
+        usr_ctx.rx_history_next =
+            (usr_ctx.rx_history_next + 1) % sizeof(usr_ctx.rx_history);
+        if (usr_ctx.rx_history_count < sizeof(usr_ctx.rx_history)) {
+            usr_ctx.rx_history_count++;
         }
 
         lfp_stream_update(&lfp_stream, uart_rx_byte);

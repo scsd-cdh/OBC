@@ -253,7 +253,7 @@ static void pds_thread(const void *p_arg) {
     ARG_UNUSED(p_arg);
 
     while (1) {
-        LOG_INF("PDS thread running");
+        LOG_DBG("PDS thread running, getting pds system status");
         get_pds_system_status();
         get_pds_health_check();
         get_pds_converter();

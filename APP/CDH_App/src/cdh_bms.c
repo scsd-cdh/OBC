@@ -186,11 +186,9 @@ static void bms_thread(const void *p_arg)
 
     while (1)
     {
-        LOG_INF("BMS thread running");
+        LOG_DBG("BMS thread getting power status");
         get_bms_power_status();
         get_bms_system_status();
-        // long timeouts make it easier to debug. Logging takes a long time, smaller timeouts seem to cause dropped messages.
-        // We will optimize later
         k_msleep(2000);
     }
 }
