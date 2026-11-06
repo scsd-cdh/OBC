@@ -16,7 +16,7 @@
 #include "cdh_comms.h"
 #include "threads.h"
 
-#define I2C_TIMEOUT_MS K_FOREVER
+#define I2C_TIMEOUT_MS K_MSEC(1000)
 
 LOG_MODULE_REGISTER(cdh_pds);
 
