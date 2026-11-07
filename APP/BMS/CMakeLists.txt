@@ -106,6 +106,9 @@ set_source_files_properties(${SOURCES} PROPERTIES
 
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".elf")
 
+# NTC Beta conversion uses logf().
+target_link_libraries(${PROJECT_NAME} PRIVATE m)
+
 # TI support-files include is always present; your INCLUDE_DIRS are appended.
 target_include_directories(${PROJECT_NAME} PRIVATE
         /opt/ti/support-files/include
