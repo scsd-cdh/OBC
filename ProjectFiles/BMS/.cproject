@@ -64,6 +64,7 @@
                                     <listOptionValue value="${PROJECT_ROOT}"/>
                                     <listOptionValue value="../../../DRIVERS/MSP430/SWI2C"/>
                                     <listOptionValue value="../../../MIDDLEWARE/ADS7138"/>
+                                    <listOptionValue value="${PROJECT_LOC}/../../MIDDLEWARE/HEATER_CONTROLLER"/>
                                     <listOptionValue value="${CG_TOOL_ROOT}/include"/>
                                     <listOptionValue value="../../../MIDDLEWARE/shared_types"/>
                                     <listOptionValue value="${PROJECT_ROOT}/../../MIDDLEWARE/MSP_UTILS"/>
@@ -178,6 +179,7 @@
                                     <listOptionValue value="../../space_stuff/msp430fr69xx_1.c/peripherals"/>
                                     <listOptionValue value="../APP/BMS"/>
                                     <listOptionValue value="../MIDDLEWARE/ADS7138"/>
+                                    <listOptionValue value="${PROJECT_LOC}/../../MIDDLEWARE/HEATER_CONTROLLER"/>
                                     <listOptionValue value="${CG_TOOL_ROOT}/include"/>
                                 </option>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.ADVICE__POWER.706444910" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.ADVICE__POWER" value="all" valueType="string"/>

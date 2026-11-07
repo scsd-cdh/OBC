@@ -3,6 +3,7 @@
 #ifndef PWM_B_H_
 #define PWM_B_H_
 
+#include <stdbool.h>
 #include "timer_b.h"
 
 /******************************************************************************
@@ -39,14 +40,16 @@ extern void PWM_PinSelect(uint8_t selectedPort, uint16_t selectedPin);
 /******************************************************************************
  * @brief Generates a PWM waveform in up-mode
  *
- * This function generates a PWM Waveform with the specified timer period (in micro-seconds) and duty cycle (in microseconds)
+ * Generates a PWM waveform; period and duty are timer counts.
+ * Restarts shared Timer_B0, affecting timing on its other channels.
+ * Use PWM_SetOutput() for steady ON/OFF control.
  * Example: To generate a 75% waveform, a valid example is Timer_Period = 524 and duty cycle = 393. (As in 393 is 75% of 524)
  *
  * @param Timer_Period
- *        Period of waveform in microseconds
+ *        Period register value in timer counts
  *
  * @param Duty_Cycle
- *        Duty cycle time in microseconds
+ *        Duty compare value in timer counts
  *
  * @param CompareRegister
  *        This parameter expects "CompareRegister_x" from the Compare_Register enum where 0 <= x <= 6.
@@ -83,6 +86,10 @@ extern void PWM_PinSelect(uint8_t selectedPort, uint16_t selectedPin);
  * @return None.
  ******************************************************************************/
 extern void PWM_Generate(uint16_t Timer_Period, uint16_t Duty_Cycle, Compare_Register CompareRegister);
+
+// Hold one output LOW (false) or HIGH (true) for steady OFF/ON control.
+// Does not start or reset the shared timer.
+extern void PWM_SetOutput(bool high, Compare_Register CompareRegister);
 
 
 #endif /* PWM_B_H_ */

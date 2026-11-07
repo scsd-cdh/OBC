@@ -162,3 +162,47 @@ readings are not published; telemetry does not yet include validity or age field
 The shared `Read_ADC()` helper returns `ADC_READ_INVALID` (`UINT16_MAX`) on timeout.
 Checked ADS7138 operations return `ADS7138_STATUS_TIMEOUT`; software I2C returns
 `SWI2C_ERROR_TIMEOUT`. A NACK remains a transfer failure.
+
+## Automatic heater control
+
+`MIDDLEWARE/HEATER_CONTROLLER` provides a reusable controller for two ADC readings
+and one heater output. BMS initializes four instances, commanding all outputs LOW
+at startup, and updates them only after a complete successful eight-channel
+temperature scan:
+
+| Heater | Sensor numbers | ADS channels | FR5989/FR6989 output |
+| --- | --- | --- | --- |
+| 1 | 1, 2 | 0, 1 | P2.4 / TB0.3 |
+| 2 | 3, 4 | 2, 3 | P2.5 / TB0.4 |
+| 3 | 5, 6 | 4, 5 | P2.6 / TB0.5 |
+| 4 | 7, 8 | 6, 7 | P2.7 / TB0.6 |
+
+Configure these shared defines in
+[`heater_controller.h`](../../MIDDLEWARE/HEATER_CONTROLLER/heater_controller.h):
+
+- `LOW_THRES_TEMP` and `HIGH_THRES_TEMP`: signed integer milli degrees Celsius.
+- `CALIB_GAIN`: linear slope in milli degrees Celsius per ADC count; it may be
+  positive or negative and fractional.
+- `CALIB_OFFSET`: linear offset in milli degrees Celsius.
+
+Each ADC reading is converted using `CALIB_GAIN * adc + CALIB_OFFSET`, truncated
+to integer milliC, then the two temperatures are averaged. Below LOW turns the
+heater ON; above HIGH turns it OFF. Between thresholds, including equality, it
+retains its previous state. The output uses Timer_B static output mode for true
+0% (continuously LOW) or 100% (continuously HIGH).
+
+The defaults are deliberately unconfigured: thresholds, gain, and offset are
+zero. Controllers remain OFF until a nonzero gain and LOW < HIGH are configured.
+No physical calibration or operating temperatures are supplied by these defaults.
+Invalid ADC counts or out-of-range conversions are ignored. A failed scan leaves
+all controller states unchanged, including a heater which was already ON.
+
+The manual CDH heater-duty buffer, callback, and dispatch are temporarily disabled
+with `#if 0` in `BMS.c`. Manual duty requests have no response while disabled.
+The ASN.1 message definitions are retained for future re-enabling.
+
+Run host tests from the repository root:
+
+```bash
+python3 -m unittest discover -s MIDDLEWARE/HEATER_CONTROLLER/tests -v
+```
