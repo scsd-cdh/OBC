@@ -1,0 +1,90 @@
+Wed Oct 14 23:21:29 2026:	* -----/|-------------------------------------------------------------------- *
+Wed Oct 14 23:21:29 2026:	*     / |__                                                                   *
+Wed Oct 14 23:21:29 2026:	*    /_   /   MSP Flasher v1.3.20                                             *
+Wed Oct 14 23:21:29 2026:	*      | /                                                                    *
+Wed Oct 14 23:21:29 2026:	* -----|/-------------------------------------------------------------------- *
+Wed Oct 14 23:21:29 2026:	*
+Wed Oct 14 23:21:29 2026:	* Evaluating triggers...done
+Wed Oct 14 23:21:29 2026:	* Checking for available FET debuggers: 
+Wed Oct 14 23:21:29 2026:	* Found USB FET @ ttyACM0 <- Selected
+Wed Oct 14 23:21:29 2026:	* Initializing interface @ ttyACM0...done
+Wed Oct 14 23:21:30 2026:	* Checking firmware compatibility: 
+Wed Oct 14 23:21:30 2026:	* FET firmware is up to date.
+Wed Oct 14 23:21:30 2026:	* Reading FW version...done
+Wed Oct 14 23:21:30 2026:	* Setting VCC to 3000 mV...done
+Wed Oct 14 23:21:35 2026:	* Accessing device...done
+Wed Oct 14 23:21:36 2026:	* Reading device information...done
+Wed Oct 14 23:21:36 2026:	* Loading file into device...done
+Wed Oct 14 23:21:37 2026:	* Verifying memory (build/I2C_Protection_Test.hex)...done
+Wed Oct 14 23:21:38 2026:	* 
+Wed Oct 14 23:21:38 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:21:38 2026:	* Arguments   : -n MSP430FR5989 -w build/I2C_Protection_Test.hex -v -z [VCC,RESET] 
+Wed Oct 14 23:21:38 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:21:38 2026:	* Driver      : loaded
+Wed Oct 14 23:21:38 2026:	* Dll Version : 31400000
+Wed Oct 14 23:21:38 2026:	* FwVersion   : 31200000
+Wed Oct 14 23:21:38 2026:	* Interface   : TIUSB
+Wed Oct 14 23:21:38 2026:	* HwVersion   : U 3.0
+Wed Oct 14 23:21:38 2026:	* JTAG Mode   : AUTO
+Wed Oct 14 23:21:38 2026:	* Device      : MSP430FR5989
+Wed Oct 14 23:21:38 2026:	* EEM         : Level 5, ClockCntrl 2
+Wed Oct 14 23:21:38 2026:	* Erase Mode  : ERASE_ALL
+Wed Oct 14 23:21:38 2026:	* Prog.File   : build/I2C_Protection_Test.hex
+Wed Oct 14 23:21:38 2026:	* Verified    : TRUE
+Wed Oct 14 23:21:38 2026:	* BSL Unlock  : FALSE
+Wed Oct 14 23:21:38 2026:	* InfoA Access: FALSE
+Wed Oct 14 23:21:38 2026:	* VCC ON      : 3000 mV
+Wed Oct 14 23:21:38 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:21:38 2026:	* Resetting device (RST/NMI)...done
+Wed Oct 14 23:21:38 2026:	* Starting target code execution...done
+Wed Oct 14 23:21:39 2026:	* Disconnecting from device...done
+Wed Oct 14 23:21:39 2026:	* 
+Wed Oct 14 23:21:39 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:21:39 2026:	* Driver      : closed (No error)
+Wed Oct 14 23:21:39 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:21:39 2026:	*/
+Wed Oct 14 23:34:46 2026:	* -----/|-------------------------------------------------------------------- *
+Wed Oct 14 23:34:46 2026:	*     / |__                                                                   *
+Wed Oct 14 23:34:46 2026:	*    /_   /   MSP Flasher v1.3.20                                             *
+Wed Oct 14 23:34:46 2026:	*      | /                                                                    *
+Wed Oct 14 23:34:46 2026:	* -----|/-------------------------------------------------------------------- *
+Wed Oct 14 23:34:46 2026:	*
+Wed Oct 14 23:34:46 2026:	* Evaluating triggers...done
+Wed Oct 14 23:34:46 2026:	* Checking for available FET debuggers: 
+Wed Oct 14 23:34:46 2026:	* Found USB FET @ ttyACM0 <- Selected
+Wed Oct 14 23:34:46 2026:	* Initializing interface @ ttyACM0...done
+Wed Oct 14 23:34:47 2026:	* Checking firmware compatibility: 
+Wed Oct 14 23:34:47 2026:	* FET firmware is up to date.
+Wed Oct 14 23:34:47 2026:	* Reading FW version...done
+Wed Oct 14 23:34:47 2026:	* Setting VCC to 3000 mV...done
+Wed Oct 14 23:34:47 2026:	* Accessing device...done
+Wed Oct 14 23:34:48 2026:	* Reading device information...done
+Wed Oct 14 23:34:48 2026:	* Loading file into device...done
+Wed Oct 14 23:34:48 2026:	* Verifying memory (build/I2C_Protection_Test.hex)...done
+Wed Oct 14 23:34:49 2026:	* 
+Wed Oct 14 23:34:49 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:34:49 2026:	* Arguments   : -n MSP430FR5989 -w build/I2C_Protection_Test.hex -v -z [VCC,RESET] 
+Wed Oct 14 23:34:49 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:34:49 2026:	* Driver      : loaded
+Wed Oct 14 23:34:49 2026:	* Dll Version : 31400000
+Wed Oct 14 23:34:49 2026:	* FwVersion   : 31200000
+Wed Oct 14 23:34:49 2026:	* Interface   : TIUSB
+Wed Oct 14 23:34:49 2026:	* HwVersion   : U 3.0
+Wed Oct 14 23:34:49 2026:	* JTAG Mode   : AUTO
+Wed Oct 14 23:34:49 2026:	* Device      : MSP430FR5989
+Wed Oct 14 23:34:49 2026:	* EEM         : Level 5, ClockCntrl 2
+Wed Oct 14 23:34:49 2026:	* Erase Mode  : ERASE_ALL
+Wed Oct 14 23:34:49 2026:	* Prog.File   : build/I2C_Protection_Test.hex
+Wed Oct 14 23:34:49 2026:	* Verified    : TRUE
+Wed Oct 14 23:34:49 2026:	* BSL Unlock  : FALSE
+Wed Oct 14 23:34:49 2026:	* InfoA Access: FALSE
+Wed Oct 14 23:34:49 2026:	* VCC ON      : 3000 mV
+Wed Oct 14 23:34:49 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:34:49 2026:	* Resetting device (RST/NMI)...done
+Wed Oct 14 23:34:50 2026:	* Starting target code execution...done
+Wed Oct 14 23:34:50 2026:	* Disconnecting from device...done
+Wed Oct 14 23:34:50 2026:	* 
+Wed Oct 14 23:34:50 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:34:50 2026:	* Driver      : closed (No error)
+Wed Oct 14 23:34:50 2026:	* ----------------------------------------------------------------------------
+Wed Oct 14 23:34:50 2026:	*/

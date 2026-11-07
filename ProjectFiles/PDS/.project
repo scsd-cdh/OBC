@@ -43,57 +43,12 @@
 		<link>
 			<name>APP/PDS_App</name>
 			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
+			<location>/home/brendan/dev/zephyr_obc/application/APP/PDS_App</location>
 		</link>
 		<link>
 			<name>DRIVERS/MSP430</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>MIDDLEWARE/tinyprotocol</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>APP/PDS_App/AppComm.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/AppComm.c</locationURI>
-		</link>
-		<link>
-			<name>APP/PDS_App/AppComm.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/AppComm.h</locationURI>
-		</link>
-		<link>
-			<name>APP/PDS_App/RoutineCycle.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/RoutineCycle.c</locationURI>
-		</link>
-		<link>
-			<name>APP/PDS_App/RoutineCycle.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/RoutineCycle.h</locationURI>
-		</link>
-		<link>
-			<name>APP/PDS_App/bsp.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/bsp.c</locationURI>
-		</link>
-		<link>
-			<name>APP/PDS_App/bsp.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/bsp.h</locationURI>
-		</link>
-		<link>
-			<name>APP/PDS_App/main.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/main.c</locationURI>
-		</link>
-		<link>
-			<name>APP/PDS_App/version.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/version.h</locationURI>
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/ADC</name>
@@ -119,21 +74,6 @@
 			<name>DRIVERS/MSP430/UTILS</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>MIDDLEWARE/tinyprotocol/README.md</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/tinyprotocol/README.md</locationURI>
-		</link>
-		<link>
-			<name>MIDDLEWARE/tinyprotocol/tinyprotocol.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/tinyprotocol/tinyprotocol.c</locationURI>
-		</link>
-		<link>
-			<name>MIDDLEWARE/tinyprotocol/tinyprotocol.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/tinyprotocol/tinyprotocol.h</locationURI>
 		</link>
 		<link>
 			<name>DRIVERS/MSP430/ADC/ADC_Read.c</name>
@@ -181,6 +121,21 @@
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_B/rtc_b.h</locationURI>
 		</link>
 		<link>
+			<name>DRIVERS/MSP430/RTC_C</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/RTC_C/rtc_c.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_C/rtc_c.c</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/RTC_C/rtc_c.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/RTC_C/rtc_c.h</locationURI>
+		</link>
+		<link>
 			<name>DRIVERS/MSP430/UTILS/utils.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/UTILS/utils.c</locationURI>
@@ -209,6 +164,151 @@
 			<name>DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</locationURI>
+		</link>
+		<link>
+			<name>APP/PDS_App/PDS.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/PDS.c</locationURI>
+		</link>
+		<link>
+			<name>APP/PDS_App/PDS.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/PDS.h</locationURI>
+		</link>
+		<link>
+			<name>APP/PDS_App/main.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/main.c</locationURI>
+		</link>
+		<link>
+			<name>APP/PDS_App/version.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/APP/PDS_App/version.h</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/ASN1SCC</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/ASN1SCC</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/ASN1SCC/asn1_lfp.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/ASN1SCC/asn1_lfp.h</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP/body.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP/body.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP/cobs.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP/cobs.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP/header.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP/header.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP/lfp.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP/lfp.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP/stream.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP/stream.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP_I2C</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP_I2C</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP_I2C/lfp_i2c.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP_I2C/lfp_i2c.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/LFP_I2C/lfp_i2c.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/LFP_I2C/lfp_i2c.h</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/MSP_UTILS</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/MSP_UTILS</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/MSP_UTILS/msp_utils.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/MSP_UTILS/msp_utils.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/MSP_UTILS/msp_utils.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/MSP_UTILS/msp_utils.h</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/asn1crt.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/asn1crt.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/asn1crt.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/asn1crt.h</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/asn1crt_encoding.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/asn1crt_encoding.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/asn1crt_encoding.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/asn1crt_encoding.h</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/asn1crt_encoding_uper.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/asn1crt_encoding_uper.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/asn1crt_encoding_uper.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/asn1crt_encoding_uper.h</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/_systems.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/_systems.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/_systems.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/_systems.h</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/pds.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/pds.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/asn1/pds.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/asn1/pds.h</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

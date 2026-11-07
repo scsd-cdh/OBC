@@ -45,8 +45,9 @@ static struct {
         asn1_lfp_last_error.lfp = 0;                                                                                   \
         asn1_lfp_last_error.asn1 = 0;                                                                                  \
                                                                                                                        \
+                                                                                                                       \
         /*Validate that the buffer is big enough, otherwise abort*/                                                    \
-        if ((BUFFER_LEN) < ASN1_LFP_RECV_BUF_SIZE(TYPE)) {                                                             \
+        if ((BUFFER_LEN) < ASN1_LFP_SEND_BUF_SIZE(TYPE)) {                                                             \
             asn1_lfp_last_error.lfp = LFP_EOVERFLOW;                                                                   \
         } else {                                                                                                       \
             /*Setup serialized but unencoded buffer*/                                                                  \
@@ -56,7 +57,6 @@ static struct {
             /*Prepare encoder*/                                                                                        \
             BitStream asn1_lfp__encoder;                                                                               \
             BitStream_Init(&asn1_lfp__encoder, asn1_lfp__p_asn1_payload, asn1_lfp__asn1_size);                         \
-                                                                                                                       \
             const uint8_t asn1_lfp__endpoint = (lfpId ## TYPE);                                                        \
                                                                                                                        \
             /*Do encoding*/                                                                                            \

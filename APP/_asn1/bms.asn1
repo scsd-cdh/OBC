@@ -28,10 +28,6 @@ BMSCellStatus ::= SEQUENCE {
     overvoltage BOOLEAN,
     -- Cell Under Voltage
     undervoltage BOOLEAN,
-    -- Cell Over Current
-    overcurrent BOOLEAN,
-    -- Cell Under Current
-    undercurrent BOOLEAN,
     -- Direct Reading Voltage
     voltage BMSADCValue
 }
@@ -47,7 +43,9 @@ BMSBatteryPackStatus ::= SEQUENCE {
     -- Direct Reading of Current Current Sensor CHR
     currentCharge BMSADCValue,
     -- Direct Reading of Combined Voltage
-    voltage BMSADCValue
+    voltage BMSADCValue,
+    -- Battery Over Current flag
+    overcurrent BOOLEAN
 }
 
 
