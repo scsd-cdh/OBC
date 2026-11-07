@@ -21,3 +21,11 @@ void PWM_Generate(uint16_t Timer_Period, uint16_t Duty_Cycle, Compare_Register C
 
     Timer_B_outputPWM(TIMER_B0_BASE, &param);
 }
+
+void PWM_SetOutput(bool high, Compare_Register CompareRegister)
+{
+    Timer_B_setOutputMode(TIMER_B0_BASE, CompareRegister,
+                         TIMER_B_OUTPUTMODE_OUTBITVALUE);
+    Timer_B_setOutputForOutputModeOutBitValue(TIMER_B0_BASE, CompareRegister,
+        high ? TIMER_B_OUTPUTMODE_OUTBITVALUE_HIGH : TIMER_B_OUTPUTMODE_OUTBITVALUE_LOW);
+}

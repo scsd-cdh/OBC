@@ -19,6 +19,7 @@
 #include "PWM.h"
 #include "swi2c.h"
 #include "ads7138irter.h"
+#include "heater_controller.h"
 #include "i2c.h"
 #include "lfp.h"
 #include "lfp/stream.h"
@@ -137,11 +138,14 @@ typedef struct {
 // Acquisition owns reading_buffer; CDH serializes only comm_buffer.
 static volatile bms_telemetry_t s_reading_buffer;
 static volatile bms_telemetry_t s_comm_buffer;
+static HeaterController s_heaters[4];
 
 // Static asn1 encoded data buffers to be sent back to CDH on request
 static volatile uint8_t s_powerstatus_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
 static volatile uint8_t s_temperature_status_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusResponse)];
+#if 0 // Manual CDH heater-duty commands are disabled while automatic control is active.
 static uint8_t s_heaterduty_response_tx_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyResponse)];
+#endif
 
 
 static lfp_stream_ctx_t s_lfp_ctx;
@@ -201,6 +205,7 @@ static inline void bms_temperature_status_req_cb(const BMSTemperatureStatusReque
     lfp_i2c_set_txbuf(s_temperature_status_tx_buf, size);
 }
 
+#if 0 // Manual CDH heater-duty commands are disabled while automatic control is active.
 static inline void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payload, const asn1_lfp_decode_data_t * p_data) {
     // It's 100-1 and not 99 because that's what they do in the TI examples for PWM, IDK why the do that but best to stick to a standard if it exists
     lfp_i2c_transition(I2C_SLAVE_STATE_PROCESSING);
@@ -227,6 +232,7 @@ static inline void bms_set_heater_duty_cb(const BMSSetHeaterDutyRequest * p_payl
     );
     lfp_i2c_set_txbuf(s_heaterduty_response_tx_buf, size);
 }
+#endif
 
 // bit silly to try to inline this. asm output at i2c.asm confirms a call with max optimizations (line 657): CALLA &s_ctx+0
 static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16_t body_length, void * p_ctx) {
@@ -250,9 +256,11 @@ static void on_msg(const lfp_header_t * p_header, const uint8_t * p_body, uint16
         return;
     }
 
+#if 0 // Do not dispatch manual heater commands; automatic control owns the outputs.
     if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSetHeaterDutyRequest, bms_set_heater_duty_cb)) {
         return;
     }
+#endif
 }
 
 /* INITIALIZATOIN LOGIC */
@@ -394,6 +402,17 @@ static void comm_init() {
         on_lfp_error, &s_user_ctx);
 }
 
+static void heater_set_output(uint16_t heater, bool on) {
+    PWM_SetOutput(on, (Compare_Register)heater);
+}
+
+static void heater_init() {
+    heater_controller_init(&s_heaters[0], HEATER1_CCR, heater_set_output);
+    heater_controller_init(&s_heaters[1], HEATER2_CCR, heater_set_output);
+    heater_controller_init(&s_heaters[2], HEATER3_CCR, heater_set_output);
+    heater_controller_init(&s_heaters[3], HEATER4_CCR, heater_set_output);
+}
+
 // Each collection builds a complete local result and publishes only on success.
 static bool collect_power_status(void) {
     BMSPowerStatusResponse power;
@@ -476,9 +495,12 @@ static bool collect_power_status(void) {
     return true;
 }
 
-static bool collect_temperature_status(void) {
+static bool collect_temperature_status(void) 
+{
     BMSTemperatureStatusResponse temperature;
-    for (uint8_t i = 0; i < ADC_NUM_CHANNELS; i++) {
+
+    for (uint8_t i = 0; i < ADC_NUM_CHANNELS; i++) 
+    {
         if (ADS7138IRTER_SingleRegisterWrite(&s_swi2c_descriptor,
                 ADS7138_CHANNEL_SEL_REGISTER, i) != ADS7138_STATUS_OK ||
             ADS7138IRTER_Read(&s_swi2c_descriptor,
@@ -491,6 +513,13 @@ static bool collect_temperature_status(void) {
     __disable_interrupt();
     s_reading_buffer.temperature = temperature;
     if (gie) __enable_interrupt();
+
+    // Sensor numbering 1..8 maps to ADS channels 0..7 in adjacent pairs.
+    for (uint8_t i = 0; i < 4; i++) {
+        (void)heater_controller_update(&s_heaters[i],
+            temperature.thermistors.arr[2 * i],
+            temperature.thermistors.arr[2 * i + 1]);
+    }
     return true;
 }
 
@@ -552,9 +581,13 @@ static void retry_interrupt_update(void) {
     }
 }
 
-void bms_init(void) {
+void bms_init(void) 
+{
     hardware_init();
+
+    heater_init();
     comm_init();
+
     rtc_init();
     (void)bms_rtc_config();
 }

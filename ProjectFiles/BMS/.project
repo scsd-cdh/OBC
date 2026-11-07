@@ -345,5 +345,20 @@
 			<type>2</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/TIMER</locationURI>
 		</link>
+		<link>
+			<name>MIDDLEWARE/HEATER_CONTROLLER</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/HEATER_CONTROLLER/heater_controller.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/HEATER_CONTROLLER/heater_controller.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/HEATER_CONTROLLER/heater_controller.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/HEATER_CONTROLLER/heater_controller.h</locationURI>
+		</link>
 	</linkedResources>
 </projectDescription>
