@@ -180,21 +180,34 @@ temperature scan:
 Configure these shared defines in
 [`heater_controller.h`](../../MIDDLEWARE/HEATER_CONTROLLER/heater_controller.h):
 
-- `LOW_THRES_TEMP` and `HIGH_THRES_TEMP`: signed integer milli degrees Celsius.
-- `CALIB_GAIN`: linear slope in milli degrees Celsius per ADC count; it may be
-  positive or negative and fractional.
-- `CALIB_OFFSET`: linear offset in milli degrees Celsius.
+- `LOW_THRES_TEMP` and `HIGH_THRES_TEMP`: signed integer milli degrees Celsius;
+  defaults are 5000 (5 C) and 15000 (15 C).
+- `THERMISTOR_R25_OHMS`: 10000 ohms at 25 C.
+- `THERMISTOR_BETA_K`: 3669 kelvin, specified between 25 C and 85 C.
+- `THERMISTOR_PULLUP_OHMS`: 10000 ohms, matching board resistors R23-R30.
 
-Each ADC reading is converted using `CALIB_GAIN * adc + CALIB_OFFSET`, truncated
-to integer milliC, then the two temperatures are averaged. Below LOW turns the
+The sensor defaults are for the Honeywell **112-103FAJ-B01** NTC thermistor
+([datasheet](https://www.farnell.com/datasheets/1880963.pdf)). Update the sensor
+constants if this part changes. The divider has a pull-up to AVCC and the
+thermistor to ground; the ADS7138 also uses AVCC as its reference:
+
+```text
+R = THERMISTOR_PULLUP_OHMS * adc / (4096 - adc)
+T_kelvin = 1 / (1 / 298.15 + ln(R / THERMISTOR_R25_OHMS) / THERMISTOR_BETA_K)
+T_milliC = (T_kelvin - 273.15) * 1000
+```
+
+This Beta equation is a nominal approximation. The sensor's +/-20% resistance
+tolerance requires individual calibration for accurate temperature readings;
+the 25/85 Beta value does not guarantee accuracy over the full operating range.
+Each temperature is truncated to integer milliC before averaging. Below LOW turns the
 heater ON; above HIGH turns it OFF. Between thresholds, including equality, it
 retains its previous state. The output uses Timer_B static output mode for true
 0% (continuously LOW) or 100% (continuously HIGH).
 
-The defaults are deliberately unconfigured: thresholds, gain, and offset are
-zero. Controllers remain OFF until a nonzero gain and LOW < HIGH are configured.
-No physical calibration or operating temperatures are supplied by these defaults.
-Invalid ADC counts or out-of-range conversions are ignored. A failed scan leaves
+Controllers initialize OFF and use the configured thresholds after a valid scan.
+Zero/out-of-range ADC counts, invalid sensor constants, and invalid conversions
+are rejected. A failed scan leaves
 all controller states unchanged, including a heater which was already ON.
 
 The manual CDH heater-duty buffer, callback, and dispatch are temporarily disabled
@@ -204,5 +217,6 @@ The ASN.1 message definitions are retained for future re-enabling.
 Run host tests from the repository root:
 
 ```bash
-python3 -m unittest discover -s MIDDLEWARE/HEATER_CONTROLLER/tests -v
+cc -std=c99 -Wall -Wextra -Werror MIDDLEWARE/HEATER_CONTROLLER/tests/test_heater_controller.c -lm -o /tmp/test_heater_controller
+/tmp/test_heater_controller
 ```
