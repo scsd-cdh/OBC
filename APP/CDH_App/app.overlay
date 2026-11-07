@@ -76,9 +76,9 @@
 	};
 
 	camera: camera,pins {
-	compatible = "vnd,raw-gpios";
-	cam-gpios = <&pioa 20 GPIO_ACTIVE_HIGH>; /* OUTPUT CAM_ID */
-	// YET TO BE ASSIGNED
+		compatible = "vnd,raw-gpios";
+		cam-gpios = <&pioa 20 GPIO_ACTIVE_HIGH>; /* OUTPUT CAM_ID */
+		// YET TO BE ASSIGNED
 		//			 <GPIO_ACTIVE_LOW>, /* CAM_RST_EN */
 		//			 <GPIO_ACTIVE_LOW>, /* CAM_GPIO0 */
 		//			 <GPIO_ACTIVE_LOW>, /* CAM_GPIO1 */
@@ -98,6 +98,20 @@
 		adcs-label = "ADCS pins connected to CDH Board";
 		status = "okay";
 	};
+};
+
+&ext1_i2c {
+	pds_i2c: pds@8 {
+		compatible = "vnd,i2c-device";
+
+		reg = < 0x08 >;
+	};
+	bms_i2c: bms@9 {
+		compatible = "vnd,i2c-device";
+
+		reg = < 0x09 >;
+	};
+
 };
 
 &ext1_i2c {

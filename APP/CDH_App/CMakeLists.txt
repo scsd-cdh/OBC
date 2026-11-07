@@ -11,10 +11,10 @@ target_sources(app
         PRIVATE FILE_SET HEADERS BASE_DIRS src/include FILES
         src/include/main.h
         src/include/pins.h
-        src/cdh_pds_example.h
-        src/lfp_i2c_single.h
-        src/main.h
-        src/threads.h
+        src/include/cdh_pds_example.h
+        src/include/lfp_i2c_single.h
+        src/include/main.h
+        src/include/threads.h
 
         PRIVATE
         src/cdh_pds_example.c

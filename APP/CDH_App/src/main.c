@@ -1,13 +1,15 @@
 #include "include/main.h"
 #include "include/pins.h"
-#include "main.h"
-#include "cdh_pds_example.h"
+#include "include/cdh_pds_example.h"
 #include "zephyr/kernel.h"
   
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+
+LOG_MODULE_REGISTER(main);
+
 
 int main(void)
 {
