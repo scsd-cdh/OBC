@@ -1,77 +1,50 @@
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 
 #include "include/pins.h"
 
-/* Transceiver */
-const struct gpio_dt_spec trans_on        = GPIO_DT_SPEC_GET_BY_IDX(TRANSCEIVER_NODE, transceiver_gpios, 0);
-const struct gpio_dt_spec trans_off       = GPIO_DT_SPEC_GET_BY_IDX(TRANSCEIVER_NODE, transceiver_gpios, 1);
-const struct gpio_dt_spec trans_mi2c_dis  = GPIO_DT_SPEC_GET_BY_IDX(TRANSCEIVER_NODE, transceiver_gpios, 2);
-const struct gpio_dt_spec trans_ri2c_dis  = GPIO_DT_SPEC_GET_BY_IDX(TRANSCEIVER_NODE, transceiver_gpios, 3);
-const struct gpio_dt_spec trans_irq       = GPIO_DT_SPEC_GET_BY_IDX(TRANSCEIVER_NODE, transceiver_gpios, 4);
+LOG_MODULE_REGISTER(pins, LOG_LEVEL_INF);
 
-/* Astroyeast */
-const struct gpio_dt_spec yeast_on        = GPIO_DT_SPEC_GET_BY_IDX(YEAST_NODE, astroyeast_gpios, 0);
-const struct gpio_dt_spec yeast_off       = GPIO_DT_SPEC_GET_BY_IDX(YEAST_NODE, astroyeast_gpios, 1);
-const struct gpio_dt_spec yeast_mi2c_dis  = GPIO_DT_SPEC_GET_BY_IDX(YEAST_NODE, astroyeast_gpios, 2);
-const struct gpio_dt_spec yeast_ri2c_dis  = GPIO_DT_SPEC_GET_BY_IDX(YEAST_NODE, astroyeast_gpios, 3);
-const struct gpio_dt_spec yeast_irq       = GPIO_DT_SPEC_GET_BY_IDX(YEAST_NODE, astroyeast_gpios, 4);
 
-/* Imager */
-const struct gpio_dt_spec imager_on       = GPIO_DT_SPEC_GET_BY_IDX(IMAGER_NODE, imager_gpios, 0);
-const struct gpio_dt_spec imager_off      = GPIO_DT_SPEC_GET_BY_IDX(IMAGER_NODE, imager_gpios, 1);
-const struct gpio_dt_spec imager_mi2c_dis = GPIO_DT_SPEC_GET_BY_IDX(IMAGER_NODE, imager_gpios, 2);
-const struct gpio_dt_spec imager_ri2c_dis = GPIO_DT_SPEC_GET_BY_IDX(IMAGER_NODE, imager_gpios, 3);
-const struct gpio_dt_spec imager_irq      = GPIO_DT_SPEC_GET_BY_IDX(IMAGER_NODE, imager_gpios, 4);
 
-/* BMS */
-const struct gpio_dt_spec bms_mi2c_dis    = GPIO_DT_SPEC_GET_BY_IDX(BMS_NODE, bms_gpios, 0);
-const struct gpio_dt_spec bms_ri2c_dis    = GPIO_DT_SPEC_GET_BY_IDX(BMS_NODE, bms_gpios, 1);
-const struct gpio_dt_spec bms_irq         = GPIO_DT_SPEC_GET_BY_IDX(BMS_NODE, bms_gpios, 2);
+/* Define each global spec once */
+#define DEFINE_PIN(name, lbl, prop, idx, flags) \
+const struct gpio_dt_spec name = \
+GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(lbl), prop, idx);
+PIN_TABLE(DEFINE_PIN)
+#undef DEFINE_PIN
 
-/* PDS */
-const struct gpio_dt_spec pds_mcu_en      = GPIO_DT_SPEC_GET_BY_IDX(PDS_NODE, pds_gpios, 0);
-const struct gpio_dt_spec pds_irq         = GPIO_DT_SPEC_GET_BY_IDX(PDS_NODE, pds_gpios, 1);
+static int init_one(const struct gpio_dt_spec *spec, gpio_flags_t flags,
+            const char *name)
+{
+    if (!gpio_is_ready_dt(spec)) {
+        LOG_ERR("%s: GPIO controller not ready", name);
+        return -ENODEV;
+    }
 
-/* HDRM */
-const struct gpio_dt_spec arm_hdrm        = GPIO_DT_SPEC_GET_BY_IDX(HDRM_NODE, hdrm_gpios, 0);
-const struct gpio_dt_spec burn_hdrm       = GPIO_DT_SPEC_GET_BY_IDX(HDRM_NODE, hdrm_gpios, 1);
-const struct gpio_dt_spec stat_hdrm       = GPIO_DT_SPEC_GET_BY_IDX(HDRM_NODE, hdrm_gpios, 2);
-const struct gpio_dt_spec arm_hdrm_2      = GPIO_DT_SPEC_GET_BY_IDX(HDRM_NODE, hdrm_gpios, 3);
-const struct gpio_dt_spec burn_hdrm_2     = GPIO_DT_SPEC_GET_BY_IDX(HDRM_NODE, hdrm_gpios, 4);
-const struct gpio_dt_spec boot_hdrm_2     = GPIO_DT_SPEC_GET_BY_IDX(HDRM_NODE, hdrm_gpios, 5);
+    /* dt_flags (ACTIVE_HIGH/LOW) are merged in by gpio_pin_configure_dt() */
+    int ret = gpio_pin_configure_dt(spec, flags);
 
-/* MRAM */
-const struct gpio_dt_spec ram_cs          = GPIO_DT_SPEC_GET_BY_IDX(MRAM_NODE, mram_gpios, 0);
-const struct gpio_dt_spec ram_cs_2        = GPIO_DT_SPEC_GET_BY_IDX(MRAM_NODE, mram_gpios, 1);
-const struct gpio_dt_spec ram_en          = GPIO_DT_SPEC_GET_BY_IDX(MRAM_NODE, mram_gpios, 2);
-const struct gpio_dt_spec ram_en_2        = GPIO_DT_SPEC_GET_BY_IDX(MRAM_NODE, mram_gpios, 3);
-const struct gpio_dt_spec ram_wp          = GPIO_DT_SPEC_GET_BY_IDX(MRAM_NODE, mram_gpios, 4);
-const struct gpio_dt_spec ram_wp_2        = GPIO_DT_SPEC_GET_BY_IDX(MRAM_NODE, mram_gpios, 5);
+    if (ret < 0) {
+        LOG_ERR("%s: configure failed (%d)", name, ret);
+    }
+    return ret;
+}
 
-/* Camera */
-const struct gpio_dt_spec cam_id          = GPIO_DT_SPEC_GET_BY_IDX(CAM_NODE, cam_gpios, 0);
+int pins_init(void)
+{
+    int first_err = 0;
+    int ret;
 
-/* ADCS */
-const struct gpio_dt_spec adcs_on         = GPIO_DT_SPEC_GET_BY_IDX(ADCS_NODE, adcs_gpios, 0);
-const struct gpio_dt_spec adcs_off        = GPIO_DT_SPEC_GET_BY_IDX(ADCS_NODE, adcs_gpios, 1);
-const struct gpio_dt_spec adcs_mi2c_dis   = GPIO_DT_SPEC_GET_BY_IDX(ADCS_NODE, adcs_gpios, 2);
-const struct gpio_dt_spec adcs_ri2c_dis   = GPIO_DT_SPEC_GET_BY_IDX(ADCS_NODE, adcs_gpios, 3);
+// Initialize every pin name defined in app.overlay with their respective attribute
+#define INIT_PIN(name, lbl, prop, idx, flags) \
+ret = init_one(&name, (flags), #name); \
+if (ret < 0 && first_err == 0) { \
+first_err = ret; \
+}
+    PIN_TABLE(INIT_PIN)
+#undef INIT_PIN
 
-void gpio_init() {
-    /* INCOMPLETE*/
-    const struct gpio_dt_spec trans_pins[] = {
-        DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(transceiver), transceiver_gpios,
-                                 GPIO_DT_SPEC_GET_BY_IDX, (,))
-    };
-    /* ...one array per group... */
-
-    const struct pin_group groups[] = {
-        { DT_PROP(DT_NODELABEL(transceiver), transceiver_label),
-          trans_pins, ARRAY_SIZE(trans_pins) },
-        { DT_PROP(DT_NODELABEL(astroyeast), astroyeast_label),
-          yeast_pins, ARRAY_SIZE(yeast_pins) },
-        /* ... */
-    };
-    int board_nodes[] = {TRANSCEIVER_NODE, };
+    return first_err;
 }

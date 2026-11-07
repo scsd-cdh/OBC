@@ -84,9 +84,12 @@ void asn1_example(void) {
 
 int main(void)
 {
-    gpio_init();
+    int err = pins_init();
+    if (err != 0) {
+        LOG_ERR("Pin initilization failed");
+        return err;
+    }
     while (1) {
-        //gpio_pin_toggle_dt(&pb03);
         k_msleep(1000);
     }
 
