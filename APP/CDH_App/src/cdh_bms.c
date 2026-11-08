@@ -38,7 +38,6 @@ static uint8_t lfp_recv_buf[MAX_FROM_LIST( // NOLINT(bugprone-branch-clone)
     ASN1_LFP_RECV_BUF_SIZE(BMSSetHeaterDutyResponse)
 )];
 
-
 static void on_error(int error_code, const struct asn1_lfp_decode_data_t* p_data) {
     ARG_UNUSED(p_data);
     LOG_WRN("ASN1 parse failure: %d", error_code);
@@ -68,8 +67,6 @@ static inline void bms_battery_handler(const BMSBatteryPackStatus * p_pack, cons
         bms_adc_to_float(p_pack->cellB.voltage),
         p_pack->cellB.overvoltage, p_pack->cellB.undervoltage
     );
-
-    // TODO: handle flags ?
 }
 
 static inline void bms_systemstatus_handler(const BMSSystemStatusResponse * p_status) {
@@ -85,6 +82,7 @@ static inline void bms_systemstatus_handler(const BMSSystemStatusResponse * p_st
 static inline void bms_battery_callback(BMSPowerStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
     ARG_UNUSED(p_data);
 
+    cdh_critical_evaluate_power_status(p_payload);
     bms_battery_handler(&p_payload->batteryPack1, 1);
     bms_battery_handler(&p_payload->batteryPack2, 2);
 }
@@ -273,6 +271,12 @@ void request_bms_power_status(void) {
 
     (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
                               bms_battery_callback);
+
+    // Don't bother formatting / queueing telemetry in safe mode, we won't be using it anyway (?)
+    // FIXME: Do we want to queue / log this telemetry in safe mode? It might be useful for debugging, but it also might be a waste of time / resources
+    if (cdh_critical_is_safe()) {
+        goto unlock;
+    }
 
     uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
     int fwd_ret = cdh_comms_fwd_lfp_msg(

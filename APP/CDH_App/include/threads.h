@@ -1,5 +1,7 @@
 #pragma once
 
+#include <asn1/bms.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -21,3 +23,7 @@ struct cdh_telemetry_message {
 };
 
 int cdh_telemetry_enqueue(const uint8_t *data, size_t length);
+void cdh_critical_evaluate_power_status(
+    const BMSPowerStatusResponse *status
+);
+bool cdh_critical_is_safe(void);
