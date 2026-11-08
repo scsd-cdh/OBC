@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <uart/uart_transport.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(loopback_uart), okay)
 static const struct device *uart = DEVICE_DT_GET(DT_ALIAS(loopback_uart));

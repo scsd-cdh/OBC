@@ -6,6 +6,7 @@
 #include <asn1/_systems.h>
 
 #include "cdh_comms.h"
+#include <uart/uart_transport.h>
 #include "lfp/stream.h"
 #include "zephyr/kernel.h"
 #include "zephyr/logging/log.h"
@@ -208,14 +209,14 @@ static bool decode_message(asn1_lfp_decode_data_t *data)
 static bool loopback_on_header(const lfp_header_t *header, void *user_data)
 {
     ARG_UNUSED(user_data);
-    user_ctx_t* ctx = user_data;
-    ctx->p_header = (lfp_header_t*)header;
-    LOG_DBG("Received header: length=%d initiator=%d target=%d endpoint=%d",
-        header->encoded_length,
-        header->initiator,
-        header->target,
-        header->endpoint
-    );
+    // user_ctx_t* ctx = user_data;
+    // ctx->p_header = (lfp_header_t*)header;
+    // LOG_DBG("Received header: length=%d initiator=%d target=%d endpoint=%d",
+    //     header->encoded_length,
+    //     header->initiator,
+    //     header->target,
+    //     header->endpoint
+    // );
     return true;
 }
 
@@ -228,7 +229,7 @@ static void loopback_on_message(
 {
     ARG_UNUSED(user_data);
 
-    LOG_INF(
+    LOG_DBG(
         "Loopback telemetry: target=%d endpoint=%d",
         header->target,
         header->endpoint
