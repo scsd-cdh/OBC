@@ -95,6 +95,32 @@ static inline void bms_systemstatus_callback(BMSSystemStatusResponse * p_payload
     bms_systemstatus_handler(p_payload);
 }
 
+static inline void bms_temperature_handler(
+    const BMSTemperatureStatusResponse *p_status
+) {
+    LOG_DBG(
+        "BMS Temperature Status: "
+        "T1=%u T2=%u T3=%u T4=%u T5=%u T6=%u T7=%u T8=%u",
+        p_status->thermistors.arr[0],
+        p_status->thermistors.arr[1],
+        p_status->thermistors.arr[2],
+        p_status->thermistors.arr[3],
+        p_status->thermistors.arr[4],
+        p_status->thermistors.arr[5],
+        p_status->thermistors.arr[6],
+        p_status->thermistors.arr[7]
+    );
+}
+
+static inline void bms_temperature_callback(
+    BMSTemperatureStatusResponse *p_payload,
+    asn1_lfp_decode_data_t *p_data
+) {
+    ARG_UNUSED(p_data);
+
+    bms_temperature_handler(p_payload);
+}
+
 void request_bms_system_status(void)
 {
     if (k_mutex_lock(&bms_lock, K_FOREVER) != 0) {
@@ -151,6 +177,68 @@ unlock:
     k_mutex_unlock(&bms_lock);
 }
 
+void request_bms_temperature_status(void)
+{
+    if (k_mutex_lock(&bms_lock, K_FOREVER) != 0) {
+        return;
+    }
+
+    const uint32_t size = ASN1_LFP_SERIALIZE(
+        cdhSystemId, bmsSystemId, BMSTemperatureStatusRequest,
+        lfp_send_buf, sizeof(lfp_send_buf), {});
+    if (!size) {
+        LOG_WRN("Failed to serialize temperature status request: a:%d l:%d",
+            ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
+        goto unlock;
+    }
+
+    const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
+    if (ret != 0) {
+        LOG_WRN("Failed to send temperature status request: %d", ret);
+        goto unlock;
+    }
+
+    lfp_header_t header;
+    asn1_lfp_decode_data_t data = {
+        .p_on_error_cb = on_error,
+        .p_header = &header,
+        .p_body = lfp_recv_buf
+    };
+    data.body_length = lfp_i2c_single_receive(
+        &dev_bms,
+        &header,
+        lfp_recv_buf, sizeof(lfp_recv_buf),
+        I2C_TIMEOUT_MS);
+    if (data.body_length == LFP_FAIL) {
+        LOG_WRN("Failed to read BMS temperature response");
+        goto unlock;
+    }
+
+    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId,
+                              BMSTemperatureStatusResponse,
+                              bms_temperature_callback);
+
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusResponse)];
+    const int fwd_ret = cdh_comms_fwd_lfp_msg(
+        &data,
+        encode_buf,
+        sizeof(encode_buf)
+    );
+    if (fwd_ret < 0) {
+        LOG_WRN("Failed to forward BMS temperature status response: %d",
+            fwd_ret);
+        goto unlock;
+    }
+
+    const int enqueue_ret = cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    if (enqueue_ret != 0) {
+        LOG_WRN("Failed to queue BMS temperature status telemetry: %d",
+            enqueue_ret);
+    }
+
+unlock:
+    k_mutex_unlock(&bms_lock);
+}
 
 
 void request_bms_power_status(void) {

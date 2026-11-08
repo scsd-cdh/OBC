@@ -45,6 +45,7 @@ static void critical_thread(const void *p_arg)
     while (1) {
         LOG_DBG("Critical thread waking up, requesting BMS and PDS critical data");
         request_bms_power_status();
+        request_bms_temperature_status();
         request_pds_converter_monitor();
         request_pds_health_check();
         LOG_DBG("Critical thread sleeping for %d seconds", CRITICAL_PERIOD_MS / 1000);
