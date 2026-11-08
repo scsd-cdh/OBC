@@ -112,7 +112,7 @@ void request_pds_system_status(void) {
     if (!size) {
         LOG_WRN("Failed to serialize system status request: a:%d l:%d",
             ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
-        goto pds_system_status_unlock;
+        goto unlock;
     }
 
     lfp_header_t header;
@@ -126,7 +126,7 @@ void request_pds_system_status(void) {
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send system status request: %d", ret);
-        goto pds_system_status_unlock;
+        goto unlock;
     }
 
     data.body_length = lfp_i2c_single_receive(
@@ -136,7 +136,7 @@ void request_pds_system_status(void) {
         I2C_TIMEOUT_MS);
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-        goto pds_system_status_unlock;
+        goto unlock;
     }
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
@@ -150,12 +150,12 @@ void request_pds_system_status(void) {
     );
     if (fwd_ret < 0) {
         LOG_WRN("Failed to forward PDS system status response: %d", fwd_ret);
-        goto pds_system_status_unlock;
+        goto unlock;
     }
 
     (void)cdh_telemetry_enqueue(encode_buf, fwd_ret);
 
-pds_system_status_unlock:
+unlock:
     k_mutex_unlock(&pds_lock);
 }
 
@@ -169,7 +169,7 @@ void request_pds_health_check(void) {
     if (!size) {
         LOG_WRN("Failed to serialize health check request: a:%d l:%d",
             ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
-        goto pds_health_check_unlock;
+        goto unlock;
     }
 
     lfp_header_t header;
@@ -182,7 +182,7 @@ void request_pds_health_check(void) {
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send health check request: %d", ret);
-        goto pds_health_check_unlock;
+        goto unlock;
     }
 
     data.body_length = lfp_i2c_single_receive(
@@ -192,7 +192,7 @@ void request_pds_health_check(void) {
         I2C_TIMEOUT_MS);
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-        goto pds_health_check_unlock;
+        goto unlock;
     }
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSHealthCheckResponse,
@@ -206,12 +206,12 @@ void request_pds_health_check(void) {
     );
     if (fwd_ret < 0) {
         LOG_WRN("Failed to forward PDS health check response: %d", fwd_ret);
-        goto pds_health_check_unlock;
+        goto unlock;
     }
 
     (void)cdh_telemetry_enqueue(encode_buf, fwd_ret);
 
-pds_health_check_unlock:
+unlock:
     k_mutex_unlock(&pds_lock);
 }
 
@@ -225,7 +225,7 @@ void request_pds_converter_monitor(void) {
     if (!size) {
         LOG_WRN("Failed to serialize converter monitor request: a:%d l:%d",
             ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
-        goto pds_converter_monitor_unlock;
+        goto unlock;
     }
 
     lfp_header_t header;
@@ -238,7 +238,7 @@ void request_pds_converter_monitor(void) {
     const int ret = i2c_write_dt(&dev_pds, lfp_send_buf, size);
     if (ret != 0) {
         LOG_WRN("Failed to send converter monitor request: %d", ret);
-        goto pds_converter_monitor_unlock;
+        goto unlock;
     }
 
     data.body_length = lfp_i2c_single_receive(
@@ -248,7 +248,7 @@ void request_pds_converter_monitor(void) {
         I2C_TIMEOUT_MS);
     if (data.body_length == LFP_FAIL) {
         LOG_WRN("Failed to read PDS response");
-        goto pds_converter_monitor_unlock;
+        goto unlock;
     }
 
     (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
@@ -262,11 +262,11 @@ void request_pds_converter_monitor(void) {
     );
     if (fwd_ret < 0) {
         LOG_WRN("Failed to forward PDS converter monitor response: %d", fwd_ret);
-        goto pds_converter_monitor_unlock;
+        goto unlock;
     }
 
     (void)cdh_telemetry_enqueue(encode_buf, fwd_ret);
 
-pds_converter_monitor_unlock:
+unlock:
     k_mutex_unlock(&pds_lock);
 }
