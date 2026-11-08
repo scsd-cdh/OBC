@@ -13,7 +13,6 @@
 #include "zephyr/logging/log.h"
 
 LOG_MODULE_REGISTER(cdh, LOG_LEVEL_DBG);
-LOG_MODULE_REGISTER(cdh, LOG_LEVEL_DBG);
 
 typedef struct
 {
