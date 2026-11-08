@@ -6,13 +6,13 @@ find_package(Zephyr)
 project(CDH)
 
 target_sources(app
-        PRIVATE FILE_SET HEADERS BASE_DIRS src FILES
-        src/cdh_comms.h
-        src/cdh_bms.h
-        src/cdh_pds.h
-        src/lfp_i2c_single.h
-        src/threads.h
-        src/main.h
+        PRIVATE FILE_SET HEADERS BASE_DIRS include FILES
+        include/cdh_comms.h
+        include/cdh_bms.h
+        include/cdh_pds.h
+        include/lfp_i2c_single.h
+        include/threads.h
+        include/main.h
 
         PRIVATE
         src/cdh_comms.c
@@ -42,6 +42,5 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/icd.css ${CMAKE_CURRENT_LIST_DIR}/../_asn1/icd.css
 )
 target_include_directories(app PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE/shared_types
         ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE/UART/include
 )
