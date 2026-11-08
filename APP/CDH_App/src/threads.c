@@ -22,11 +22,7 @@ int cdh_telemetry_enqueue(const uint8_t *data, size_t length)
     memcpy(message.data, data, length);
 
     // This is thread safe
-    const int ret = k_msgq_put(&telemetry_queue, &message, K_NO_WAIT);
-    if (ret != 0) {
-        LOG_WRN("Telemetry queue full, dropping message: %d", ret);
-    }
-    return ret;
+    return k_msgq_put(&telemetry_queue, &message, K_NO_WAIT);
 }
 
 static void transmit_queued_telemetry(void)

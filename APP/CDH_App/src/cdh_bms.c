@@ -142,7 +142,10 @@ void request_bms_system_status(void)
         goto unlock;
     }
 
-    (void)cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    const int enqueue_ret = cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    if (enqueue_ret != 0) {
+        LOG_WRN("Failed to queue BMS system status telemetry: %d", enqueue_ret);
+    }
 
 unlock:
     k_mutex_unlock(&bms_lock);
@@ -193,7 +196,10 @@ void request_bms_power_status(void) {
         LOG_WRN("Failed to forward BMS power status response: %d", fwd_ret);
         goto unlock;
     }
-    (void)cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    const int enqueue_ret = cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    if (enqueue_ret != 0) {
+        LOG_WRN("Failed to queue BMS power status telemetry: %d", enqueue_ret);
+    }
 
 unlock:
     k_mutex_unlock(&bms_lock);

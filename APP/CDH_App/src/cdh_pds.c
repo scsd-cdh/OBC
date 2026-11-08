@@ -153,7 +153,10 @@ void request_pds_system_status(void) {
         goto unlock;
     }
 
-    (void)cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    const int enqueue_ret = cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    if (enqueue_ret != 0) {
+        LOG_WRN("Failed to queue PDS system status telemetry: %d", enqueue_ret);
+    }
 
 unlock:
     k_mutex_unlock(&pds_lock);
@@ -209,7 +212,10 @@ void request_pds_health_check(void) {
         goto unlock;
     }
 
-    (void)cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    const int enqueue_ret = cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    if (enqueue_ret != 0) {
+        LOG_WRN("Failed to queue PDS health check telemetry: %d", enqueue_ret);
+    }
 
 unlock:
     k_mutex_unlock(&pds_lock);
@@ -265,7 +271,10 @@ void request_pds_converter_monitor(void) {
         goto unlock;
     }
 
-    (void)cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    const int enqueue_ret = cdh_telemetry_enqueue(encode_buf, fwd_ret);
+    if (enqueue_ret != 0) {
+        LOG_WRN("Failed to queue PDS converter monitor telemetry: %d", enqueue_ret);
+    }
 
 unlock:
     k_mutex_unlock(&pds_lock);
