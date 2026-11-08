@@ -5,6 +5,8 @@ include("../../settings.cmake")
 find_package(Zephyr)
 project(CDH)
 
+list(APPEND DTS_ROOT "${CMAKE_CURRENT_LIST_DIR}")
+
 target_sources(app
         PRIVATE FILE_SET HEADERS BASE_DIRS include FILES
         include/cdh_comms.h
@@ -12,6 +14,7 @@ target_sources(app
         include/cdh_pds.h
         include/lfp_i2c_single.h
         include/threads.h
+        include/pins.h
         include/main.h
 
         PRIVATE
@@ -20,6 +23,7 @@ target_sources(app
         src/cdh_pds.c
         src/lfp_i2c_single.c
         src/main.c
+        src/pins.c
         src/threads.c
         ../../MIDDLEWARE/UART/uart_transport.c
 )

@@ -1,0 +1,28 @@
+Thu Oct 15 23:09:54 2026:	* -----/|-------------------------------------------------------------------- *
+Thu Oct 15 23:09:54 2026:	*     / |__                                                                   *
+Thu Oct 15 23:09:54 2026:	*    /_   /   MSP Flasher v1.3.20                                             *
+Thu Oct 15 23:09:54 2026:	*      | /                                                                    *
+Thu Oct 15 23:09:54 2026:	* -----|/-------------------------------------------------------------------- *
+Thu Oct 15 23:09:54 2026:	*
+Thu Oct 15 23:09:54 2026:	* Evaluating triggers...done
+Thu Oct 15 23:09:54 2026:	* Checking for available FET debuggers: 
+Thu Oct 15 23:09:54 2026:	* Found USB FET @ ttyACM0 <- Selected
+Thu Oct 15 23:09:54 2026:	* Initializing interface @ ttyACM0...done
+Thu Oct 15 23:09:54 2026:	* Checking firmware compatibility: 
+Thu Oct 15 23:09:54 2026:	* FET firmware is up to date.
+Thu Oct 15 23:09:54 2026:	* Reading FW version...done
+Thu Oct 15 23:09:54 2026:	* Setting VCC to 3000 mV...done
+Thu Oct 15 23:10:00 2026:	* Accessing device...done
+Thu Oct 15 23:10:01 2026:	* Reading device information...
+Thu Oct 15 23:10:01 2026:	* Warning: Found device does not match -n selection:
+Thu Oct 15 23:10:01 2026:	- Selected: MSP430FR6989
+Thu Oct 15 23:10:01 2026:	- Found:    MSP430FR5989
+Thu Oct 15 23:10:01 2026:	- Continue? (Y/N): Thu Oct 15 23:10:01 2026:	x
+Thu Oct 15 23:10:01 2026:	* Resetting device (RST/NMI)...done
+Thu Oct 15 23:10:01 2026:	* Starting target code execution...done
+Thu Oct 15 23:10:02 2026:	* Disconnecting from device...done
+Thu Oct 15 23:10:02 2026:	* 
+Thu Oct 15 23:10:02 2026:	* ----------------------------------------------------------------------------
+Thu Oct 15 23:10:02 2026:	* Driver      : closed (No error)
+Thu Oct 15 23:10:02 2026:	* ----------------------------------------------------------------------------
+Thu Oct 15 23:10:02 2026:	*/

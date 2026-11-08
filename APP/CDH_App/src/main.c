@@ -1,4 +1,5 @@
 #include "main.h"
+#include "pins.h"
 
 #include <asn1_lfp.h>
 #include <asn1/bms.h>
@@ -6,11 +7,12 @@
 #include <asn1/_systems.h>
 
 #include "cdh_comms.h"
-#include <uart/uart_transport.h>
+#include "uart/uart_transport.h"
 #include "lfp/stream.h"
 #include "zephyr/kernel.h"
 #include "zephyr/logging/log.h"
 
+LOG_MODULE_REGISTER(cdh, LOG_LEVEL_DBG);
 LOG_MODULE_REGISTER(cdh, LOG_LEVEL_DBG);
 
 typedef struct
@@ -281,6 +283,11 @@ int main(void)
     lfp_stream_ctx_t lfp_stream;
     user_ctx_t usr_ctx = {0};
 
+    int err = pins_init();
+    if (err != 0) {
+        LOG_ERR("Pin initialization failed");
+        return err;
+    }
 
     lfp_stream_init(
         &lfp_stream,

@@ -1,0 +1,50 @@
+# dts/bindings/vnd,raw-gpios.yaml
+description: Generic group of GPIO pins with no fixed direction
+compatible: "vnd,raw-gpios"
+
+properties:
+  # GPIO groups
+  transceiver-gpios:
+    type: phandle-array
+  astroyeast-gpios:
+    type: phandle-array
+  imager-gpios:
+    type: phandle-array
+  bms-gpios:
+    type: phandle-array
+  pds-gpios:
+    type: phandle-array
+  hdrm-gpios:
+    type: phandle-array
+  mram-gpios:
+    type: phandle-array
+  cam-gpios:
+    type: phandle-array
+  adcs-gpios:
+    type: phandle-array
+
+  # Descriptive labels
+  transceiver-label:
+    type: string
+  astroyeast-label:
+    type: string
+  imager-label:
+    type: string
+  bms-label:
+    type: string
+  pds-label:
+    type: string
+  hdrm-label:
+    type: string
+  mram-label:
+    type: string
+  cam-label:
+    type: string
+  adcs-label:
+    type: string
+
+  # Bus references
+  mram-spi0-bus:
+    type: phandle
+  cam-usb-bus:
+    type: phandle

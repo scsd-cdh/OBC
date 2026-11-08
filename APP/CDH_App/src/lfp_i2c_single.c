@@ -1,4 +1,4 @@
-#include "lfp_i2c_single.h"
+#include "include/lfp_i2c_single.h"
 
 #include <asn1_lfp.h>
 #include <lfp.h>
