@@ -5,8 +5,6 @@
 #include <asn1/pds.h>
 #include <asn1/_systems.h>
 
-#include "cdh_bms.h"
-#include "cdh_pds.h"
 #include "cdh_comms.h"
 #include "lfp/stream.h"
 #include "zephyr/kernel.h"
