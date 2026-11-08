@@ -50,19 +50,13 @@ void cdh_critical_evaluate_power_status(
     const BMSPowerStatusResponse *status
 )
 {
-    // FIXME: Not sure if we actually want to go into safe mode on any flag being set or not. Again revisit
-    const bool protection_fault = false;
-    // const bool protection_fault =
-    //     status->batteryPack1.overcurrent || status->batteryPack2.overcurrent ||
-    //     status->batteryPack1.cellA.undervoltage ||
-    //     status->batteryPack1.cellB.undervoltage ||
-    //     status->batteryPack2.cellA.undervoltage ||
-    //     status->batteryPack2.cellB.undervoltage ||
-    //     status->batteryPack1.cellA.overvoltage ||
-    //     status->batteryPack1.cellB.overvoltage ||
-    //     status->batteryPack2.cellA.overvoltage ||
-    //     status->batteryPack2.cellB.overvoltage;
-
+    // FIXME: we know for sure uv/oc trigger safe mode, not sure what to do about ov
+    const bool protection_fault =
+        status->batteryPack1.overcurrent || status->batteryPack2.overcurrent ||
+        status->batteryPack1.cellA.undervoltage ||
+        status->batteryPack1.cellB.undervoltage ||
+        status->batteryPack2.cellA.undervoltage ||
+        status->batteryPack2.cellB.undervoltage;
 
     // Feels safer to go into safe mode if any cell is below the safe entry threshold, and only exit safe mode if all cells are above the safe exit threshold
     // Not sure what is correct
