@@ -3,15 +3,23 @@
 #include "cdh_pds.h"
 #include "cdh_comms.h"
 #include "zephyr/logging/log.h"
+#include "uart/uart_transport.h"
 #include <string.h>
 
 LOG_MODULE_REGISTER(cdh_threads);
 
 // FIXME: Currently going into safe mode at 30% battery voltage max ADC value, which I have no idea is correct or not.
 // Complete placeholder, we will revisit and tweak accordingly
-#define BMS_ADC_MAX 4095U
-#define BMS_SAFE_ENTRY_ADC ((BMS_ADC_MAX * 30U) / 100U)
-#define BMS_SAFE_EXIT_ADC ((BMS_ADC_MAX * 40U) / 100U)
+#define BMS_ADC_MAX     4095U
+#define BMS_VREF_MV     3300U
+
+#define BMS_SENSE_GAIN_NUM 3U   // 0.75 V/V
+#define BMS_SENSE_GAIN_DEN 4U
+#define MV_TO_ADC(mv)  ((uint32_t)(((uint32_t)(mv)  * BMS_SENSE_GAIN_NUM * 4096U) / (BMS_SENSE_GAIN_DEN * BMS_VREF_MV)))
+#define ADC_TO_MV(adc) ((uint32_t)(((uint32_t)(adc) * BMS_VREF_MV * BMS_SENSE_GAIN_DEN) / (4096U * BMS_SENSE_GAIN_NUM)))
+
+#define BMS_SAFE_ENTRY_ADC MV_TO_ADC(3376U) // 30% battery voltage from the curve.
+#define BMS_SAFE_EXIT_ADC  MV_TO_ADC(3400U) // 40% battery voltage from the curve.
 
 enum cdh_mode {
     CDH_MODE_STANDBY,
@@ -34,28 +42,43 @@ static void cdh_set_mode(enum cdh_mode next_mode)
     /* TODO: Communicate mode changes to subsystems */
 }
 
+static inline double bms_adc_to_float(const uint16_t val) {
+    return ((double)val * 3.3) / (1 << 12);
+}
+
 void cdh_critical_evaluate_power_status(
     const BMSPowerStatusResponse *status
 )
 {
     // FIXME: Not sure if we actually want to go into safe mode on any flag being set or not. Again revisit
-    const bool protection_fault =
-        status->batteryPack1.overcurrent || status->batteryPack2.overcurrent ||
-        status->batteryPack1.cellA.undervoltage ||
-        status->batteryPack1.cellB.undervoltage ||
-        status->batteryPack2.cellA.undervoltage ||
-        status->batteryPack2.cellB.undervoltage ||
-        status->batteryPack1.cellA.overvoltage ||
-        status->batteryPack1.cellB.overvoltage ||
-        status->batteryPack2.cellA.overvoltage ||
-        status->batteryPack2.cellB.overvoltage;
+    const bool protection_fault = false;
+    // const bool protection_fault =
+    //     status->batteryPack1.overcurrent || status->batteryPack2.overcurrent ||
+    //     status->batteryPack1.cellA.undervoltage ||
+    //     status->batteryPack1.cellB.undervoltage ||
+    //     status->batteryPack2.cellA.undervoltage ||
+    //     status->batteryPack2.cellB.undervoltage ||
+    //     status->batteryPack1.cellA.overvoltage ||
+    //     status->batteryPack1.cellB.overvoltage ||
+    //     status->batteryPack2.cellA.overvoltage ||
+    //     status->batteryPack2.cellB.overvoltage;
+
+
+    // Feels safer to go into safe mode if any cell is below the safe entry threshold, and only exit safe mode if all cells are above the safe exit threshold
+    // Not sure what is correct
     const bool low_battery =
         status->batteryPack1.voltage < BMS_SAFE_ENTRY_ADC ||
         status->batteryPack2.voltage < BMS_SAFE_ENTRY_ADC;
     const bool recovered =
-        status->batteryPack1.voltage >= BMS_SAFE_EXIT_ADC &&
-        status->batteryPack2.voltage >= BMS_SAFE_EXIT_ADC;
+        status->batteryPack1.voltage > BMS_SAFE_EXIT_ADC &&
+        status->batteryPack2.voltage > BMS_SAFE_EXIT_ADC;
 
+    LOG_DBG("Pack1: raw=%u (%u mV) | Pack2: raw=%u (%u mV) | entry=%u (%u mV) exit=%u (%u mV) | low=%d recovered=%d",
+          status->batteryPack1.voltage, ADC_TO_MV(status->batteryPack1.voltage),
+          status->batteryPack2.voltage, ADC_TO_MV(status->batteryPack2.voltage),
+          BMS_SAFE_ENTRY_ADC, ADC_TO_MV(BMS_SAFE_ENTRY_ADC),
+          BMS_SAFE_EXIT_ADC,  ADC_TO_MV(BMS_SAFE_EXIT_ADC),
+          low_battery, recovered);
     if (cdh_mode == CDH_MODE_STANDBY && (protection_fault || low_battery)) {
         cdh_set_mode(CDH_MODE_SAFE);
     } else if (cdh_mode == CDH_MODE_SAFE && !protection_fault && recovered) {
