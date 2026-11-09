@@ -27,3 +27,6 @@ void cdh_critical_evaluate_power_status(
     const BMSPowerStatusResponse *status
 );
 bool cdh_critical_is_safe(void);
+
+// gives semaphore allowing command thread to start. We need to open uart before the thread is allowed to do anything. 
+void cdh_command_start(void);

@@ -6,7 +6,15 @@
 #include "uart/uart_transport.h"
 #include <string.h>
 
+#include "lfp/stream.h"
+
 LOG_MODULE_REGISTER(cdh_threads);
+
+/* Given by cdh_command_start() once UART2 is open. */
+K_SEM_DEFINE(command_start_sem, 0, 1);
+
+#define COMMAND_BODY_BUFFER_SIZE 256
+#define COMMAND_RX_BACKOFF_MS    10
 
 #define BMS_ADC_MAX     4095U
 #define BMS_VREF_MV     3300U
@@ -117,6 +125,51 @@ static void discard_queued_telemetry(void)
     k_msgq_purge(&telemetry_queue);
 }
 
+static bool command_on_header(const lfp_header_t *header, void *user_data)
+{
+    ARG_UNUSED(user_data);
+
+    LOG_DBG("Command header: length=%d initiator=%d target=%d endpoint=%d",
+            header->encoded_length,
+            header->initiator,
+            header->target,
+            header->endpoint);
+
+    /* TODO: reject frames not addressed to the CDH (check lfp/stream.h for
+     * what returning false does to the parser before relying on it). */
+    return true;
+}
+
+static void command_on_message(
+    const lfp_header_t *header,
+    const uint8_t *body,
+    uint16_t body_length,
+    void *user_data
+)
+{
+    ARG_UNUSED(user_data);
+
+    LOG_INF("Command received: initiator=%d target=%d endpoint=%d body_length=%u",
+            header->initiator,
+            header->target,
+            header->endpoint,
+            body_length);
+    LOG_HEXDUMP_INF(body, body_length, "Command body:");
+}
+
+static void command_on_error(lfp_code_t reason, void *user_data)
+{
+    ARG_UNUSED(user_data);
+
+    LOG_WRN("Command LFP stream error: %d", reason);
+
+    const uint32_t dropped = uart_transport_debug_dropped();
+    if (dropped != 0) {
+        LOG_WRN("UART RX ring has dropped %u bytes", dropped);
+    }
+}
+
+
 static void critical_thread(const void *p_arg)
 {
     ARG_UNUSED(p_arg);
@@ -158,6 +211,56 @@ static void telemetry_thread(const void *p_arg)
         LOG_DBG("Telemetry thread sleeping for %d seconds", TELEMETRY_PERIOD_MS / 1000);
         k_sleep(K_MSEC(TELEMETRY_PERIOD_MS));
     }
+}
+
+static void command_thread(void *p1, void *p2, void *p3)
+{
+    ARG_UNUSED(p1);
+    ARG_UNUSED(p2);
+    ARG_UNUSED(p3);
+
+    static uint8_t body_buffer[COMMAND_BODY_BUFFER_SIZE];
+    static lfp_stream_ctx_t stream;
+
+    lfp_stream_init(
+        &stream,
+        body_buffer,
+        sizeof(body_buffer),
+        command_on_header,
+        command_on_message,
+        command_on_error,
+        NULL
+    );
+
+    // Only start listening on uart once main has allowed us to. 
+    k_sem_take(&command_start_sem, K_FOREVER);
+    LOG_INF("Command thread started, listening for commands on UART2");
+
+    while (1) {
+        uint8_t byte;
+        const int ret = uart_transport_read(&byte, sizeof(byte), K_FOREVER);
+
+        if (ret <= 0) {
+            if (ret < 0) {
+                LOG_WRN("Failed to read from UART2: %d", ret);
+            }
+            /* Highest priority thread: never spin, or the critical and
+             * telemetry threads starve. */
+            k_msleep(COMMAND_RX_BACKOFF_MS);
+            continue;
+        }
+
+        lfp_stream_update(&stream, byte);
+    }
+}
+
+
+K_THREAD_DEFINE(p_command_thread, THREAD_STACK_SIZE, command_thread,
+        NULL, NULL, NULL, THREAD_PRIORITY_COMMAND, 0, 0);
+
+void cdh_command_start(void)
+{
+    k_sem_give(&command_start_sem);
 }
 
 K_THREAD_DEFINE(p_critical_thread, THREAD_STACK_SIZE, critical_thread, NULL, NULL, NULL,
