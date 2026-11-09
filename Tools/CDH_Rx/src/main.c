@@ -5,6 +5,7 @@
 #include <asn1/pds.h>
 #include <asn1/_systems.h>
 
+#include "asn1/comms.h"
 #include "uart/uart_transport.h"
 #include "lfp/stream.h"
 #include "zephyr/kernel.h"
@@ -216,7 +217,7 @@ static bool decode_message(asn1_lfp_decode_data_t *data)
     return false;
 }
 
-static bool loopback_on_header(const lfp_header_t *header, void *user_data)
+static bool receiver_on_header(const lfp_header_t *header, void *user_data)
 {
     user_ctx_t* ctx = user_data;
     ctx->p_header = (lfp_header_t*)header;
@@ -229,7 +230,7 @@ static bool loopback_on_header(const lfp_header_t *header, void *user_data)
     return true;
 }
 
-static void loopback_on_message(
+static void receiver_on_message(
     const lfp_header_t *header,
     const uint8_t *body,
     uint16_t body_length,
@@ -239,7 +240,7 @@ static void loopback_on_message(
     ARG_UNUSED(user_data);
 
     LOG_DBG(
-        "Loopback telemetry: target=%d endpoint=%d",
+        "receiver telemetry: target=%d endpoint=%d",
         header->target,
         header->endpoint
     );
@@ -254,10 +255,10 @@ static void loopback_on_message(
 }
 
 
-static void loopback_on_error(lfp_code_t reason, void *user_data)
+static void receiver_on_error(lfp_code_t reason, void *user_data)
 {
     user_ctx_t *ctx = user_data;
-    LOG_WRN("Loopback LFP stream error detected: %d", reason);
+    LOG_WRN("receiver LFP stream error detected: %d", reason);
 
     // Print the last 32 bytes received over UART
     uint8_t history[sizeof(ctx->rx_history)];
@@ -283,6 +284,36 @@ static void loopback_on_error(lfp_code_t reason, void *user_data)
     }
 }
 
+K_SEM_DEFINE(transmit_sem, 0, 1);
+
+static void transmit_thread(const void *p)
+{
+    ARG_UNUSED(p);
+
+    COMMSDummyRequest dummy_request = {
+        .placeholder = 0xDEADBEEF
+    };
+
+    k_sem_take(&transmit_sem, K_FOREVER);
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(COMMSDummyRequest)];
+    const uint32_t size = ASN1_LFP_SERIALIZE(commsSystemId, cdhSystemId, COMMSDummyRequest, encode_buf, sizeof(encode_buf), dummy_request);
+    if (!size)
+    {
+        LOG_WRN("Failed to serialize COMMS dummy request");
+        return;
+    }
+
+    while (1) {
+        LOG_DBG("Transmitting COMMS dummy request telemetry");
+        uart_transport_write(link_uart, encode_buf, size);
+
+        k_sleep(K_MSEC(3000));
+    }
+}
+
+K_THREAD_DEFINE(p_tramsit_thread, 1024, transmit_thread, NULL, NULL, NULL,
+        3, 0, 2000);
+
 int main(void)
 {
     uint8_t uart_rx_byte;
@@ -294,12 +325,15 @@ int main(void)
         &lfp_stream,
         lfp_body_buffer,
         sizeof(lfp_body_buffer),
-        loopback_on_header,
-        loopback_on_message,
-        loopback_on_error,
+        receiver_on_header,
+        receiver_on_message,
+        receiver_on_error,
         &usr_ctx
     );
 
+
+
+    LOG_INF("Opening uart transport");
     int ret = uart_transport_open(link_uart);
     if (ret != 0) {
         LOG_ERR("Failed to open UART2 RX: %d", ret);
@@ -307,6 +341,7 @@ int main(void)
     }
 
     LOG_INF("Starting UART2 receiver (decoding telemetry from CDH_App board)");
+    k_sem_give(&transmit_sem);
 
     while (1) {
         ret = uart_transport_read(
