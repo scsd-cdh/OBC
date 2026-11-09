@@ -1,0 +1,44 @@
+/*
+ * Receiver board overlay: UART2 only.
+ *
+ * The pinctrl and uart2 blocks at the bottom are copied verbatim from
+ * CDH_App/app.overlay. If you change the baud rate or pins in one file,
+ * change the other too, or the two boards will stop understanding each other.
+ */
+/ {
+    aliases {
+        transmitter = &uart2;
+    };
+};
+
+/* Disabled for the same reason as in CDH_App/app.overlay: these conflict with
+ * the UART2 configuration below. */
+&spi0 {
+    status = "disabled";
+};
+
+&pwm0 {
+    status = "disabled";
+};
+
+&pwm_led0 {
+    status = "disabled";
+};
+
+&pinctrl {
+    transmitter_default: transmitter_default {
+        group1 {
+            pinmux = <PD25C_UART2_RXD>,
+                     <PD26C_UART2_TXD>;
+        };
+    };
+};
+
+&uart2 {
+    status = "okay";
+    // Setting this to 500000 was causing the UART to drop bytes, so it was changed to 115200 for now. This may need to be revisited in the future.
+    current-speed = <115200>;
+
+    pinctrl-0 = <&transmitter_default>;
+    pinctrl-names = "default";
+};
