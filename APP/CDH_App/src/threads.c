@@ -8,8 +8,6 @@
 
 LOG_MODULE_REGISTER(cdh_threads);
 
-// FIXME: Currently going into safe mode at 30% battery voltage max ADC value, which I have no idea is correct or not.
-// Complete placeholder, we will revisit and tweak accordingly
 #define BMS_ADC_MAX     4095U
 #define BMS_VREF_MV     3300U
 
@@ -58,8 +56,6 @@ void cdh_critical_evaluate_power_status(
         status->batteryPack2.cellA.undervoltage ||
         status->batteryPack2.cellB.undervoltage;
 
-    // Feels safer to go into safe mode if any cell is below the safe entry threshold, and only exit safe mode if all cells are above the safe exit threshold
-    // Not sure what is correct
     const bool low_battery =
         status->batteryPack1.voltage < BMS_SAFE_ENTRY_ADC ||
         status->batteryPack2.voltage < BMS_SAFE_ENTRY_ADC;

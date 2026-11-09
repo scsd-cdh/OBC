@@ -209,15 +209,14 @@ static bool decode_message(asn1_lfp_decode_data_t *data)
 
 static bool loopback_on_header(const lfp_header_t *header, void *user_data)
 {
-    ARG_UNUSED(user_data);
-    // user_ctx_t* ctx = user_data;
-    // ctx->p_header = (lfp_header_t*)header;
-    // LOG_DBG("Received header: length=%d initiator=%d target=%d endpoint=%d",
-    //     header->encoded_length,
-    //     header->initiator,
-    //     header->target,
-    //     header->endpoint
-    // );
+    user_ctx_t* ctx = user_data;
+    ctx->p_header = (lfp_header_t*)header;
+    LOG_DBG("Received header: length=%d initiator=%d target=%d endpoint=%d",
+        header->encoded_length,
+        header->initiator,
+        header->target,
+        header->endpoint
+    );
     return true;
 }
 

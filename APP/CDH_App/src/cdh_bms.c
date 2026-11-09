@@ -238,7 +238,6 @@ unlock:
     k_mutex_unlock(&bms_lock);
 }
 
-
 void request_bms_power_status(void) {
     if (k_mutex_lock(&bms_lock, K_FOREVER) != 0) {
         return;

@@ -63,6 +63,7 @@ size_t uart_transport_debug_snapshot(uint8_t *buffer, size_t buffer_size)
         return 0;
     }
 
+    // disable interrupts to prevent the ISR from modifying the history while we are copying it.
     unsigned int key = irq_lock();
     const size_t count = MIN(uart_debug_history_count, buffer_size);
     const size_t start =
