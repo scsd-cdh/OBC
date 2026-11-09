@@ -119,8 +119,34 @@ static inline void bms_temperature_callback(
     bms_temperature_handler(p_payload);
 }
 
+static inline void request_mock_bms_system_status(void)
+{
+    BMSSystemStatusResponse system_status = {
+        .version = 1,
+        .uptime = 0xdeadbeef
+    };
+    bms_systemstatus_callback(&system_status, NULL);
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
+    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusResponse, encode_buf, sizeof(encode_buf), system_status);
+    if (!size)
+    {
+        LOG_WRN("Failed to serialize mock BMS system status");
+        return;
+    }
+    const int ret = cdh_telemetry_enqueue(encode_buf, size);
+    if (ret != 0)
+    {
+        LOG_WRN("Failed to qenqueue mock BMS system status telemetry: %d", ret);
+    }
+}
+
 void request_bms_system_status(void)
 {
+#ifdef MOCK_BMS
+    request_mock_bms_system_status();
+    return;
+#endif
+
     if (k_mutex_lock(&bms_lock, K_FOREVER) != 0) {
         return;
     }
@@ -175,8 +201,35 @@ unlock:
     k_mutex_unlock(&bms_lock);
 }
 
+static inline void request_mock_bms_temperature_status(void)
+{
+    BMSTemperatureStatusResponse temp_status = {
+        .thermistors = {
+            .arr = { 25, 26, 27, 28, 29, 30, 31, 32 }
+        }
+    };
+    bms_temperature_callback(&temp_status, NULL);
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusResponse)];
+    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSTemperatureStatusResponse, encode_buf, sizeof(encode_buf), temp_status);
+    if (!size)
+    {
+        LOG_WRN("Failed to serialize mock BMS temperature status");
+        return;
+    }
+    const int ret = cdh_telemetry_enqueue(encode_buf, size);
+    if (ret != 0)
+    {
+        LOG_WRN("Failed to enqueue mock BMS temperature status telemetry: %d", ret);
+    }
+}
+
 void request_bms_temperature_status(void)
 {
+#ifdef MOCK_BMS
+    request_mock_bms_temperature_status();
+    return;
+#endif
+
     if (k_mutex_lock(&bms_lock, K_FOREVER) != 0) {
         return;
     }
@@ -238,7 +291,66 @@ unlock:
     k_mutex_unlock(&bms_lock);
 }
 
+// TODO: Configure for if we want safe mode or not. For now values hardcoded for safe thresholds
+static inline void request_mock_bms_power_status(void)
+{
+    BMSPowerStatusResponse power_status = {
+        .batteryPack1 = {
+            .voltage = MV_TO_ADC(4100U),
+            .currentDraw = 0x2000,
+            .currentCharge = 0x3000,
+            .overcurrent = 0,
+            .cellA = {
+                .voltage = 0x400,
+                .overvoltage = 0,
+                .undervoltage = 0
+            },
+            .cellB = {
+                .voltage = 0x500,
+                .overvoltage = 0,
+                .undervoltage = 0
+            }
+        },
+        .batteryPack2 = {
+            .voltage = MV_TO_ADC(4100U),
+            .currentDraw = 0x7000,
+            .currentCharge = 0x8000,
+            .overcurrent = 0,
+            .cellA = {
+                .voltage = 0x900,
+                .overvoltage = 0,
+                .undervoltage = 0
+            },
+            .cellB = {
+                .voltage = 0xa00,
+                .overvoltage = 0,
+                .undervoltage = 0
+            }
+        }
+    };
+
+    // a little  redundant
+    bms_battery_callback(&power_status, NULL);
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusResponse)];
+    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSPowerStatusResponse, encode_buf, sizeof(encode_buf), power_status);
+    if (!size)
+    {
+        LOG_WRN("Failed to serialize mock BMS power status");
+        return;
+    }
+    const int ret = cdh_telemetry_enqueue(encode_buf, size);
+    if (ret != 0)
+    {
+        LOG_WRN("Failed to enqueue mock BMS power status telemetry: %d", ret);
+    }
+}
+
 void request_bms_power_status(void) {
+#ifdef MOCK_BMS
+    request_mock_bms_power_status();
+    return;
+#endif
+
     if (k_mutex_lock(&bms_lock, K_FOREVER) != 0) {
         return;
     }

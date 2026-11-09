@@ -95,6 +95,7 @@ static inline void pds_healthcheck_callback(PDSHealthCheckResponse * p_payload,
 
     pds_healthcheck_handler(p_payload);
 }
+
 static inline void pds_converter_monitor_callback(PDSConverterMonitorResponse * p_payload,
                                                   asn1_lfp_decode_data_t * p_data) {
     ARG_UNUSED(p_data);
@@ -102,7 +103,33 @@ static inline void pds_converter_monitor_callback(PDSConverterMonitorResponse * 
     pds_converter_monitor_handler(p_payload);
 }
 
+static inline void request_pds_mock_system_status(void)
+{
+    PDSSystemStatusResponse system_status = {
+        .version = 1,
+        .uptime = 0xdeadbeef
+    };
+    pds_systemstatus_callback(&system_status, NULL);
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(PDSSystemStatusResponse)];
+    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, pdsSystemId, PDSSystemStatusResponse, encode_buf, sizeof(encode_buf), system_status);
+    if (!size)
+    {
+        LOG_WRN("Failed to serialize mock PDS system status");
+        return;
+    }
+
+    const int ret = cdh_telemetry_enqueue(encode_buf, size);
+    if (ret != 0)
+    {
+        LOG_WRN("Failed to enqueue mock PDS system status telemetry: %d", ret);
+    }
+}
+
 void request_pds_system_status(void) {
+#ifdef MOCK_PDS
+    request_pds_mock_system_status();
+    return;
+#endif
     if (k_mutex_lock(&pds_lock, K_FOREVER) != 0) {
         return;
     }
@@ -162,7 +189,35 @@ unlock:
     k_mutex_unlock(&pds_lock);
 }
 
+static inline void request_pds_mock_health_check(void)
+{
+    PDSHealthCheckResponse health_check = {
+        .hash = {
+            .arr = {0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF,
+                    0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}
+        }
+    };
+    pds_healthcheck_callback(&health_check, NULL);
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(PDSHealthCheckResponse)];
+    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, pdsSystemId, PDSHealthCheckResponse, encode_buf, sizeof(encode_buf), health_check);
+    if (!size)
+    {
+        LOG_WRN("Failed to serialize mock PDS health check");
+        return;
+    }
+    const int ret = cdh_telemetry_enqueue(encode_buf, size);
+    if (ret != 0)
+    {
+        LOG_WRN("Failed to enqueue mock PDS health check telemetry: %d", ret);
+    }
+}
+
 void request_pds_health_check(void) {
+#ifdef MOCK_PDS
+    request_pds_mock_health_check();
+    return;
+#endif
+
     if (k_mutex_lock(&pds_lock, K_FOREVER) != 0) {
         return;
     }
@@ -221,7 +276,36 @@ unlock:
     k_mutex_unlock(&pds_lock);
 }
 
+static inline void request_pds_mock_converter_monitor(void)
+{
+    PDSConverterMonitorResponse converter_monitor = {
+        .int5vVs = MV_TO_ADC(5000U),
+        .reg5vVs = MV_TO_ADC(5000U),
+        .converterA5vVs = MV_TO_ADC(5000U),
+        .converterB5vVs = MV_TO_ADC(5000U),
+        .temperatureSense = MV_TO_ADC(2500U)
+    };
+    pds_converter_monitor_callback(&converter_monitor, NULL);
+    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(PDSConverterMonitorResponse)];
+    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, pdsSystemId, PDSConverterMonitorResponse, encode_buf, sizeof(encode_buf), converter_monitor);
+    if (!size)
+    {
+        LOG_WRN("Failed to serialize mock PDS converter monitor");
+        return;
+    }
+    const int ret = cdh_telemetry_enqueue(encode_buf, size);
+    if (ret != 0)
+    {
+        LOG_WRN("Failed to enqueue mock PDS converter monitor telemetry: %d", ret);
+    }
+}
+
 void request_pds_converter_monitor(void) {
+#ifdef MOCK_PDS
+    request_pds_mock_converter_monitor();
+    return;
+#endif
+
     if (k_mutex_lock(&pds_lock, K_FOREVER) != 0) {
         return;
     }

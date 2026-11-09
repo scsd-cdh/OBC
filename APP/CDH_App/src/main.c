@@ -1,5 +1,6 @@
 #include "pins.h"
 #include "cdh_comms.h"
+#include "threads.h"
 #include "uart/uart_transport.h"
 #include "zephyr/kernel.h"
 #include "zephyr/logging/log.h"
@@ -19,5 +20,7 @@ int main(void)
         LOG_ERR("Failed to open UART2: %d", ret);
         return ret;
     }
+
+    cdh_command_start();
     return 0;
 }

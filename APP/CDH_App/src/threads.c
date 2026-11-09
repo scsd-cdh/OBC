@@ -16,14 +16,6 @@ K_SEM_DEFINE(command_start_sem, 0, 1);
 #define COMMAND_BODY_BUFFER_SIZE 256
 #define COMMAND_RX_BACKOFF_MS    10
 
-#define BMS_ADC_MAX     4095U
-#define BMS_VREF_MV     3300U
-
-#define BMS_SENSE_GAIN_NUM 3U   // 0.75 V/V
-#define BMS_SENSE_GAIN_DEN 4U
-#define MV_TO_ADC(mv)  ((uint32_t)(((uint32_t)(mv)  * BMS_SENSE_GAIN_NUM * 4096U) / (BMS_SENSE_GAIN_DEN * BMS_VREF_MV)))
-#define ADC_TO_MV(adc) ((uint32_t)(((uint32_t)(adc) * BMS_VREF_MV * BMS_SENSE_GAIN_DEN) / (4096U * BMS_SENSE_GAIN_NUM)))
-
 #define BMS_SAFE_ENTRY_ADC MV_TO_ADC(3376U) // 30% battery voltage from the curve.
 #define BMS_SAFE_EXIT_ADC  MV_TO_ADC(3400U) // 40% battery voltage from the curve.
 
@@ -57,6 +49,7 @@ void cdh_critical_evaluate_power_status(
 )
 {
     // FIXME: we know for sure uv/oc trigger safe mode, not sure what to do about ov
+    // Active high,
     const bool protection_fault =
         status->batteryPack1.overcurrent || status->batteryPack2.overcurrent ||
         status->batteryPack1.cellA.undervoltage ||

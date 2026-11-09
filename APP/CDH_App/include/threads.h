@@ -17,6 +17,14 @@
 #define TELEMETRY_QUEUE_DEPTH 16
 #define TELEMETRY_BUFFER_SIZE 256
 
+#define BMS_ADC_MAX     4095U
+#define BMS_VREF_MV     3300U
+
+#define BMS_SENSE_GAIN_NUM 3U   // 0.75 V/V
+#define BMS_SENSE_GAIN_DEN 4U
+#define MV_TO_ADC(mv)  ((uint32_t)(((uint32_t)(mv)  * BMS_SENSE_GAIN_NUM * 4096U) / (BMS_SENSE_GAIN_DEN * BMS_VREF_MV)))
+#define ADC_TO_MV(adc) ((uint32_t)(((uint32_t)(adc) * BMS_VREF_MV * BMS_SENSE_GAIN_DEN) / (4096U * BMS_SENSE_GAIN_NUM)))
+
 struct cdh_telemetry_message {
     size_t length;
     uint8_t data[TELEMETRY_BUFFER_SIZE];
