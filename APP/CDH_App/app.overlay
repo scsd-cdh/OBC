@@ -1,129 +1,150 @@
 / {
-	/* Use of the pins in code are all lowercase */
-	transceiver: transceiver,pins {
-		compatible = "vnd,raw-gpios";
-		transceiver-gpios = <&pioe 1 GPIO_ACTIVE_HIGH>, /* OUTPUT TRANS_ON */
-							<&pioe 2 GPIO_ACTIVE_HIGH>, /* OUTPUT TRANS_OFF */
-							<&piod 10 GPIO_ACTIVE_HIGH>, /* INPUT TRANS_MI2C_DIS */
-							<&pioc 16 GPIO_ACTIVE_HIGH>, /* INPUT TRANS_RI2C_DIS */
-							<&pioc 22 GPIO_ACTIVE_HIGH>; /* INPUT TRANS_IRQ */
-		transceiver-label = "Transceiver Board pins connected to CDH Board";
-		status = "okay";
-	};
+    aliases {
+        transmitter = &uart2;
+    };
 
-	astroyeast: astroyeast,pins {
-		compatible = "vnd,raw-gpios";
-		astroyeast-gpios = <&pioc 13 GPIO_ACTIVE_HIGH>, /* OUTPUT YEAST_ON */
-						   <&pioc 15 GPIO_ACTIVE_HIGH>, /* OUTPUT YEAST_OFF */
-						   <&pioe 4 GPIO_ACTIVE_HIGH>, /* INPUT YEAST_MI2C_DIS */
-						   <&piob 2 GPIO_ACTIVE_HIGH>, /* INPUT YEAST_RI2C_DIS */
-						   <&pioc 23 GPIO_ACTIVE_HIGH>; /* INPUT YEAST_IRQ */
-		astroyeast-label = "Astroyeast Board pins connected to CDH Board";
-		status = "okay";
-	};
+    /* Use of the pins in code are all lowercase */
+    transceiver: transceiver,pins {
+        compatible = "vnd,raw-gpios";
+        transceiver-gpios = <&pioe 1 GPIO_ACTIVE_HIGH>, /* OUTPUT TRANS_ON */
+                            <&pioe 2 GPIO_ACTIVE_HIGH>, /* OUTPUT TRANS_OFF */
+                            <&piod 10 GPIO_ACTIVE_HIGH>, /* INPUT TRANS_MI2C_DIS */
+                            <&pioc 16 GPIO_ACTIVE_HIGH>, /* INPUT TRANS_RI2C_DIS */
+                            <&pioc 22 GPIO_ACTIVE_HIGH>; /* INPUT TRANS_IRQ */
+        transceiver-label = "Transceiver Board pins connected to CDH Board";
+        status = "okay";
+    };
 
-	imager: imager,pins {
-		compatible = "vnd,raw-gpios";
-		imager-gpios = <&pioa 6 GPIO_ACTIVE_HIGH>, /* OUTPUT IMAGER_ON */
-					   <&piod 8 GPIO_ACTIVE_HIGH>, /* OUTPUT IMAGER_OFF */
-					   <&piod 3 GPIO_ACTIVE_HIGH>, /* INPUT IMAGER_MI2C_DIS */
-					   <&pioa 29 GPIO_ACTIVE_HIGH>, /* INPUT IMAGER_RI2C_DIS */
-					   <&pioc 24 GPIO_ACTIVE_HIGH>; /* INPUT IMAGER_IRQ*/
-		imager-label = "Imager Board pins connected to CDH Board";
-		status = "okay";
-	};
+    astroyeast: astroyeast,pins {
+        compatible = "vnd,raw-gpios";
+        astroyeast-gpios = <&pioc 13 GPIO_ACTIVE_HIGH>, /* OUTPUT YEAST_ON */
+                           <&pioc 15 GPIO_ACTIVE_HIGH>, /* OUTPUT YEAST_OFF */
+                           <&pioe 4 GPIO_ACTIVE_HIGH>, /* INPUT YEAST_MI2C_DIS */
+                           <&piob 2 GPIO_ACTIVE_HIGH>, /* INPUT YEAST_RI2C_DIS */
+                           <&pioc 23 GPIO_ACTIVE_HIGH>; /* INPUT YEAST_IRQ */
+        astroyeast-label = "Astroyeast Board pins connected to CDH Board";
+        status = "okay";
+    };
 
-	bms: bms,pins {
-		compatible = "vnd,raw-gpios";
-		bms-gpios = <&pioc 0 GPIO_ACTIVE_HIGH>, /* BMS_MI2C_DIS */
-					<&piod 29 GPIO_ACTIVE_HIGH>, /* BMS_RI2C_DIS */
-					<&pioc 26 GPIO_ACTIVE_HIGH>; /* INPUT BMS_IRQ */
-		bms-label = "BMS Board pins connected to CDH Board";
-		status = "okay";
-	};
+    imager: imager,pins {
+        compatible = "vnd,raw-gpios";
+        imager-gpios = <&pioa 6 GPIO_ACTIVE_HIGH>, /* OUTPUT IMAGER_ON */
+                       <&piod 8 GPIO_ACTIVE_HIGH>, /* OUTPUT IMAGER_OFF */
+                       <&piod 3 GPIO_ACTIVE_HIGH>, /* INPUT IMAGER_MI2C_DIS */
+                       <&pioa 29 GPIO_ACTIVE_HIGH>, /* INPUT IMAGER_RI2C_DIS */
+                       <&pioc 24 GPIO_ACTIVE_HIGH>; /* INPUT IMAGER_IRQ*/
+        imager-label = "Imager Board pins connected to CDH Board";
+        status = "okay";
+    };
 
-	pds: pds,pins {
-		compatible = "vnd,raw-gpios";
-		pds-gpios = <&piod 0 GPIO_ACTIVE_HIGH>, /* OUTPUT PDS_MCU_EN */
-					<&pioc 27 GPIO_ACTIVE_HIGH>; /* INPUT PDS_IRQ */
-		pds-label = "PDS Board pins connected to CDH Board";
-		status = "okay";
-	};
+    bms: bms,pins {
+        compatible = "vnd,raw-gpios";
+        bms-gpios = <&pioc 0 GPIO_ACTIVE_HIGH>, /* BMS_MI2C_DIS */
+                    <&piod 29 GPIO_ACTIVE_HIGH>, /* BMS_RI2C_DIS */
+                    <&pioc 26 GPIO_ACTIVE_HIGH>; /* INPUT BMS_IRQ */
+        bms-label = "BMS Board pins connected to CDH Board";
+        status = "okay";
+    };
 
-	hdrm: hdrm,pins {
-		compatible = "vnd,raw-gpios";
-		hdrm-gpios = <&pioc 2 GPIO_ACTIVE_HIGH>, /* INPUT ARM_HDRM */
-					 <&pioc 3 GPIO_ACTIVE_HIGH>, /* INPUT BURN_HDRM */
-					 <&pioc 5 GPIO_ACTIVE_HIGH>, /* INPUT STAT_HDRM */
-					 <&pioa 21 GPIO_ACTIVE_HIGH>, /* INPUT ARM_HDRM_2 */
-					 <&pioa 22 GPIO_ACTIVE_HIGH>, /* INPUT BURN_HDRM_2 */
-					 <&pioa 23 GPIO_ACTIVE_HIGH>; /* INPUT BOOT_HDRM_2 */
-		hdrm-label = "HDRM Board pins connected to CDH Board";
-		status = "okay";
-	};
+    pds: pds,pins {
+        compatible = "vnd,raw-gpios";
+        pds-gpios = <&piod 0 GPIO_ACTIVE_HIGH>, /* OUTPUT PDS_MCU_EN */
+                    <&pioc 27 GPIO_ACTIVE_HIGH>; /* INPUT PDS_IRQ */
+        pds-label = "PDS Board pins connected to CDH Board";
+        status = "okay";
+    };
 
-	mram: mram,pins {
-		compatible = "vnd,raw-gpios";
-		mram-gpios = <&piod 15 GPIO_ACTIVE_LOW>, /* OUTPUT !RAM_CS */
-					 <&piod 17 GPIO_ACTIVE_LOW>, /* OUTPUT !RAM_CS_2 */
-					 <&piod 16 GPIO_ACTIVE_LOW>, /* OUTPUT !RAM_EN */
-					 <&piod 18 GPIO_ACTIVE_LOW>, /* OUTPUT !RAM_EN_2 */
-					 <&piod 13 GPIO_ACTIVE_HIGH>, /* OUTPUT RAM_WP */
-					 <&piod 14 GPIO_ACTIVE_HIGH>; /* OUTPUT RAM_WP_2 */
-		mram-spi0-bus = <&spi0>;
-		mram-label = "MRAM pins connected to CDH Board";
-		status = "okay";
-	};
+    hdrm: hdrm,pins {
+        compatible = "vnd,raw-gpios";
+        hdrm-gpios = <&pioc 2 GPIO_ACTIVE_HIGH>, /* INPUT ARM_HDRM */
+                     <&pioc 3 GPIO_ACTIVE_HIGH>, /* INPUT BURN_HDRM */
+                     <&pioc 5 GPIO_ACTIVE_HIGH>, /* INPUT STAT_HDRM */
+                     <&pioa 21 GPIO_ACTIVE_HIGH>, /* INPUT ARM_HDRM_2 */
+                     <&pioa 22 GPIO_ACTIVE_HIGH>, /* INPUT BURN_HDRM_2 */
+                     <&pioa 23 GPIO_ACTIVE_HIGH>; /* INPUT BOOT_HDRM_2 */
+        hdrm-label = "HDRM Board pins connected to CDH Board";
+        status = "okay";
+    };
 
-	camera: camera,pins {
-		compatible = "vnd,raw-gpios";
-		cam-gpios = <&pioa 20 GPIO_ACTIVE_HIGH>; /* OUTPUT CAM_ID */
-		// YET TO BE ASSIGNED
-		//			 <GPIO_ACTIVE_LOW>, /* CAM_RST_EN */
-		//			 <GPIO_ACTIVE_LOW>, /* CAM_GPIO0 */
-		//			 <GPIO_ACTIVE_LOW>, /* CAM_GPIO1 */
-		//			 <GPIO_ACTIVE_LOW>, /* CAM_GPIO2 */
-		// YET TO BE ASSIGNED
-		cam-usb-bus = <&usbhs>; /* for CAM_USB_D_P/N */
-		cam-label = "Camera pins connected to CDH Board";
-		status = "okay";
-	};
+    mram: mram,pins {
+        compatible = "vnd,raw-gpios";
+        mram-gpios = <&piod 15 GPIO_ACTIVE_LOW>, /* OUTPUT !RAM_CS */
+                     <&piod 17 GPIO_ACTIVE_LOW>, /* OUTPUT !RAM_CS_2 */
+                     <&piod 16 GPIO_ACTIVE_LOW>, /* OUTPUT !RAM_EN */
+                     <&piod 18 GPIO_ACTIVE_LOW>, /* OUTPUT !RAM_EN_2 */
+                     <&piod 13 GPIO_ACTIVE_HIGH>, /* OUTPUT RAM_WP */
+                     <&piod 14 GPIO_ACTIVE_HIGH>; /* OUTPUT RAM_WP_2 */
+        mram-spi0-bus = <&spi0>;
+        mram-label = "MRAM pins connected to CDH Board";
+        status = "okay";
+    };
 
-	adcs: adcs,pins {
-		compatible = "vnd,raw-gpios";
-		adcs-gpios = <&piod 6 GPIO_ACTIVE_HIGH>, /* OUTPUT ADCS_ON */
-					 <&piod 7 GPIO_ACTIVE_HIGH>, /* OUTPUT ADCS_OFF */
-					 <&pioa 28 GPIO_ACTIVE_HIGH>, /* INPUT ADCS_MI2C_DIS */
-					 <&piod 9 GPIO_ACTIVE_HIGH>; /* INPUT ADCS_RI2C_DIS */
-		adcs-label = "ADCS pins connected to CDH Board";
-		status = "okay";
-	};
+    camera: camera,pins {
+        compatible = "vnd,raw-gpios";
+        cam-gpios = <&pioa 20 GPIO_ACTIVE_HIGH>; /* OUTPUT CAM_ID */
+        // YET TO BE ASSIGNED
+        //             <GPIO_ACTIVE_LOW>, /* CAM_RST_EN */
+        //             <GPIO_ACTIVE_LOW>, /* CAM_GPIO0 */
+        //             <GPIO_ACTIVE_LOW>, /* CAM_GPIO1 */
+        //             <GPIO_ACTIVE_LOW>, /* CAM_GPIO2 */
+        // YET TO BE ASSIGNED
+        cam-usb-bus = <&usbhs>; /* for CAM_USB_D_P/N */
+        cam-label = "Camera pins connected to CDH Board";
+        status = "okay";
+    };
+
+    adcs: adcs,pins {
+        compatible = "vnd,raw-gpios";
+        adcs-gpios = <&piod 6 GPIO_ACTIVE_HIGH>, /* OUTPUT ADCS_ON */
+                     <&piod 7 GPIO_ACTIVE_HIGH>, /* OUTPUT ADCS_OFF */
+                     <&pioa 28 GPIO_ACTIVE_HIGH>, /* INPUT ADCS_MI2C_DIS */
+                     <&piod 9 GPIO_ACTIVE_HIGH>; /* INPUT ADCS_RI2C_DIS */
+        adcs-label = "ADCS pins connected to CDH Board";
+        status = "okay";
+    };
 };
 
 &ext1_i2c {
-	pds_i2c: pds@8 {
-		compatible = "vnd,i2c-device";
+    pds_i2c: pds@8 {
+        compatible = "vnd,i2c-device";
 
-		reg = < 0x08 >;
-	};
-	bms_i2c: bms@9 {
-		compatible = "vnd,i2c-device";
+        reg = < 0x08 >;
+    };
+    bms_i2c: bms@9 {
+        compatible = "vnd,i2c-device";
 
-		reg = < 0x09 >;
-	};
+        reg = < 0x09 >;
+    };
 
 };
 
-&ext1_i2c {
-	pds_i2c: pds@8 {
-		compatible = "vnd,i2c-device";
+// FIXME: This conflicts with one of the uart configurations, come back to this
+&spi0 {
+    status = "disabled";
+};
 
-		reg = < 0x08 >;
-	};
-	bms_i2c: bms@9 {
-		compatible = "vnd,i2c-device";
+&pwm0 {
+    status = "disabled";
+};
 
-		reg = < 0x09 >;
-	};
+&pwm_led0 {
+    status = "disabled";
+};
 
+&pinctrl {
+    transmitter_default: transmitter_default {
+        group1 {
+            pinmux = <PD25C_UART2_RXD>,
+                     <PD26C_UART2_TXD>;
+        };
+    };
+};
+
+&uart2 {
+    status = "okay";
+    // Setting this to 500000 was causing the UART to drop bytes, so it was changed to 115200 for now. This may need to be revisited in the future.
+    current-speed = <115200>;
+
+    pinctrl-0 = <&transmitter_default>;
+    pinctrl-names = "default";
 };

@@ -2,7 +2,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 
-#include "include/pins.h"
+#include "pins.h"
 
 LOG_MODULE_REGISTER(pins, LOG_LEVEL_INF);
 
