@@ -136,7 +136,13 @@ typedef struct {
 } bms_telemetry_t;
 
 // Acquisition owns reading_buffer; CDH serializes only comm_buffer.
-static volatile bms_telemetry_t s_reading_buffer;
+// No successful scan yet: report invalid temperatures rather than apparent 0 C.
+static volatile bms_telemetry_t s_reading_buffer = {
+    .temperature = { .thermistors = { .arr = {
+        INT32_MIN, INT32_MIN, INT32_MIN, INT32_MIN,
+        INT32_MIN, INT32_MIN, INT32_MIN, INT32_MIN
+    } } }
+};
 static volatile bms_telemetry_t s_comm_buffer;
 static HeaterController s_heaters[4];
 
@@ -498,27 +504,36 @@ static bool collect_power_status(void) {
 static bool collect_temperature_status(void) 
 {
     BMSTemperatureStatusResponse temperature;
+    uint16_t raw_thermistors[ADC_NUM_CHANNELS];
 
     for (uint8_t i = 0; i < ADC_NUM_CHANNELS; i++) 
     {
-        if (ADS7138IRTER_SingleRegisterWrite(&s_swi2c_descriptor,
-                ADS7138_CHANNEL_SEL_REGISTER, i) != ADS7138_STATUS_OK ||
-            ADS7138IRTER_Read(&s_swi2c_descriptor,
-                &temperature.thermistors.arr[i]) != ADS7138_STATUS_OK) {
+        ADS7138_Status ret = ADS7138IRTER_SingleRegisterWrite(&s_swi2c_descriptor,
+                                                            ADS7138_CHANNEL_SEL_REGISTER, i);
+
+        if (ret == ADS7138_STATUS_OK) {
+            ret = ADS7138IRTER_Read(&s_swi2c_descriptor, &raw_thermistors[i]);
+        }
+
+        if (ret != ADS7138_STATUS_OK) {
             return false;
         }
+    }
+
+    // Sensor numbering 1..8 maps to ADS channels 0..7 in adjacent pairs.
+    // Update heaters first and reuse their converted milliC values for telemetry.
+    for (uint8_t i = 0; i < 4; i++) {
+        (void)heater_controller_update(&s_heaters[i],
+            raw_thermistors[2 * i], raw_thermistors[2 * i + 1],
+            &temperature.thermistors.arr[2 * i],
+            &temperature.thermistors.arr[2 * i + 1]);
     }
 
     uint16_t gie = __get_SR_register() & GIE;
     __disable_interrupt();
     s_reading_buffer.temperature = temperature;
-    if (gie) __enable_interrupt();
-
-    // Sensor numbering 1..8 maps to ADS channels 0..7 in adjacent pairs.
-    for (uint8_t i = 0; i < 4; i++) {
-        (void)heater_controller_update(&s_heaters[i],
-            temperature.thermistors.arr[2 * i],
-            temperature.thermistors.arr[2 * i + 1]);
+    if (gie) {
+        __enable_interrupt();
     }
     return true;
 }

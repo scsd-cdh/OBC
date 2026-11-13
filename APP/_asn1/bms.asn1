@@ -3,6 +3,10 @@ BMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
 -- Convert to voltage with ((float)val * 3.3) / (1 &lt;&lt; 12)
 BMSADCValue ::= INTEGER(0..65535)
 
+-- Signed millidegrees Celsius; -2147483648 means invalid or not yet sampled.
+BMSTemperatureMilliCelsius ::= INTEGER(-2147483648..2147483647)
+bmsTemperatureInvalid INTEGER ::= -2147483648
+
 -- Status of an individual cell
 BMSCellStatus ::= SEQUENCE {
     -- Cell Over Voltage
@@ -73,8 +77,9 @@ BMSTemperatureStatusRequest ::= SEQUENCE {
 
 lfpIdBMSTemperatureStatusResponse INTEGER ::= 7
 BMSTemperatureStatusResponse ::= SEQUENCE {
-    -- Direct Reading of Thermistors
-    thermistors SEQUENCE SIZE(8) OF BMSADCValue
+    -- Converted thermistor temperatures in signed millidegrees Celsius.
+    -- Invalid channels contain bmsTemperatureInvalid; raw ADC counts are not sent.
+    thermistors SEQUENCE SIZE(8) OF BMSTemperatureMilliCelsius
 }
 
 

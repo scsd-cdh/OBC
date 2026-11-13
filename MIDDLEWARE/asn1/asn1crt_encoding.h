@@ -47,12 +47,15 @@ flag BitStream_ReadBit(BitStream* pBitStrm, flag* v);
 flag BitStream_ReadByte(BitStream* pBitStrm, byte* v);
 
 /* Integer functions */
+void BitStream_EncodeConstraintWholeNumber(BitStream* pBitStrm, asn1SccSint v, asn1SccSint min, asn1SccSint max);
 void BitStream_EncodeConstraintPosWholeNumber(BitStream* pBitStrm, asn1SccUint v, asn1SccUint min, asn1SccUint max);
 
 
+flag BitStream_DecodeConstraintWholeNumber(BitStream* pBitStrm, asn1SccSint* v, asn1SccSint min, asn1SccSint max);
 flag BitStream_DecodeConstraintPosWholeNumber(BitStream* pBitStrm, asn1SccUint* v, asn1SccUint min, asn1SccUint max);
 
 
+flag BitStream_DecodeConstraintWholeNumberInt32(BitStream* pBitStrm, int32_t* v, int32_t min, int32_t max);
 
 flag BitStream_DecodeConstraintPosWholeNumberUInt8 (BitStream* pBitStrm, uint8_t* v,  uint8_t min,  uint8_t max);
 flag BitStream_DecodeConstraintPosWholeNumberUInt16(BitStream* pBitStrm, uint16_t* v, uint16_t min, uint16_t max);

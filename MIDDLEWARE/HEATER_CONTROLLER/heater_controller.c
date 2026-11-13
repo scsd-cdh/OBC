@@ -5,7 +5,12 @@
 #define UINT12BIT_MAX 4095u
 #define ADC_COUNTS_PER_FULL_SCALE 4096.0f // 2^12; ADS7138 uses AVCC as reference
 
-static bool adc_to_millicelsius(uint16_t adc, int32_t *temperature) {
+bool heater_controller_adc_to_millicelsius(uint16_t adc, int32_t *temperature) {
+    // Shared by telemetry and heater control; configuration checks are debug-only.
+    assert(THERMISTOR_R25_OHMS > 0.0f && isfinite(THERMISTOR_R25_OHMS));
+    assert(THERMISTOR_BETA_K > 0.0f && isfinite(THERMISTOR_BETA_K));
+    assert(THERMISTOR_PULLUP_OHMS > 0.0f && isfinite(THERMISTOR_PULLUP_OHMS));
+
     if (adc == 0u || adc > UINT12BIT_MAX) {
         return false;
     }
@@ -52,22 +57,22 @@ void heater_controller_init(HeaterController *controller, uint16_t heater,
 }
 
 bool heater_controller_update(HeaterController *controller,
-                              uint16_t adc_a, uint16_t adc_b) 
+                              uint16_t adc_a, uint16_t adc_b,
+                              int32_t *temperature_a, int32_t *temperature_b)
 {
-    // Check fixed thermistor configuration and thresholds in debug builds only.
-    assert(THERMISTOR_R25_OHMS > 0.0f && isfinite(THERMISTOR_R25_OHMS));
-    assert(THERMISTOR_BETA_K > 0.0f && isfinite(THERMISTOR_BETA_K));
-    assert(THERMISTOR_PULLUP_OHMS > 0.0f && isfinite(THERMISTOR_PULLUP_OHMS));
+    // Check fixed thresholds in debug builds only.
     assert(LOW_THRES_TEMP < HIGH_THRES_TEMP);
 
-    if (!controller->output) {
-        return false;
-    }
+    // Convert both independently so telemetry keeps the valid sensor even if
+    // its pair fails. Reuse these same values for the heater decision.
+    int32_t first = THERMISTOR_INVALID_MILLICELSIUS;
+    int32_t second = THERMISTOR_INVALID_MILLICELSIUS;
+    bool first_valid = heater_controller_adc_to_millicelsius(adc_a, &first);
+    bool second_valid = heater_controller_adc_to_millicelsius(adc_b, &second);
+    *temperature_a = first;
+    *temperature_b = second;
 
-    int32_t first, second;
-    if (!adc_to_millicelsius(adc_a, &first) ||
-        !adc_to_millicelsius(adc_b, &second)) 
-    {
+    if (!controller->output || !first_valid || !second_valid) {
         return false;
     }
     

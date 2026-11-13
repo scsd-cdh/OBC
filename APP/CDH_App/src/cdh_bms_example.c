@@ -67,7 +67,12 @@ static void bms_logging_temperature_callback(const BMSTemperatureStatusResponse 
     ARG_UNUSED(p_data);
 
     for (unsigned i = 0; i < 8; i++) {
-        LOG_INF("Thermistor %u: %u", i, (unsigned)p_payload->thermistors.arr[i]);
+        const BMSTemperatureMilliCelsius temperature = p_payload->thermistors.arr[i];
+        if (temperature == bmsTemperatureInvalid) {
+            LOG_INF("Thermistor %u: invalid", i + 1);
+        } else {
+            LOG_INF("Thermistor %u: %+ld mC", i + 1, (long)temperature);
+        }
     }
 }
 
