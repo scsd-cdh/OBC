@@ -52,6 +52,11 @@ the eight ADC codes actually being supplied.
 
 Invalid data preserves that heater's previous state; it does not force it OFF.
 The other three heaters continue to update when all I2C channel reads succeed.
+The BMS/CDH temperature response reports signed millidegrees Celsius, not the
+raw codes printed by the emulator. With these defaults, expect approximately
+`[+3, +3, +20003, +20003, +10021, +10021, +3, -2147483648]`;
+the last value is the invalid-temperature sentinel, not a physical temperature.
+Small rounding differences are normal. At 25 C the nominal response is +25000.
 FR5989/FR6989 outputs are P2.4, P2.5, P2.6, P2.7 respectively.
 Allow at least one complete successful one-second BMS scan after changing data.
 

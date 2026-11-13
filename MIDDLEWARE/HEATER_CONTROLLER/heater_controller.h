@@ -33,6 +33,7 @@
 #define THERMISTOR_REFERENCE_K 298.15f  // 25 degrees Celsius in kelvin
 #define CELSIUS_TO_KELVIN 273.15f       // Kelvin offset from Celsius
 #define MILLICELSIUS_PER_CELSIUS 1000.0f
+#define THERMISTOR_INVALID_MILLICELSIUS INT32_MIN // No valid temperature conversion
 
 typedef void (*HeaterOutput)(uint16_t heater, bool on);
 
@@ -45,6 +46,11 @@ typedef struct {
 void heater_controller_init(HeaterController *controller, uint16_t heater,
                             HeaterOutput output);
 
+// Shared NTC conversion for telemetry/control. Output must point to an int32_t.
+// Writes signed millidegrees Celsius; false leaves output unchanged.
+// Invalid thermistor constants assert in debug builds; ADC/conversion failures return false.
+bool heater_controller_adc_to_millicelsius(uint16_t adc, int32_t *temperature);
+
 // Inputs are two successful 12-bit ADC readings from the same completed scan.
 // Convert each using the nominal NTC Beta equation, then average in milliC.
 // This is an approximation; sensor tolerance requires individual calibration
@@ -52,8 +58,11 @@ void heater_controller_init(HeaterController *controller, uint16_t heater,
 // Below LOW turns ON; above HIGH turns OFF; equality/in-band retains state.
 // Invalid thermistor constants or thresholds trigger assert() unless NDEBUG is defined.
 // With NDEBUG, the caller must ensure constants and thresholds are valid.
+// Both temperature pointers must be valid. Each receives that sensor's milliC
+// or THERMISTOR_INVALID_MILLICELSIUS, even if its paired sensor is invalid.
 // Returns false on missing output or invalid conversion, preserving output.
 bool heater_controller_update(HeaterController *controller,
-                              uint16_t adc_a, uint16_t adc_b);
+                              uint16_t adc_a, uint16_t adc_b,
+                              int32_t *temperature_a, int32_t *temperature_b);
 
 #endif

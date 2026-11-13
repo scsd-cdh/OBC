@@ -125,7 +125,8 @@ Power and temperature have independent pending flags. A failed group is retried
 in full on 125 ms slots until it succeeds; a successful group waits for the next
 one-second scan. Power failure does not prevent a temperature attempt, and vice
 versa. CDH receives the preceding complete snapshot while a group is failing
-(initially zeros). Retry slots come from RTC prescaler 1 (128 Hz divided by 16);
+(initially zero for power and invalid for temperature). Retry slots come from
+RTC prescaler 1 (128 Hz divided by 16);
 its interrupt is enabled only while a group is pending and disabled after recovery.
 
 Two telemetry buffers have fixed roles:
@@ -142,6 +143,21 @@ Each response is encoded into its own wire buffer, so acquisition cannot change
 an in-flight response. The existing main/redundant CDH buses still share a single
 protocol transaction context; masters should serialize their requests.
 
+Temperature responses contain eight **signed millidegrees Celsius**, not ADC
+counts: `+25000` means +25 C and `-10000` means -10 C. BMS uses the same NTC
+conversion as heater control: after all eight reads succeed, each heater update
+converts its pair once, applies control, and returns both temperatures for the
+snapshot. The snapshot is published after all four updates.
+`bmsTemperatureInvalid` (`INT32_MIN`, -2147483648)
+marks a channel with an invalid ADC/conversion or no initial reading. A bad
+channel does not prevent other heater pairs from updating after a successful
+I2C scan. Raw ADC readings remain local to acquisition and heater control.
+
+The ASN.1 temperature payload is now 32 bytes (previously 16). Rebuild BMS and
+CDH from the updated `APP/_asn1/bms.asn1`; old and new temperature responses
+are not wire-compatible. LFP framing and message IDs are unchanged. The
+`ASN1_LFP_*_BUF_SIZE` macros automatically account for the larger payload.
+
 Main sleeps in LPM0 while idle, with an atomic check-and-sleep sequence. Hardware
 I2C interrupts handle CDH traffic and return to sleep; scheduled acquisition wakes
 main. LPM0 preserves SMCLK for heater PWM. Timer_A1 remains reserved for software
@@ -157,7 +173,8 @@ not fixed millisecond deadlines, and remain finite if the peripheral clock stops
 
 A timeout ends the failed operation without changing heater PWM or blocking
 heater commands. The group stays pending for the next retry slot. Failed
-readings are not published; telemetry does not yet include validity or age fields.
+I2C scans are not published. Invalid conversions within a successful temperature
+scan use the invalid sentinel; telemetry does not yet include age fields.
 
 The shared `Read_ADC()` helper returns `ADC_READ_INVALID` (`UINT16_MAX`) on timeout.
 Checked ADS7138 operations return `ADS7138_STATUS_TIMEOUT`; software I2C returns
@@ -206,8 +223,9 @@ retains its previous state. The output uses Timer_B static output mode for true
 0% (continuously LOW) or 100% (continuously HIGH).
 
 Controllers initialize OFF and use the configured thresholds after a valid scan.
-Zero/out-of-range ADC counts, invalid sensor constants, and invalid conversions
-are rejected. A failed scan leaves
+Zero/out-of-range ADC counts and invalid conversions are rejected. Invalid
+sensor constants or thresholds trigger debug assertions (disabled by NDEBUG).
+A failed scan leaves
 all controller states unchanged, including a heater which was already ON.
 
 The manual CDH heater-duty buffer, callback, and dispatch are temporarily disabled
