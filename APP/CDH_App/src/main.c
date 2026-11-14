@@ -119,6 +119,6 @@ int main(void)
         // bms_i2c_test();
         // k_msleep(100);
         // asn1_example();
-        MRAM_Spi_Test();
+        MRAM_Spi_Test(mram_dev);
     }
 }

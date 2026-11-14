@@ -6,7 +6,7 @@
 
 LOG_MODULE_REGISTER(MRAM_TEST, LOG_LEVEL_INF);
 
-static int mram_write_enable(void)
+static int mram_write_enable(const struct spi_dt_spec *spi)
 {
     uint8_t command = MRAM_CMD_WREN;
 
@@ -20,10 +20,10 @@ static int mram_write_enable(void)
         .count = 1,
     };
 
-    return spi_write_dt(&mram, &tx);
+    return spi_write_dt(spi, &tx);
 }
 
-static int mram_write_disable(void)
+static int mram_write_disable(const struct spi_dt_spec *spi)
 {
     uint8_t command = MRAM_CMD_WRDI;
 
@@ -37,7 +37,7 @@ static int mram_write_disable(void)
         .count = 1,
     };
 
-    return spi_write_dt(&mram, &tx);
+    return spi_write_dt(spi, &tx);
 }
 
 /*
@@ -51,7 +51,7 @@ static int mram_write_disable(void)
  *   address[7:0]
  *   data...
  */
-int mram_read(uint32_t address, void* data, int read_size)
+int mram_read(const struct spi_dt_spec *spi, uint32_t address, void* data, int read_size)
 {
     uint8_t command[READ_ANY_COMMAND_SIZE] = {
         Read_Mem_Array,
@@ -99,7 +99,7 @@ int mram_read(uint32_t address, void* data, int read_size)
         .count = 1,
     };
 
-    int err = spi_transceive_dt(&mram, &tx, &rx);
+    int err = spi_transceive_dt(spi, &tx, &rx);
 
     if (err != 0) {
         LOG_ERR("MRAM read failed: %d", err);
@@ -115,9 +115,9 @@ int mram_read(uint32_t address, void* data, int read_size)
 /*
  * Write to MRAM
  */
-int mram_write(uint32_t address, const uint8_t *data, size_t length)
+int mram_write(const struct spi_dt_spec *spi, uint32_t address, const uint8_t *data, size_t length)
 {
-    int err = mram_write_enable();
+    int err = mram_write_enable(spi);
 
     if (err != 0) {
         LOG_ERR("MRAM WREN failed: %d", err);
@@ -150,7 +150,7 @@ int mram_write(uint32_t address, const uint8_t *data, size_t length)
         .count = ARRAY_SIZE(tx_bufs),
     };
 
-    err = spi_write_dt(&mram, &tx);
+    err = spi_write_dt(spi, &tx);
 
 
     if (err != 0) {
@@ -158,7 +158,7 @@ int mram_write(uint32_t address, const uint8_t *data, size_t length)
         return err;
     }
 
-    err = mram_write_disable();
+    err = mram_write_disable(spi);
 
     if (err != 0) {
         LOG_ERR("MRAM WRDI failed: %d", err);
@@ -181,89 +181,63 @@ void print_buffer(const char *name, const uint8_t *data, size_t length)
     }
 }
 
-int MRAM_Spi_Test(void)
+int MRAM_Spi_Test(const struct device *dev)
 {
+    const struct mram_device_config *cfg = dev->config;
+
     LOG_INF("=================================");
     LOG_INF("SAM V71 MRAM SPI Test");
     LOG_INF("=================================");
 
-    /*
-     * Check that Zephyr initialized the SPI device.
-     */
-    if (!spi_is_ready_dt(&mram)) {
+    if (!spi_is_ready_dt(&cfg->spi)) {
         LOG_ERR("MRAM SPI device is not ready");
-        return 0;
+        return -ENODEV;
     }
 
     LOG_INF("SPI device ready");
-    LOG_INF("SPI frequency: %u Hz", mram.config.frequency);
-    LOG_INF("SPI slave: %u", mram.config.slave);
+    LOG_INF("SPI frequency: %u Hz", cfg->spi.config.frequency);
+    LOG_INF("SPI slave: %u", cfg->spi.config.slave);
 
-    /*
-     * Test data.
-     */
     const uint32_t test_address = 0x000000;
 
-    uint8_t write_data[] = {
-        0x12,
-        0x34,
-        0x56,
-        0x78
-    };
-
+    uint8_t write_data[] = {0x12, 0x34, 0x56, 0x78};
     uint8_t read_data[sizeof(write_data)] = {0};
 
-    /*
-     * Write test.
-     */
     LOG_INF("Writing MRAM...");
 
     int ret = mram_write(
+        &cfg->spi,
         test_address,
         write_data,
         sizeof(write_data)
     );
 
     if (ret != 0) {
-        LOG_ERR("MRAM write failed");
-        return 0;
+        LOG_ERR("MRAM write failed: %d", ret);
+        return ret;
     }
 
     LOG_INF("MRAM write successful");
 
-    /*
-     * Read test.
-     */
     LOG_INF("Reading MRAM...");
 
     ret = mram_read(
+        &cfg->spi,
         test_address,
         read_data,
         sizeof(read_data)
     );
 
     if (ret != 0) {
-        LOG_ERR("MRAM read failed");
-        return 0;
+        LOG_ERR("MRAM read failed: %d", ret);
+        return ret;
     }
 
     LOG_INF("MRAM read successful");
 
     print_buffer("Read data", read_data, sizeof(read_data));
 
-    /*
-     * Compare data.
-     */
-    bool match = true;
-
-    for (size_t i = 0; i < sizeof(write_data); i++) {
-        if (write_data[i] != read_data[i]) {
-            match = false;
-            break;
-        }
-    }
-
-    if (match) {
+    if (memcmp(write_data, read_data, sizeof(write_data)) == 0) {
         LOG_INF("===============================");
         LOG_INF("MRAM TEST PASSED");
         LOG_INF("===============================");
@@ -271,10 +245,7 @@ int MRAM_Spi_Test(void)
         LOG_ERR("===============================");
         LOG_ERR("MRAM TEST FAILED");
         LOG_ERR("===============================");
-    }
-
-    while (1) {
-        k_sleep(K_SECONDS(1));
+        return -EIO;
     }
 
     return 0;

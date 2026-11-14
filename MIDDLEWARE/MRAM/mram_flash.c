@@ -35,16 +35,38 @@ static int mram_read_flash(const struct device *dev, off_t offset, void *data, s
 {
     const struct mram_config *cfg = dev->config;
 
-
-
-    return mram_read(offset, data, len);
+    return mram_read(&cfg->spi ,offset, data, len);
 }
 
 static int mram_write_flash(const struct device *dev, off_t offset, const void *data, size_t len)
 {
     const struct mram_config *cfg = dev->config;
 
-    return mram_write(offset, data, len);
+    return mram_write(&cfg->spi,offset, data, len);
+}
+
+int mram_erase_flash(const struct device *dev, uint32_t offset, size_t len)
+{
+    const struct mram_config *cfg = dev->config;
+
+    uint8_t erase_buffer[64];
+    memset(erase_buffer, 0xFF, sizeof(erase_buffer));
+
+    while (len > 0) {
+        size_t chunk = MIN(len, sizeof(erase_buffer));
+
+        int err = mram_write(&cfg->spi, offset,
+                             erase_buffer, chunk);
+
+        if (err != 0) {
+            return err;
+        }
+
+        offset += chunk;
+        len -= chunk;
+    }
+
+    return 0;
 }
 
 static const struct flash_parameters * mram_get_parameters(const struct device *dev)
@@ -60,7 +82,7 @@ static DEVICE_API(flash, mram_flash_api) = {
 };
 
 #define MRAM_DEFINE(inst)                                           \
-    static const struct mram_config mram_config_##inst = {          \
+    static const struct mram_device_config mram_config_##inst = {          \
         .spi = SPI_DT_SPEC_INST_GET(inst,                           \
             SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),                 \
     };                                                              \

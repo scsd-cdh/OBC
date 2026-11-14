@@ -46,10 +46,14 @@ static const struct spi_dt_spec mram =
         SPI_WORD_SET(8) | SPI_TRANSFER_MSB
     );
 
-int mram_read(uint32_t address, void* data, int read_size);
-int mram_write(uint32_t address, const uint8_t *data, size_t length);
+struct mram_device_config {
+    struct spi_dt_spec spi;
+};
 
-int MRAM_Spi_Test(void);
+int mram_read(const struct spi_dt_spec *spi, uint32_t address, void* data, int read_size);
+int mram_write(const struct spi_dt_spec *spi, uint32_t address, const uint8_t *data, size_t length);
+
+int MRAM_Spi_Test(const struct device *dev);
 
 // Test print
 void print_buffer(const char *name, const uint8_t *data, size_t length);
