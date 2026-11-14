@@ -54,7 +54,7 @@ static int mram_write_disable(void)
 int mram_read(uint32_t address, void* data, int read_size)
 {
     uint8_t command[READ_ANY_COMMAND_SIZE] = {
-        Read_Any_Reg,
+        Read_Mem_Array,
         (uint8_t)((address >> 16) & 0xFF),
         (uint8_t)((address >> 8) & 0xFF),
         (uint8_t)(address & 0xFF),
@@ -128,7 +128,7 @@ int mram_write(uint32_t address, const uint8_t *data, size_t length)
      * Command + 3-byte address + data
      */
     uint8_t command[4] = {
-        Write_Any_Reg,
+        Write_Mem_Array,
         (uint8_t)((address >> 16) & 0xFF),
         (uint8_t)((address >> 8) & 0xFF),
         (uint8_t)(address & 0xFF),

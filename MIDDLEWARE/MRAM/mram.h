@@ -9,32 +9,18 @@
  * S3A3204V0M MRAM commands
  */
 
-//Commands not needing ADDR or DATA
+//New MRAM cmd
 #define MRAM_CMD_WREN       0x06   // Command to Write Memory Enable (typical for MRAM)
 #define MRAM_CMD_WRDI       0x04  // Command to Write Memory Disable (typical for MRAM)
-#define SSPI_EN             0xFF
-#define Entr_Deep_Pwr_Mode  0xB9
-#define Exit_Deep_Pwr_Mode  0xAB
-#define Software_Reset_EN   0x66
-#define Software_Reset      0x99
-#define MRAM_SIZE           (4U * 1024U * 1024U)
-#define MRAM_ADDRESS_SIZE   3U
-
-//Commands needing Data
 #define Read_Status_Reg     0x05
-#define Read_Serial_Reg     0xC3
-#define READ_DEVICE_ID_CMD  0x9F  // Command to read device ID (typical for MRAM)
-#define READ_UNIQUE_ID_CMD  0x4C  // Command to read unique ID (typical for MRAM)
 #define Write_Status_Reg    0x01
-
-//Commands needing Data + Address
-#define Read_Any_Reg        0x65
-#define Write_Any_Reg       0x71
 #define Read_Mem_Array      0x03
 #define Write_Mem_Array     0x02
-#define Read_Aug_Array      0x4B
-#define Write_Aug_Array     0x42
+#define SLEEP_CMD           0xB9
+#define WAKE_CMD            0xAB
 
+#define MRAM_SIZE           (4U * 1024U * 1024U)
+#define MRAM_ADDRESS_SIZE   3U
 #define READ_ANY_COMMAND_SIZE 4
 
 /*

@@ -31,24 +31,23 @@ static int mram_check_range(off_t offset, size_t len)
     return 0;
 }
 
-static int mram_read_flash(const struct device *dev,
-                          off_t offset, void *data, size_t len)
+static int mram_read_flash(const struct device *dev, off_t offset, void *data, size_t len)
 {
     const struct mram_config *cfg = dev->config;
+
+
 
     return mram_read(offset, data, len);
 }
 
-static int mram_write_flash(const struct device *dev,
-                           off_t offset, const void *data, size_t len)
+static int mram_write_flash(const struct device *dev, off_t offset, const void *data, size_t len)
 {
     const struct mram_config *cfg = dev->config;
 
     return mram_write(offset, data, len);
 }
 
-static const struct flash_parameters *
-mram_get_parameters(const struct device *dev)
+static const struct flash_parameters * mram_get_parameters(const struct device *dev)
 {
     ARG_UNUSED(dev);
     return &mram_parameters;
