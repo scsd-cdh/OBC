@@ -8,9 +8,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
 
-#include "lfp_i2c_single.h"
+#include "include/lfp_i2c_single.h"
 
-#include "cdh_bms_example.h"
+#include "include/cdh_bms_example.h"
 
 LOG_MODULE_REGISTER(cdh_bms_example);
 
