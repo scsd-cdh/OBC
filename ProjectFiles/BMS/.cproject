@@ -50,6 +50,7 @@
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.OPT_LEVEL.1456800007" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.OPT_LEVEL" value="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.OPT_LEVEL.off" valueType="enumerated"/>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.OPT_FOR_SPEED.1891188056" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.OPT_FOR_SPEED" value="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.OPT_FOR_SPEED.0" valueType="enumerated"/>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH.348147603" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH" valueType="includePath">
+                                    <listOptionValue value="${PROJECT_LOC}/../../DRIVERS/MSP430/TIMER"/>
                                     <listOptionValue value="${CCS_BASE_ROOT}/msp430/include"/>
                                     <listOptionValue value="../../../DRIVERS/MSP430/I2C"/>
                                     <listOptionValue value="../../../DRIVERS/MSP430/PWM"/>
@@ -63,6 +64,7 @@
                                     <listOptionValue value="${PROJECT_ROOT}"/>
                                     <listOptionValue value="../../../DRIVERS/MSP430/SWI2C"/>
                                     <listOptionValue value="../../../MIDDLEWARE/ADS7138"/>
+                                    <listOptionValue value="${PROJECT_LOC}/../../MIDDLEWARE/HEATER_CONTROLLER"/>
                                     <listOptionValue value="${CG_TOOL_ROOT}/include"/>
                                     <listOptionValue value="../../../MIDDLEWARE/shared_types"/>
                                     <listOptionValue value="${PROJECT_ROOT}/../../MIDDLEWARE/MSP_UTILS"/>
@@ -170,12 +172,14 @@
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.SILICON_VERSION.58755757" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.SILICON_VERSION" value="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.SILICON_VERSION.mspx" valueType="enumerated"/>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.PRINTF_SUPPORT.892795049" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.PRINTF_SUPPORT" value="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.PRINTF_SUPPORT.minimal" valueType="enumerated"/>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH.410195883" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.INCLUDE_PATH" valueType="includePath">
+                                    <listOptionValue value="${PROJECT_LOC}/../../DRIVERS/MSP430/TIMER"/>
                                     <listOptionValue value="${CCS_BASE_ROOT}/msp430/include"/>
                                     <listOptionValue value="${PROJECT_ROOT}"/>
                                     <listOptionValue value="../DRIVERS/MSP430/SWI2C"/>
                                     <listOptionValue value="../../space_stuff/msp430fr69xx_1.c/peripherals"/>
                                     <listOptionValue value="../APP/BMS"/>
                                     <listOptionValue value="../MIDDLEWARE/ADS7138"/>
+                                    <listOptionValue value="${PROJECT_LOC}/../../MIDDLEWARE/HEATER_CONTROLLER"/>
                                     <listOptionValue value="${CG_TOOL_ROOT}/include"/>
                                 </option>
                                 <option id="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.ADVICE__POWER.706444910" superClass="com.ti.ccstudio.buildDefinitions.MSP430_21.6.compilerID.ADVICE__POWER" value="all" valueType="string"/>

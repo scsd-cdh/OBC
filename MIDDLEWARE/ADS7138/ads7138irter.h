@@ -37,7 +37,10 @@
  * ADS7138IRTER_ClearBit(&i2c, ADS7138_PIN_CFG_REGISTER, 0x0F);
  *
  * // Read a 12-bit conversion (packed: high 8 bits, then high nibble)
- * uint16_t code12 = ADS7138IRTER_Read(&i2c);
+ * uint16_t code12;
+ * if (ADS7138IRTER_Read(&i2c, &code12) == ADS7138_STATUS_OK) {
+ *     // Use the successfully read conversion.
+ * }
  * @endcode
  */
 
@@ -46,6 +49,13 @@
 
 #include "swi2c.h"
 #include <stdint.h>
+
+/** Status for checked ADS7138 transfers. */
+typedef enum {
+    ADS7138_STATUS_OK = 0,
+    ADS7138_STATUS_TRANSFER_FAILED,
+    ADS7138_STATUS_TIMEOUT
+} ADS7138_Status;
 
 /**
  * @enum ADS7138_Register
@@ -72,38 +82,34 @@ typedef enum {
  * project and calls @ref SWI2C_Init. Does not configure any ADS7138 registers.
  *
  * @param[in,out] descriptor  Valid @ref SWI2C_Descriptor with SDA/SCL GPIO set.
- * @return 0 on success; negative on error (propagated from SWI2C if applicable).
+ * @return 0 after local initialization. This does not probe the ADC on the bus.
  */
 int32_t ADS7138IRTER_Initialize(SWI2C_Descriptor *descriptor);
 
 /**
- * @brief Write a “general command” byte to the ADS7138 GEN_CMD address (0x00).
+ * @brief Reset the ADS7138 using I2C general call address 0x00 and command 0x06.
  *
  * @details
- * Some device actions (e.g., software reset) are issued by writing a single
- * opcode byte to the general command address (not the normal device address).
- * This helper sets @c descriptor->address to 0x00, writes one byte, resets @c descriptor->address
- * then leaves the bus in STOP condition.
+ * Sets @c descriptor->address to 0x00, writes the reset byte, then restores
+ * the normal device address 0x10, including when the write fails.
  *
  * @param[in,out] descriptor  I²C descriptor (its @c address is changed temporarily to gen cmd).
- * @return propogated from SWI2C success/failure byte index of I2C read (0 is failure).
- *
- * @note Typical usage is to pass @c ADS7138_SW_RESET (0x06) as the command byte,
- *       but is useful on it's own for debugging I2C.
- *       If you prefer a dedicated API for reset, expose a wrapper that calls this.
+ * @return 1 on a complete write, 0 on NACK, or SWI2C_ERROR_TIMEOUT on timeout.
  */
-int32_t ADS7138_WrGenCmd(SWI2C_Descriptor *descriptor);
+int32_t ADS7138IRTER_SW_Reset(SWI2C_Descriptor *descriptor);
 
 /**
  * @brief Read a 12-bit conversion result from the ADS7138.
  *
  * @details
- * Performs a 2-byte read and packs the 12-bit result
+ * Performs a 2-byte read and packs the 12-bit result only on a complete read.
  *
  * @param[in,out] descriptor  I²C descriptor (address set to device internally if needed).
- * @return 12-bit conversion code (right-aligned in a 16-bit value).
+ * @param[out] value Non-null output pointer. Updated only on success with the
+ *                   right-aligned 12-bit conversion; unchanged on failure.
+ * @return ADS7138_STATUS_OK, ADS7138_STATUS_TIMEOUT, or ADS7138_STATUS_TRANSFER_FAILED.
  */
-uint16_t ADS7138IRTER_Read(SWI2C_Descriptor *descriptor);
+ADS7138_Status ADS7138IRTER_Read(SWI2C_Descriptor *descriptor, uint16_t *value);
 
 /**
  * @brief Read one ADS7138 register via “single register read” opcode.
@@ -127,9 +133,9 @@ uint8_t ADS7138IRTER_SingleRegisterRead(SWI2C_Descriptor *descriptor, ADS7138_Re
  * @param[in,out] descriptor  I²C descriptor (its @c address is set internally).
  * @param[in]     reg_addr    Register address to write.
  * @param[in]     reg_data    Byte to write into @p reg_addr.
- * @return propogated from SWI2C success/failure byte index of I2C read (0 is failure).
+ * @return ADS7138_STATUS_OK, ADS7138_STATUS_TIMEOUT, or ADS7138_STATUS_TRANSFER_FAILED.
  */
-int32_t ADS7138IRTER_SingleRegisterWrite(SWI2C_Descriptor *descriptor,
+ADS7138_Status ADS7138IRTER_SingleRegisterWrite(SWI2C_Descriptor *descriptor,
                                          ADS7138_Register reg_addr,
                                          uint8_t reg_data);
 

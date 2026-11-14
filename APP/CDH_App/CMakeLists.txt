@@ -27,7 +27,7 @@ target_sources(app
 
 include("../../MIDDLEWARE/ASN1SCC/asn1scc.cmake")
 
-asn1scc_generate_c(app ../_asn1/_systems.asn1 ../_asn1/pds.asn1 EXTRA_OPTS --slim -sm)
+asn1scc_generate_c(app ../_asn1/_systems.asn1 ../_asn1/pds.asn1 ../_asn1/bms.asn1 EXTRA_OPTS --slim -sm)
 
 add_custom_command(
         TARGET app

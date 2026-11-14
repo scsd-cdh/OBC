@@ -19,13 +19,11 @@ static const struct i2c_dt_spec dev_bms = I2C_DT_SPEC_GET(DT_NODELABEL(bms_i2c))
 static uint8_t lfp_send_buf[MAX_FROM_LIST( // NOLINT(bugprone-branch-clone)
     ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusRequest),
     ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusRequest),
-    ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusRequest),
     ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyRequest)
 )];
 static uint8_t lfp_recv_buf[MAX_FROM_LIST( // NOLINT(bugprone-branch-clone)
     ASN1_LFP_RECV_BUF_SIZE(BMSPowerStatusResponse),
     ASN1_LFP_RECV_BUF_SIZE(BMSTemperatureStatusResponse),
-    ASN1_LFP_RECV_BUF_SIZE(BMSSystemStatusResponse),
     ASN1_LFP_RECV_BUF_SIZE(BMSSetHeaterDutyResponse)
 )];
 
@@ -58,14 +56,6 @@ static void bms_logging_log_battery(const BMSBatteryPackStatus * p_pack, const i
 
 }
 
-static void bms_logging_log_systemstatus(const BMSSystemStatusResponse * p_status) {
-    LOG_INF(
-        "BMS System Status:\n\tVersion: %d\n\tUptime: 0x%x\n\t",
-        p_status->version,
-        p_status->uptime
-    );
-}
-
 static void bms_logging_battery_callback(BMSPowerStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
     ARG_UNUSED(p_data);
 
@@ -73,16 +63,23 @@ static void bms_logging_battery_callback(BMSPowerStatusResponse * p_payload, asn
     bms_logging_log_battery(&p_payload->batteryPack2, 2);
 }
 
-static void bms_logging_systemstatus_callback(BMSSystemStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
+static void bms_logging_temperature_callback(const BMSTemperatureStatusResponse * p_payload, const asn1_lfp_decode_data_t * p_data) {
     ARG_UNUSED(p_data);
 
-    bms_logging_log_systemstatus(p_payload);
+    for (unsigned i = 0; i < 8; i++) {
+        const BMSTemperatureMilliCelsius temperature = p_payload->thermistors.arr[i];
+        if (temperature == bmsTemperatureInvalid) {
+            LOG_INF("Thermistor %u: invalid", i + 1);
+        } else {
+            LOG_INF("Thermistor %u: %+ld mC", i + 1, (long)temperature);
+        }
+    }
 }
 
-void get_bms_system_status(void) {
-    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusRequest, lfp_send_buf, sizeof(lfp_send_buf), {});
+void get_bms_temperature_status(void) {
+    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSTemperatureStatusRequest, lfp_send_buf, sizeof(lfp_send_buf), {});
     if (!size) {
-        LOG_WRN("Failed to serialize system status request: a:%d l:%d",
+        LOG_WRN("Failed to serialize temperature status request: a:%d l:%d",
             ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
         return;
     }
@@ -91,7 +88,7 @@ void get_bms_system_status(void) {
 
     const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
     if (ret != 0) {
-        LOG_WRN("Failed to send system status request: %d", ret);
+        LOG_WRN("Failed to send temperature status request: %d", ret);
         return;
     }
 
@@ -107,7 +104,7 @@ void get_bms_system_status(void) {
         return;
     }
 
-    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse, bms_logging_systemstatus_callback)) {
+    if (ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSTemperatureStatusResponse, bms_logging_temperature_callback)) {
         return;
     }
 }

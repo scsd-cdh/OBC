@@ -331,26 +331,6 @@
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/pmm.h</locationURI>
 		</link>
 		<link>
-			<name>DRIVERS/MSP430/PWM/include/timer_a.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/timer_a.c</locationURI>
-		</link>
-		<link>
-			<name>DRIVERS/MSP430/PWM/include/timer_a.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/timer_a.h</locationURI>
-		</link>
-		<link>
-			<name>DRIVERS/MSP430/PWM/include/timer_b.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/timer_b.c</locationURI>
-		</link>
-		<link>
-			<name>DRIVERS/MSP430/PWM/include/timer_b.h</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/timer_b.h</locationURI>
-		</link>
-		<link>
 			<name>DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/ADC/include/inc/hw_memmap.h</locationURI>
@@ -359,6 +339,26 @@
 			<name>DRIVERS/MSP430/PWM/include/inc/hw_memmap.h</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/PWM/include/inc/hw_memmap.h</locationURI>
+		</link>
+		<link>
+			<name>DRIVERS/MSP430/TIMER</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/DRIVERS/MSP430/TIMER</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/HEATER_CONTROLLER</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/HEATER_CONTROLLER/heater_controller.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/HEATER_CONTROLLER/heater_controller.c</locationURI>
+		</link>
+		<link>
+			<name>MIDDLEWARE/HEATER_CONTROLLER/heater_controller.h</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/MIDDLEWARE/HEATER_CONTROLLER/heater_controller.h</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
