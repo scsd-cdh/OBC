@@ -166,8 +166,13 @@ void request_pds_system_status(void) {
         goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
-                              pds_systemstatus_callback);
+    if (!ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSSystemStatusResponse,
+                             pds_systemstatus_callback)) {
+        LOG_WRN("Discarding unexpected PDS reply: target=%u endpoint=0x%02x direction=%u",
+                data.p_header->target, data.p_header->endpoint,
+                data.p_header->direction);
+        goto unlock;
+    }
 
     uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(PDSSystemStatusResponse)];
     int fwd_ret = cdh_comms_fwd_lfp_msg(
@@ -253,8 +258,13 @@ void request_pds_health_check(void) {
         goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSHealthCheckResponse,
-                              pds_healthcheck_callback);
+    if (!ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSHealthCheckResponse,
+                             pds_healthcheck_callback)) {
+        LOG_WRN("Discarding unexpected PDS reply: target=%u endpoint=0x%02x direction=%u",
+                data.p_header->target, data.p_header->endpoint,
+                data.p_header->direction);
+        goto unlock;
+    }
 
     uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(PDSHealthCheckResponse)];
     int fwd_ret = cdh_comms_fwd_lfp_msg(
@@ -341,8 +351,13 @@ void request_pds_converter_monitor(void) {
         goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
-                              pds_converter_monitor_callback);
+    if (!ASN1_LFP_HANDLE_MSG(data, pdsSystemId, PDSConverterMonitorResponse,
+                             pds_converter_monitor_callback)) {
+        LOG_WRN("Discarding unexpected PDS reply: target=%u endpoint=0x%02x direction=%u",
+                data.p_header->target, data.p_header->endpoint,
+                data.p_header->direction);
+        goto unlock;
+    }
 
     uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(PDSConverterMonitorResponse)];
     int fwd_ret = cdh_comms_fwd_lfp_msg(

@@ -176,8 +176,13 @@ void request_bms_system_status(void)
         goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
-                              bms_systemstatus_callback);
+    if (!ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
+                             bms_systemstatus_callback)) {
+        LOG_WRN("Discarding unexpected BMS reply: target=%u endpoint=0x%02x direction=%u",
+                data.p_header->target, data.p_header->endpoint,
+                data.p_header->direction);
+        goto unlock;
+    }
 
 
     uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
@@ -265,9 +270,14 @@ void request_bms_temperature_status(void)
         goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId,
-                              BMSTemperatureStatusResponse,
-                              bms_temperature_callback);
+    if (!ASN1_LFP_HANDLE_MSG(data, bmsSystemId,
+                             BMSTemperatureStatusResponse,
+                             bms_temperature_callback)) {
+        LOG_WRN("Discarding unexpected BMS reply: target=%u endpoint=0x%02x direction=%u",
+                data.p_header->target, data.p_header->endpoint,
+                data.p_header->direction);
+        goto unlock;
+    }
 
     uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusResponse)];
     const int fwd_ret = cdh_comms_fwd_lfp_msg(
@@ -380,8 +390,13 @@ void request_bms_power_status(void) {
         goto unlock;
     }
 
-    (void)ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
-                              bms_battery_callback);
+    if (!ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSPowerStatusResponse,
+                             bms_battery_callback)) {
+        LOG_WRN("Discarding unexpected BMS reply: target=%u endpoint=0x%02x direction=%u",
+                data.p_header->target, data.p_header->endpoint,
+                data.p_header->direction);
+        goto unlock;
+    }
 
     // Don't bother formatting / queueing telemetry in safe mode, we won't be using it anyway (?)
     // FIXME: Do we want to queue / log this telemetry in safe mode? It might be useful for debugging, but it also might be a waste of time / resources
