@@ -21,6 +21,7 @@ target_sources(app
         src/cdh_comms.c
         src/cdh_bms.c
         src/cdh_pds.c
+        src/cdh_adcs.c
         src/lfp_i2c_single.c
         src/main.c
         src/pins.c
@@ -36,6 +37,7 @@ asn1scc_generate_c(app
         ../_asn1/bms.asn1
         ../_asn1/pds.asn1
         ../_asn1/comms.asn1
+        ../_asn1/adcs.asn1
         EXTRA_OPTS --slim -sm
 )
 

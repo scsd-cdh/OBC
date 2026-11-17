@@ -5,6 +5,7 @@ cdhSystemId INTEGER ::= 1
 bmsSystemId INTEGER ::= 2
 pdsSystemId INTEGER ::= 3
 commsSystemId INTEGER ::= 4
+adcsSystemId INTEGER ::= 5
 
 -- endpoints
 

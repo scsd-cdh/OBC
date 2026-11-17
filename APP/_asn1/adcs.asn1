@@ -1,0 +1,350 @@
+ADCS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+-- DRAFT v0.1 - generated with the 'ADCS LFP Messages' workbook. Not reviewed yet.
+-- Proposed system id, to add to _systems.asn1:  adcsSystemId INTEGER ::= 4
+
+-- Timestamp in ADCS uptime
+ADCSTimestamp ::= SEQUENCE {
+    seconds INTEGER(0..4294967295),
+    milliseconds INTEGER(0..999)
+}
+
+ADCSMode ::= ENUMERATED {
+    idle(0),
+    detumbling(1),
+    sunPointing(2),
+    nadirPointing(3),
+    targetPointing(4),
+    safe(5)
+}
+
+ADCSPowerState ::= ENUMERATED {
+    off(0),
+    on(1)
+}
+
+ADCSSetModeResult ::= ENUMERATED {
+    accepted(0),
+    invalidMode(1),
+    transitionNotAllowed(2),
+    busy(3)
+}
+
+ADCSSetTLEResult ::= ENUMERATED {
+    accepted(0),
+    checksumError(1),
+    parseError(2),
+    epochTooOld(3)
+}
+
+ADCSErrorFlags ::= BIT STRING {
+    magnetometerFault(0),
+    sunSensorFault(1),
+    gyroFault(2),
+    magnetorquerXFault(3),
+    magnetorquerYFault(4),
+    magnetorquerZFault(5),
+    estimatorDiverged(6),
+    noValidTLE(7),
+    overTemperature(8),
+    underTemperature(9),
+    internalCommError(10),
+    watchdogReset(11),
+    configCrcError(12)
+} (SIZE(16))
+
+------
+-- Overall ADCS state, firmware version, uptime and power state of each sensor/actuator. Same name/ID as BMS/PDS SystemStatus for consistency.
+lfpIdADCSSystemStatusRequest INTEGER ::= 0
+ADCSSystemStatusRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSSystemStatusResponse INTEGER ::= 1
+ADCSSystemStatusResponse ::= SEQUENCE {
+    -- Version of the firmware running on the ADCS computer.
+    version INTEGER(0..255),
+    -- Seconds since ADCS processor start-up.
+    uptime INTEGER(0..4294967295),
+    -- ADCS on/off. 'off' can only be reported for sub-parts; if the computer itself is off the OBC sees a timeout (see Open Questions).
+    adcsState ADCSPowerState,
+    -- Magnetometer power state.
+    magnetometerState ADCSPowerState,
+    -- Sun sensor(s) power state.
+    sunSensorState ADCSPowerState,
+    -- Gyroscope power state (remove if no gyro).
+    gyroState ADCSPowerState,
+    -- Magnetorquer driver power state.
+    magnetorquerState ADCSPowerState
+}
+
+------
+-- Current estimated position from the on-board orbit propagator, geodetic (WGS-84) LLA.
+lfpIdADCSPositionRequest INTEGER ::= 2
+ADCSPositionRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSPositionResponse INTEGER ::= 3
+ADCSPositionResponse ::= SEQUENCE {
+    -- ADCS uptime (s since ADCS boot) when the position estimate was taken.
+    timestamp ADCSTimestamp,
+    -- TRUE if the propagator has a valid TLE/orbit and the value can be trusted.
+    valid BOOLEAN,
+    -- Geodetic latitude, WGS-84. 1 LSB = 1e-6 deg (~0.11 m).
+    latitude INTEGER(-90000000..90000000),
+    -- Longitude, WGS-84. 1 LSB = 1e-6 deg.
+    longitude INTEGER(-180000000..180000000),
+    -- Altitude above WGS-84 ellipsoid, 0-2000 km.
+    altitude INTEGER(0..2000000)
+}
+
+------
+-- Current estimated velocity vector in ECEF (same frame as attitude). Speed = |v|.
+lfpIdADCSVelocityRequest INTEGER ::= 4
+ADCSVelocityRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSVelocityResponse INTEGER ::= 5
+ADCSVelocityResponse ::= SEQUENCE {
+    -- ADCS uptime (s since ADCS boot) when the velocity estimate was taken.
+    timestamp ADCSTimestamp,
+    -- TRUE if the velocity estimate can be trusted.
+    valid BOOLEAN,
+    -- ECEF X velocity. 1 LSB = 1 cm/s, range +/-10 km/s.
+    vx INTEGER(-1000000..1000000),
+    -- ECEF Y velocity. 1 LSB = 1 cm/s.
+    vy INTEGER(-1000000..1000000),
+    -- ECEF Z velocity. 1 LSB = 1 cm/s.
+    vz INTEGER(-1000000..1000000)
+}
+
+------
+-- Estimated attitude as Euler angles of body frame w.r.t. ECEF (sequence ZYX = yaw, pitch, roll - TBC).
+lfpIdADCSAttitudeRequest INTEGER ::= 6
+ADCSAttitudeRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSAttitudeResponse INTEGER ::= 7
+ADCSAttitudeResponse ::= SEQUENCE {
+    -- ADCS uptime (s since ADCS boot) when the attitude estimate was taken.
+    timestamp ADCSTimestamp,
+    -- TRUE if the attitude estimator has converged.
+    valid BOOLEAN,
+    -- Rotation about X. 1 LSB = 0.01 deg.
+    roll INTEGER(-18000..18000),
+    -- Rotation about Y. 1 LSB = 0.01 deg.
+    pitch INTEGER(-9000..9000),
+    -- Rotation about Z. 1 LSB = 0.01 deg.
+    yaw INTEGER(-18000..18000)
+}
+
+------
+-- Estimated attitude knowledge error (1-sigma) from the estimator covariance.
+lfpIdADCSAttitudeAccuracyRequest INTEGER ::= 8
+ADCSAttitudeAccuracyRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSAttitudeAccuracyResponse INTEGER ::= 9
+ADCSAttitudeAccuracyResponse ::= SEQUENCE {
+    -- ADCS uptime (s since ADCS boot) when the accuracy estimate was taken.
+    timestamp ADCSTimestamp,
+    -- Total 1-sigma attitude error. 1 LSB = 0.01 deg, 0-180 deg.
+    accuracy INTEGER(0..18000)
+}
+
+------
+-- Current ADCS mode of operation and how long it has been in it.
+lfpIdADCSGetModeRequest INTEGER ::= 10
+ADCSGetModeRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSGetModeResponse INTEGER ::= 11
+ADCSGetModeResponse ::= SEQUENCE {
+    -- Current mode of operation (see Enums).
+    currentMode ADCSMode,
+    -- Seconds since entering the current mode.
+    timeInMode INTEGER(0..4294967295)
+}
+
+------
+-- OBC commands a new ADCS mode. Response acknowledges / rejects.
+lfpIdADCSSetModeRequest INTEGER ::= 12
+ADCSSetModeRequest ::= SEQUENCE {
+    -- Requested mode of operation.
+    mode ADCSMode
+}
+
+lfpIdADCSSetModeResponse INTEGER ::= 13
+ADCSSetModeResponse ::= SEQUENCE {
+    -- Outcome of the mode-change request.
+    result ADCSSetModeResult,
+    -- Mode the ADCS is in after processing the request.
+    currentMode ADCSMode
+}
+
+------
+-- Estimated solar power generation based on the current/predicted attitude and sun vector.
+lfpIdADCSPowerEstimateRequest INTEGER ::= 14
+ADCSPowerEstimateRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSPowerEstimateResponse INTEGER ::= 15
+ADCSPowerEstimateResponse ::= SEQUENCE {
+    -- ADCS uptime (s since ADCS boot) when the power estimate was taken.
+    timestamp ADCSTimestamp,
+    -- Estimated power generation. 1 LSB = 1 mW, 0-65.535 W.
+    estimatedPower INTEGER(0..65535)
+}
+
+------
+-- Calibrated magnetometer measurement in body frame.
+lfpIdADCSMagneticFieldRequest INTEGER ::= 16
+ADCSMagneticFieldRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSMagneticFieldResponse INTEGER ::= 17
+ADCSMagneticFieldResponse ::= SEQUENCE {
+    -- ADCS uptime (s since ADCS boot) when the magnetometer sample was taken.
+    timestamp ADCSTimestamp,
+    -- TRUE if the sample is valid (sensor OK, not saturated, MTQs off during sample).
+    valid BOOLEAN,
+    -- Body X field. 1 LSB = 0.01 uT (10 nT), +/-1000 uT.
+    bx INTEGER(-100000..100000),
+    -- Body Y field. 1 LSB = 0.01 uT.
+    by INTEGER(-100000..100000),
+    -- Body Z field. 1 LSB = 0.01 uT.
+    bz INTEGER(-100000..100000)
+}
+
+------
+-- Measured Sun direction in body frame as azimuth/elevation.
+lfpIdADCSSunMeasurementRequest INTEGER ::= 18
+ADCSSunMeasurementRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSSunMeasurementResponse INTEGER ::= 19
+ADCSSunMeasurementResponse ::= SEQUENCE {
+    -- ADCS uptime (s since ADCS boot) when the sun sensor sample was taken.
+    timestamp ADCSTimestamp,
+    -- FALSE when in eclipse or no sensor sees the Sun (angles then invalid).
+    sunVisible BOOLEAN,
+    -- Sun azimuth in body XY plane from +X towards +Y. 1 LSB = 0.01 deg.
+    azimuth INTEGER(-18000..18000),
+    -- Sun elevation above body XY plane towards +Z. 1 LSB = 0.01 deg.
+    elevation INTEGER(-9000..9000)
+}
+
+------
+-- Array of ADCS board/sensor temperatures. Array size is a placeholder - set to the real sensor count.
+lfpIdADCSTemperatureRequest INTEGER ::= 20
+ADCSTemperatureRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSTemperatureResponse INTEGER ::= 21
+ADCSTemperatureResponse ::= SEQUENCE {
+    -- Temperatures, 1 LSB = 0.01 degC, -40 to +125 degC. Index -> sensor map TBD.
+    temperatures SEQUENCE SIZE(4) OF INTEGER(-4000..12500)
+}
+
+------
+-- Active fault flags, last error code and total error count.
+lfpIdADCSErrorRequest INTEGER ::= 22
+ADCSErrorRequest ::= SEQUENCE {
+    -- If TRUE, ADCS clears latched errorFlags and errorCount after building the response.
+    clearErrors BOOLEAN
+}
+
+lfpIdADCSErrorResponse INTEGER ::= 23
+ADCSErrorResponse ::= SEQUENCE {
+    -- One bit per active/latched fault, see Enums sheet for bit assignment.
+    errorFlags ADCSErrorFlags,
+    -- Code of the most recent error (0 = none). Code table TBD.
+    lastErrorCode INTEGER(0..255),
+    -- ADCS uptime (s since ADCS boot) when the last error was taken.
+    lastErrorTime ADCSTimestamp,
+    -- Number of errors since boot / last clear (saturates).
+    errorCount INTEGER(0..65535)
+}
+
+------
+-- Last torque commanded by the controller and resulting magnetorquer duty cycles.
+lfpIdADCSTorqueCommandRequest INTEGER ::= 24
+ADCSTorqueCommandRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSTorqueCommandResponse INTEGER ::= 25
+ADCSTorqueCommandResponse ::= SEQUENCE {
+    -- ADCS uptime (s since ADCS boot) when the command was taken.
+    timestamp ADCSTimestamp,
+    -- Commanded torque about body X. 1 LSB = 1 nN.m, +/-1 mN.m.
+    torqueX INTEGER(-1000000..1000000),
+    -- Commanded torque about body Y.
+    torqueY INTEGER(-1000000..1000000),
+    -- Commanded torque about body Z.
+    torqueZ INTEGER(-1000000..1000000),
+    -- Magnetorquer X/Y/Z signed PWM duty cycle (sign = current direction).
+    mtqDuty SEQUENCE SIZE(3) OF INTEGER(-100..100)
+}
+
+------
+-- OBC uploads a TLE (received from ground) so the ADCS propagator can compute position/velocity. [PROPOSED]
+lfpIdADCSSetTLERequest INTEGER ::= 26
+ADCSSetTLERequest ::= SEQUENCE {
+    -- TLE line 1, 69 ASCII chars (IA5String SIZE(69), 7 bits/char in uPER).
+    line1 IA5String(SIZE(69)),
+    -- TLE line 2, 69 ASCII chars.
+    line2 IA5String(SIZE(69))
+}
+
+lfpIdADCSSetTLEResponse INTEGER ::= 27
+ADCSSetTLEResponse ::= SEQUENCE {
+    -- Outcome of the TLE upload.
+    result IA5String(SIZE(69))
+}
+
+------
+-- Optional aggregate: one request returns every telemetry response above (useful for periodic logging/beacon). [PROPOSED]
+lfpIdADCSHousekeepingRequest INTEGER ::= 28
+ADCSHousekeepingRequest ::= SEQUENCE {
+    placeholder INTEGER(0) -- Empty struct placeholder
+}
+
+lfpIdADCSHousekeepingResponse INTEGER ::= 29
+ADCSHousekeepingResponse ::= SEQUENCE {
+    -- Same content as ADCSSystemStatusResponse.
+    systemStatus ADCSSystemStatusResponse,
+    -- Same content as ADCSPositionResponse.
+    position ADCSPositionResponse,
+    -- Same content as ADCSVelocityResponse.
+    velocity ADCSVelocityResponse,
+    -- Same content as ADCSAttitudeResponse.
+    attitude ADCSAttitudeResponse,
+    -- Same content as ADCSAttitudeAccuracyResponse.
+    attitudeAccuracy ADCSAttitudeAccuracyResponse,
+    -- Same content as ADCSGetModeResponse.
+    mode ADCSGetModeResponse,
+    -- Same content as ADCSPowerEstimateResponse.
+    powerEstimate ADCSPowerEstimateResponse,
+    -- Same content as ADCSMagneticFieldResponse.
+    magneticField ADCSMagneticFieldResponse,
+    -- Same content as ADCSSunMeasurementResponse.
+    sunMeasurement ADCSSunMeasurementResponse,
+    -- Same content as ADCSTemperatureResponse.
+    temperature ADCSTemperatureResponse,
+    -- Same content as ADCSErrorResponse.
+    error ADCSErrorResponse,
+    -- Same content as ADCSTorqueCommandResponse.
+    torqueCommand ADCSTorqueCommandResponse
+}
+
+END
