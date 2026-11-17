@@ -20,6 +20,7 @@ target_sources(app
         src/cdh_pds_example.c
         src/lfp_i2c_single.c
         src/main.c
+        ../../MIDDLEWARE/asn1/bms.c
 )
 
 
@@ -34,5 +35,6 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/icd.css ${CMAKE_CURRENT_LIST_DIR}/../_asn1/icd.css
 )
 target_include_directories(app PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE
         ${CMAKE_CURRENT_SOURCE_DIR}/../../MIDDLEWARE/shared_types
 )
