@@ -1,0 +1,8 @@
+COMMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+lfpIdCOMMSDummyRequest INTEGER ::= 0
+COMMSDummyRequest ::= SEQUENCE {
+    placeholder INTEGER(0..4294967295) -- deadbeef or whatever
+}
+
+END

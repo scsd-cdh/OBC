@@ -63,7 +63,11 @@ typedef struct {
 #define V_CELL_2A_CP_PIN          ADC12_B_INPUT_A3  // FR5989 P1.3 pin 36; FR6989 P1.3 pin 63 / 48
 #define V_CELL_2B_CP_PIN          ADC12_B_INPUT_A2  // FR5989 P1.2 pin 37; FR6989 P1.2 pin 64 / 49
 #define V_BATTPACK_1_CP_PIN       ADC12_B_INPUT_A11 // FR5989 P4.3 pin 43; FR6989 P9.3 pin 70 / 55
+#if defined (__MSP430FR5989__) 
 #define V_BATTPACK_2_CP_PIN       ADC12_B_INPUT_A1  // FR5989 P1.1 pin 38; FR6989 P1.1 pin 65 / 50
+#elif defined (__MSP430FR6989__)
+#define V_BATTPACK_2_CP_PIN       ADC12_B_INPUT_A4  // FR6989 P8.6 pin 65 / 50
+#endif 
 
 // ADC memory buffers
 #define I_SENSE_VUR_1_CP_MEM      ADC12_B_MEMORY_0
@@ -285,6 +289,7 @@ static void adc_init() {
     ADC_PinSelect(V_CELL_2A_CP_PIN,         V_CELL_2A_CP_MEM);
     ADC_PinSelect(V_CELL_2B_CP_PIN,         V_CELL_2B_CP_MEM);
     ADC_PinSelect(V_BATTPACK_1_CP_PIN,      V_BATTPACK_1_CP_MEM);
+    ADC_PinSelect(V_BATTPACK_2_CP_PIN,      V_BATTPACK_2_CP_MEM);
 
     // NOTE: You need to set the end of sequence to the last ADC pin and set sequence of channels mode!!! Otherwise
     // it will only read the first pin you set (i.e. MEM0!!!)
