@@ -18,3 +18,12 @@ node_modules/
 
 /APP/_asn1/icd.html
 /APP/_asn1/icd.css
+
+.cache/*
+.west/
+bootloader/
+compile_commands.json
+doc/
+modules/
+tools/
+zephyr/
