@@ -28,13 +28,11 @@ static const struct i2c_dt_spec dev_bms = I2C_DT_SPEC_GET(DT_NODELABEL(bms_i2c))
 static uint8_t lfp_send_buf[MAX_FROM_LIST( // NOLINT(bugprone-branch-clone)
     ASN1_LFP_SEND_BUF_SIZE(BMSPowerStatusRequest),
     ASN1_LFP_SEND_BUF_SIZE(BMSTemperatureStatusRequest),
-    ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusRequest),
     ASN1_LFP_SEND_BUF_SIZE(BMSSetHeaterDutyRequest)
 )];
 static uint8_t lfp_recv_buf[MAX_FROM_LIST( // NOLINT(bugprone-branch-clone)
     ASN1_LFP_RECV_BUF_SIZE(BMSPowerStatusResponse),
     ASN1_LFP_RECV_BUF_SIZE(BMSTemperatureStatusResponse),
-    ASN1_LFP_RECV_BUF_SIZE(BMSSystemStatusResponse),
     ASN1_LFP_RECV_BUF_SIZE(BMSSetHeaterDutyResponse)
 )];
 
@@ -69,28 +67,12 @@ static inline void bms_battery_handler(const BMSBatteryPackStatus * p_pack, cons
     );
 }
 
-static inline void bms_systemstatus_handler(const BMSSystemStatusResponse * p_status) {
-    LOG_DBG(
-        "BMS System Status:\n\tVersion: %d\n\tUptime: 0x%x\n\t",
-        p_status->version,
-        p_status->uptime
-    );
-
-    // TODO: Handle?
-}
-
 static inline void bms_battery_callback(BMSPowerStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
     ARG_UNUSED(p_data);
 
     cdh_critical_evaluate_power_status(p_payload);
     bms_battery_handler(&p_payload->batteryPack1, 1);
     bms_battery_handler(&p_payload->batteryPack2, 2);
-}
-
-static inline void bms_systemstatus_callback(BMSSystemStatusResponse * p_payload, asn1_lfp_decode_data_t * p_data) {
-    ARG_UNUSED(p_data);
-
-    bms_systemstatus_handler(p_payload);
 }
 
 static inline void bms_temperature_handler(
@@ -117,93 +99,6 @@ static inline void bms_temperature_callback(
     ARG_UNUSED(p_data);
 
     bms_temperature_handler(p_payload);
-}
-
-static inline void request_mock_bms_system_status(void)
-{
-    BMSSystemStatusResponse system_status = {
-        .version = 1,
-        .uptime = 0xdeadbeef
-    };
-    bms_systemstatus_callback(&system_status, NULL);
-    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
-    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusResponse, encode_buf, sizeof(encode_buf), system_status);
-    if (!size)
-    {
-        LOG_WRN("Failed to serialize mock BMS system status");
-        return;
-    }
-    const int ret = cdh_telemetry_enqueue(encode_buf, size);
-    if (ret != 0)
-    {
-        LOG_WRN("Failed to qenqueue mock BMS system status telemetry: %d", ret);
-    }
-}
-
-void request_bms_system_status(void)
-{
-#ifdef MOCK_BMS
-    request_mock_bms_system_status();
-    return;
-#endif
-
-    if (k_mutex_lock(&bms_lock, K_FOREVER) != 0) {
-        return;
-    }
-
-    const uint32_t size = ASN1_LFP_SERIALIZE(cdhSystemId, bmsSystemId, BMSSystemStatusRequest, lfp_send_buf, sizeof(lfp_send_buf), {});
-    if (!size) {
-        LOG_WRN("Failed to serialize system status request: a:%d l:%d",
-            ASN1_LFP_ERROR_CODE.asn1, ASN1_LFP_ERROR_CODE.lfp);
-        goto unlock;
-    }
-
-    const int ret = i2c_write_dt(&dev_bms, lfp_send_buf, size);
-    if (ret != 0) {
-        LOG_WRN("Failed to send system status request: %d", ret);
-        goto unlock;
-    }
-
-    lfp_header_t recv_header;
-    asn1_lfp_decode_data_t data = {.p_on_error_cb = on_error, .p_header = &recv_header, .p_body = lfp_recv_buf};
-    data.body_length = lfp_i2c_single_receive(
-        &dev_bms,
-        &recv_header,
-        lfp_recv_buf, sizeof(lfp_recv_buf),
-        I2C_TIMEOUT_MS);
-    if (data.body_length == LFP_FAIL) {
-        LOG_WRN("Failed to read BMS response");
-        goto unlock;
-    }
-
-    if (!ASN1_LFP_HANDLE_MSG(data, bmsSystemId, BMSSystemStatusResponse,
-                             bms_systemstatus_callback)) {
-        LOG_WRN("Discarding unexpected BMS reply: target=%u endpoint=0x%02x direction=%u",
-                data.p_header->target, data.p_header->endpoint,
-                data.p_header->direction);
-        goto unlock;
-    }
-
-
-    uint8_t encode_buf[ASN1_LFP_SEND_BUF_SIZE(BMSSystemStatusResponse)];
-    int fwd_ret = cdh_comms_fwd_lfp_msg(
-        &data,
-        encode_buf,
-        sizeof(encode_buf)
-    );
-
-    if (fwd_ret < 0) {
-        LOG_WRN("Failed to forward BMS system status response: %d", fwd_ret);
-        goto unlock;
-    }
-
-    const int enqueue_ret = cdh_telemetry_enqueue(encode_buf, fwd_ret);
-    if (enqueue_ret != 0) {
-        LOG_WRN("Failed to queue BMS system status telemetry: %d", enqueue_ret);
-    }
-
-unlock:
-    k_mutex_unlock(&bms_lock);
 }
 
 static inline void request_mock_bms_temperature_status(void)
