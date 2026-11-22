@@ -7,6 +7,36 @@
 
 #include "swi2c.h"
 #include <msp430.h>
+#include "timer_a.h"
+
+// Reserve TA1/CCR0 for software I2C. TB0 belongs to heater PWM.
+#define SWI2C_TIMER_BASE TIMER_A1_BASE
+#define SWI2C_TIMER_CCR TIMER_A_CAPTURECOMPARE_REGISTER_0
+
+static void swi2c_timer_start(void) {
+    Timer_A_clear(SWI2C_TIMER_BASE);
+    Timer_A_startCounter(SWI2C_TIMER_BASE, TIMER_A_UP_MODE);
+}
+
+static inline bool swi2c_timer_wait(void) {
+    Timer_A_clearCaptureCompareInterrupt(SWI2C_TIMER_BASE, SWI2C_TIMER_CCR);
+    for (uint16_t polls = 0; polls < SWI2C_TIMER_POLL_LIMIT; polls++) {
+        if (Timer_A_getCaptureCompareInterruptStatus(
+                SWI2C_TIMER_BASE, SWI2C_TIMER_CCR,
+                TIMER_A_CAPTURECOMPARE_INTERRUPT_FLAG)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static int32_t swi2c_timeout(SWI2C_Descriptor *descriptor) {
+    // Release the open-drain bus without waiting on a possibly stopped timer.
+    *descriptor->sda_port_dir &= ~descriptor->sda_pin;
+    *descriptor->scl_port_dir &= ~descriptor->scl_pin;
+    Timer_A_stop(SWI2C_TIMER_BASE);
+    return SWI2C_ERROR_TIMEOUT;
+}
 
 void SWI2C_Init(SWI2C_Descriptor *descriptor) {
     *descriptor->scl_port_out &= ~descriptor->scl_pin;
@@ -15,7 +45,17 @@ void SWI2C_Init(SWI2C_Descriptor *descriptor) {
     *descriptor->scl_port_dir &= ~descriptor->scl_pin;
     *descriptor->sda_port_dir &= ~descriptor->sda_pin;
 
-    TB0CCR0 = SWI2C_TIMER_PERIOD;
+    Timer_A_initUpModeParam timer = {
+        .clockSource = TIMER_A_CLOCKSOURCE_SMCLK,
+        .clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_1,
+        .timerPeriod = SWI2C_TIMER_PERIOD,
+        .timerInterruptEnable_TAIE = TIMER_A_TAIE_INTERRUPT_DISABLE,
+        .captureCompareInterruptEnable_CCR0_CCIE = TIMER_A_CCIE_CCR0_INTERRUPT_DISABLE,
+        .timerClear = TIMER_A_DO_CLEAR,
+        .startTimer = false
+    };
+    Timer_A_stop(SWI2C_TIMER_BASE);
+    Timer_A_initUpMode(SWI2C_TIMER_BASE, &timer);
 }
 
 int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) {
@@ -24,13 +64,15 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
     uint16_t sclStretchCnt = 0;
 
     /* Starting the timer */
-    TB0CTL = TBSSEL_2 + MC_1 + TBCLR;
+    swi2c_timer_start();
 
     /* Sending the START */
     *descriptor->sda_port_dir |= descriptor->sda_pin;
     __no_operation();
     *descriptor->scl_port_dir |= descriptor->scl_pin;
-    TIMER_ITERATION();
+    if (!swi2c_timer_wait()) {
+        return swi2c_timeout(descriptor);
+    }
 
     /* Next doing the control byte */
     currentByte = (descriptor->address << 1) | BIT0;
@@ -51,13 +93,17 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
 
         /* Now that we set the SDA line, we have to send out a clock pulse */
         *descriptor->scl_port_dir &= ~descriptor->scl_pin;
-        TIMER_ITERATION();
+        if (!swi2c_timer_wait()) {
+            return swi2c_timeout(descriptor);
+        }
 
         /* Incrementing to the next bit and waiting for the next clock cycle */
         currentByte = (currentByte << 1);
         numBits = (numBits - 1);
         *descriptor->scl_port_dir |= descriptor->scl_pin;
-        TIMER_ITERATION();
+        if (!swi2c_timer_wait()) {
+            return swi2c_timeout(descriptor);
+        }
 
     }
     while (numBits > 0);
@@ -67,7 +113,9 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
      an I2C stop and return false */
     *descriptor->sda_port_dir &= ~descriptor->sda_pin;
     *descriptor->scl_port_dir &= ~descriptor->scl_pin;
-    TIMER_ITERATION();
+    if (!swi2c_timer_wait()) {
+        return swi2c_timeout(descriptor);
+    }
 
     if (*descriptor->sda_port_in & descriptor->sda_pin)
     {
@@ -86,7 +134,7 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
             }
 
             if(sclStretchCnt == 4999) {
-                goto I2CReadTransactionCleanUp;
+                return swi2c_timeout(descriptor);
             }
         }
 
@@ -96,7 +144,9 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
 
         /* Sending out another clock cycle */
         *descriptor->scl_port_dir |= descriptor->scl_pin;
-        TIMER_ITERATION();
+        if (!swi2c_timer_wait()) {
+            return swi2c_timeout(descriptor);
+        }
         *descriptor->sda_port_dir &= ~descriptor->sda_pin;
 
         /* Loop to read until all bits have been read */
@@ -105,7 +155,9 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
             /* Priming our temporary variable and sending a clock pulse */
             currentByte = (currentByte << 1);
             *descriptor->scl_port_dir &= ~descriptor->scl_pin;
-            TIMER_ITERATION();
+            if (!swi2c_timer_wait()) {
+                return swi2c_timeout(descriptor);
+            }
 
             /* If the data line is high, recording that */
             if (*descriptor->sda_port_in & descriptor->sda_pin)
@@ -116,7 +168,9 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
             /* Send out another clock cycle and decrement our counter */
             numBits = (numBits - 1);
             *descriptor->scl_port_dir |= descriptor->scl_pin;
-            TIMER_ITERATION();
+            if (!swi2c_timer_wait()) {
+                return swi2c_timeout(descriptor);
+            }
         }
         while (numBits > 0);
 
@@ -139,11 +193,13 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
             }
 
             if(sclStretchCnt == 4999) {
-                goto I2CReadTransactionCleanUp;
+                return swi2c_timeout(descriptor);
             }
         }
 
-        TIMER_ITERATION();
+        if (!swi2c_timer_wait()) {
+            return swi2c_timeout(descriptor);
+        }
     }
 
     I2CReadTransactionCleanUp:
@@ -151,14 +207,18 @@ int32_t SWI2C_Read(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len) 
     /* Sending out the stop bit */
     *descriptor->scl_port_dir |= descriptor->scl_pin;
     *descriptor->sda_port_dir |= descriptor->sda_pin;
-    TIMER_ITERATION();
+    if (!swi2c_timer_wait()) {
+        return swi2c_timeout(descriptor);
+    }
     *descriptor->scl_port_dir &= ~descriptor->scl_pin;
     __no_operation();
     *descriptor->sda_port_dir &= ~descriptor->sda_pin;
-    TIMER_ITERATION();
+    if (!swi2c_timer_wait()) {
+        return swi2c_timeout(descriptor);
+    }
 
     /* Stop the timer */
-    TB0CTL = MC_0;
+    Timer_A_stop(SWI2C_TIMER_BASE);
 
     /* If all bytes were read, return true- otherwise false. */
     return rxIndex;
@@ -170,13 +230,15 @@ int32_t SWI2C_Write(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len)
     uint16_t i = 0;
 
     // Start the timer
-    TB0CTL = TBSSEL_2 + MC_1 + TBCLR;
+    swi2c_timer_start();
 
     /* Sending the START */
     *descriptor->sda_port_dir |= descriptor->sda_pin;
     __no_operation();
     *descriptor->scl_port_dir |= descriptor->scl_pin;
-    TIMER_ITERATION();
+    if (!swi2c_timer_wait()) {
+        return swi2c_timeout(descriptor);
+    }
 
     /* Next doing the control byte */
     temp = (descriptor->address << 1);
@@ -197,14 +259,18 @@ int32_t SWI2C_Write(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len)
 
         /* Now that we set the SDA line, we have to send out a clock pulse */
         *descriptor->scl_port_dir &= ~descriptor->scl_pin;
-        TIMER_ITERATION();
+        if (!swi2c_timer_wait()) {
+            return swi2c_timeout(descriptor);
+        }
 
         /* Incrementing to the next bit and waiting for the next clock cycle */
         temp = (temp << 1);
         bits = (bits - 1);
 
         *descriptor->scl_port_dir |= descriptor->scl_pin;
-        TIMER_ITERATION();
+        if (!swi2c_timer_wait()) {
+            return swi2c_timeout(descriptor);
+        }
 
     }
     while (bits > 0);
@@ -223,11 +289,13 @@ int32_t SWI2C_Write(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len)
         }
 
         if(i == 4999) {
-            goto I2CWriteTransactionCleanUp;
+            return swi2c_timeout(descriptor);
         }
     }
 
-    TIMER_ITERATION();
+    if (!swi2c_timer_wait()) {
+        return swi2c_timeout(descriptor);
+    }
 
     if (*descriptor->sda_port_in & descriptor->sda_pin)
     {
@@ -236,7 +304,9 @@ int32_t SWI2C_Write(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len)
 
     /* Sending out another clock cycle */
     *descriptor->scl_port_dir |= descriptor->scl_pin;
-    TIMER_ITERATION();
+    if (!swi2c_timer_wait()) {
+        return swi2c_timeout(descriptor);
+    }
 
     /* Next, let us send out all bytes in the user buffer */
     for (ii = 0; ii < len; ii++)
@@ -259,13 +329,17 @@ int32_t SWI2C_Write(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len)
 
             /* Now that we set the SDA line, we send out a clock pulse */
             *descriptor->scl_port_dir &= ~descriptor->scl_pin;
-            TIMER_ITERATION();
+            if (!swi2c_timer_wait()) {
+                return swi2c_timeout(descriptor);
+            }
 
             /* Incrementing to the next bit and waiting for next clock cycle */
             temp = (temp << 1);
             bits = (bits - 1);
             *descriptor->scl_port_dir |= descriptor->scl_pin;
-            TIMER_ITERATION();
+            if (!swi2c_timer_wait()) {
+                return swi2c_timeout(descriptor);
+            }
 
         }
         while (bits > 0);
@@ -282,11 +356,13 @@ int32_t SWI2C_Write(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len)
             }
 
             if(i == 4999) {
-                goto I2CWriteTransactionCleanUp;
+                return swi2c_timeout(descriptor);
             }
         }
 
-        TIMER_ITERATION();
+        if (!swi2c_timer_wait()) {
+            return swi2c_timeout(descriptor);
+        }
 
         if (*descriptor->sda_port_in & descriptor->sda_pin)
         {
@@ -295,22 +371,28 @@ int32_t SWI2C_Write(SWI2C_Descriptor *descriptor, uint8_t *buffer, uint16_t len)
 
         /* Sending out another clock cycle */
         *descriptor->scl_port_dir |= descriptor->scl_pin;
-        TIMER_ITERATION();
+        if (!swi2c_timer_wait()) {
+            return swi2c_timeout(descriptor);
+        }
     }
 
     I2CWriteTransactionCleanUp:
     /* If the user did not request to skip, we send out the stop bit */
 
     *descriptor->scl_port_dir |= descriptor->scl_pin;
-    TIMER_ITERATION();
+    if (!swi2c_timer_wait()) {
+        return swi2c_timeout(descriptor);
+    }
     *descriptor->sda_port_dir |= descriptor->sda_pin;
-    TIMER_ITERATION();
+    if (!swi2c_timer_wait()) {
+        return swi2c_timeout(descriptor);
+    }
     *descriptor->scl_port_dir &= ~descriptor->scl_pin;
     __no_operation();
     *descriptor->sda_port_dir &= ~descriptor->sda_pin;
 
     /* Stop the timer */
-    TB0CTL = MC_0;
+    Timer_A_stop(SWI2C_TIMER_BASE);
 
     return ii;
 }

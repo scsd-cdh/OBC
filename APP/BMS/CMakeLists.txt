@@ -35,6 +35,7 @@ set(INCLUDE_DIRS
         ${REPO_ROOT}/DRIVERS/MSP430/I2C
         ${REPO_ROOT}/DRIVERS/MSP430/PWM
         ${REPO_ROOT}/DRIVERS/MSP430/PWM/include
+        ${REPO_ROOT}/DRIVERS/MSP430/TIMER
         ${REPO_ROOT}/DRIVERS/MSP430/RTC_C
         ${REPO_ROOT}/DRIVERS/MSP430/RTC_B
         ${REPO_ROOT}/DRIVERS/MSP430/UTILS
@@ -44,6 +45,7 @@ set(INCLUDE_DIRS
         ${REPO_ROOT}/DRIVERS/MSP430/SWI2C
         ${REPO_ROOT}/MIDDLEWARE
         ${REPO_ROOT}/MIDDLEWARE/ADS7138
+        ${REPO_ROOT}/MIDDLEWARE/HEATER_CONTROLLER
         ${REPO_ROOT}/MIDDLEWARE/ASN1SCC
         ${REPO_ROOT}/MIDDLEWARE/LFP/include
         ${REPO_ROOT}/MIDDLEWARE/LFP/include/lfp
@@ -62,13 +64,14 @@ set(SOURCES
         ${REPO_ROOT}/DRIVERS/MSP430/I2C/i2c.c
         ${REPO_ROOT}/DRIVERS/MSP430/PWM/PWM.c
         ${REPO_ROOT}/DRIVERS/MSP430/PWM/include/pmm.c
-        ${REPO_ROOT}/DRIVERS/MSP430/PWM/include/timer_a.c
-        ${REPO_ROOT}/DRIVERS/MSP430/PWM/include/timer_b.c
+        ${REPO_ROOT}/DRIVERS/MSP430/TIMER/timer_a.c
+        ${REPO_ROOT}/DRIVERS/MSP430/TIMER/timer_b.c
         ${REPO_ROOT}/DRIVERS/MSP430/RTC_B/rtc_b.c
         ${REPO_ROOT}/DRIVERS/MSP430/RTC_C/rtc_c.c
         ${REPO_ROOT}/DRIVERS/MSP430/SWI2C/swi2c.c
         ${REPO_ROOT}/DRIVERS/MSP430/UTILS/utils.c
         ${REPO_ROOT}/MIDDLEWARE/ADS7138/ads7138irter.c
+        ${REPO_ROOT}/MIDDLEWARE/HEATER_CONTROLLER/heater_controller.c
         ${REPO_ROOT}/MIDDLEWARE/MSP_UTILS/msp_utils.c
         ${REPO_ROOT}/MIDDLEWARE/LFP_I2C/lfp_i2c.c
 )
@@ -102,6 +105,9 @@ set_source_files_properties(${SOURCES} PROPERTIES
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".elf")
+
+# NTC Beta conversion uses logf().
+target_link_libraries(${PROJECT_NAME} PRIVATE m)
 
 # TI support-files include is always present; your INCLUDE_DIRS are appended.
 target_include_directories(${PROJECT_NAME} PRIVATE

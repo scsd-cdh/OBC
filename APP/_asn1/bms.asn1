@@ -3,24 +3,9 @@ BMS DEFINITIONS AUTOMATIC TAGS ::= BEGIN
 -- Convert to voltage with ((float)val * 3.3) / (1 &lt;&lt; 12)
 BMSADCValue ::= INTEGER(0..65535)
 
-
-
-
-lfpIdBMSSystemStatusRequest INTEGER ::= 0
-BMSSystemStatusRequest ::= SEQUENCE {
-    placeholder INTEGER(0) -- Empty struct placeholder
-}
-
-lfpIdBMSSystemStatusResponse INTEGER ::= 1
-BMSSystemStatusResponse ::= SEQUENCE {
-    -- Version of the firmware running on BMS.
-    version INTEGER(0..255),
-    -- Number of seconds since processor start-up.
-    uptime INTEGER(0..4294967295)
-}
-
-
-
+-- Signed millidegrees Celsius; -2147483648 means invalid or not yet sampled.
+BMSTemperatureMilliCelsius ::= INTEGER(-2147483648..2147483647)
+bmsTemperatureInvalid INTEGER ::= -2147483648
 
 -- Status of an individual cell
 BMSCellStatus ::= SEQUENCE {
@@ -64,7 +49,7 @@ BMSPowerStatusResponse ::= SEQUENCE {
 
 
 
-
+-- Override Heater output (BMS Self control heaters)
 lfpIdBMSSetHeaterDutyRequest INTEGER ::= 4
 BMSSetHeaterDutyRequest ::= SEQUENCE {
     -- Duty Cycle of PWM Wave for Heater 1
@@ -79,7 +64,7 @@ BMSSetHeaterDutyRequest ::= SEQUENCE {
 
 lfpIdBMSSetHeaterDutyResponse INTEGER ::= 5
 BMSSetHeaterDutyResponse ::= SEQUENCE {
-    placeholder INTEGER(0) -- Empty struct placeholder
+    responseCode INTEGER(0..1) -- 0 = success (command applied), 1 = failure
 }
 
 
@@ -92,8 +77,9 @@ BMSTemperatureStatusRequest ::= SEQUENCE {
 
 lfpIdBMSTemperatureStatusResponse INTEGER ::= 7
 BMSTemperatureStatusResponse ::= SEQUENCE {
-    -- Direct Reading of Thermistors
-    thermistors SEQUENCE SIZE(8) OF BMSADCValue
+    -- Converted thermistor temperatures in signed millidegrees Celsius.
+    -- Invalid channels contain bmsTemperatureInvalid; raw ADC counts are not sent.
+    thermistors SEQUENCE SIZE(8) OF BMSTemperatureMilliCelsius
 }
 
 

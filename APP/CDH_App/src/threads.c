@@ -198,7 +198,6 @@ static void telemetry_thread(const void *p_arg)
 
         LOG_DBG("Telemetry thread waking up, transmitting queued telemetry and requesting BMS and PDS system status");
         transmit_queued_telemetry();
-        request_bms_system_status();
         request_pds_system_status();
         transmit_queued_telemetry();
         LOG_DBG("Telemetry thread sleeping for %d seconds", TELEMETRY_PERIOD_MS / 1000);

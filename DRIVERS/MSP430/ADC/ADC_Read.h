@@ -3,6 +3,18 @@
 
 #include "include/adc12_b.h"
 
+typedef enum {
+    ADC_STATUS_OK = 0,
+    ADC_STATUS_TIMEOUT
+} ADC_Status;
+
+/* Finite poll budget, independent of peripheral clocks. Not a millisecond value. */
+#define ADC_CONVERSION_POLL_LIMIT 10000u
+#define ADC_READ_INVALID UINT16_MAX
+
+/* Wait for idle without modifying an active conversion; return on timeout. */
+extern ADC_Status ADC_waitForConversion(void);
+
 /******************************************************************************
  * @brief Used in the ADC_PinSelect() function as the pin parameter.
  ******************************************************************************/
@@ -82,7 +94,7 @@ extern void ADC_PinSelect(ADC_Pin pin, uint8_t memoryBufferIndex);
  *        "ADC12_B_MEMORY_x" (where 0 <= x <= 31), configured earlier
  *        via ADC_PinSelect(...).
  *
- * @return A 16-bit unsigned integer representing the digital value.
+ * @return A 12-bit conversion value, or ADC_READ_INVALID on timeout.
  ******************************************************************************/
 extern uint16_t Read_ADC(uint8_t memoryBufferIndex);
 

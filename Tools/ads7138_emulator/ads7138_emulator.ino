@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/timer.h"
 
@@ -20,11 +21,30 @@ const uint8_t PWM_IN_PIN = 15; // GP15
 const uint8_t LED_PIN = 25;    // Built-in LED
 const int INTERVAL_MS = 50;    // Run simulation every 50ms
 
+// true: return the fixed temperatures below; false: run GP15 heating/cooling.
+const bool FIXED_TEMPERATURE_MODE = true;
+// Degrees Celsius per ADC channel; adjacent pairs drive heaters 1 through 4.
+// With BMS thresholds 5 C / 15 C: 0 C turns ON, 10 C holds, 20 C turns OFF.
+const float TEST_TEMPERATURES_C[8] = {
+  0.0f, 0.0f,    // Heater 1: cold -> ON
+  20.0f, 20.0f,  // Heater 2: warm -> OFF
+  10.0f, 10.0f,  // Heater 3: in-band -> retain state (OFF after BMS reset)
+  0.0f, 0.0f     // Heater 4: sensor 8 is overridden below -> retain state
+};
+// Fixed mode only: true forces ADC code 0 (invalid for the logarithm).
+// This tests invalid sensor data while I2C transfers still succeed.
+const bool TEST_INVALID_READINGS[8] = {
+  false, false,  // Heater 1: sensors 1 and 2
+  false, false,  // Heater 2: sensors 3 and 4
+  false, false,  // Heater 3: sensors 5 and 6
+  false, true    // Heater 4: sensor 7 valid, sensor 8 invalid
+};
+
 // --- Thermistor Simulation Constants ---
-// Adjust these to match the hardware you will eventually install
+// Honeywell 112-103FAJ-B01; match heater_controller.h if the sensor changes.
 const float THERMISTOR_NOMINAL = 10000; // Resistance at 25 degrees C (10k)
 const float TEMPERATURE_NOMINAL = 25;   // Temp. for nominal resistance (almost always 25 C)
-const float BETA_COEFFICIENT = 3950;    // The beta coefficient of the thermistor
+const float BETA_COEFFICIENT = 3669;    // Beta (kelvin), specified at 25/85 C
 const float SERIES_RESISTOR = 10000;    // The value of the 'other' resistor in the divider (10k)
 
 // --- Global Simulation Variables ---
@@ -70,7 +90,9 @@ void writeRegister(uint8_t reg, uint8_t value) {
 
 // Called when master sends data to us
 void onReceiveHandler(int len) {
-  if (len <= 0) return;
+  if (len <= 0) {
+    return;
+  }
 
   uint8_t first = Wire.read();
   len--;
@@ -145,13 +167,29 @@ uint16_t temperatureToADC(float tempC) {
     // Voltage Fraction = R_therm / (R_series + R_therm)
     float voltageFraction = resistance / (SERIES_RESISTOR + resistance);
 
-    // 4. Convert to 12-bit ADC value (0-4095)
-    float adcVal = voltageFraction * 4095.0;
+    // 4. ADS7138 uses 4096 counts per full scale; maximum code is 4095.
+    float adcVal = voltageFraction * 4096.0;
 
     // Clamp values
-    if (adcVal > 4095) return 4095;
-    if (adcVal < 0) return 0;
+    if (adcVal > 4095) {
+      return 4095;
+    }
+    if (adcVal < 0) {
+      return 0;
+    }
     return (uint16_t)adcVal;
+}
+
+void updateChannels() {
+  float currentTemp = temperature;
+  for (uint8_t i = 0; i < 8; i++) {
+    if (FIXED_TEMPERATURE_MODE && TEST_INVALID_READINGS[i]) {
+      channels[i] = 0u;
+    } else {
+      channels[i] = temperatureToADC(
+          FIXED_TEMPERATURE_MODE ? TEST_TEMPERATURES_C[i] : currentTemp);
+    }
+  }
 }
 
 // --- Timer Interrupt Service Routine (ISR) ---
@@ -166,16 +204,27 @@ bool timer_callback(struct repeating_timer *t) {
     }
 
     // Safety bounds for simulation physics
-    if (temperature < -200) temperature = -200;
-    if (temperature > 500) temperature = 500;
+    if (temperature < -200) {
+      temperature = -200;
+    }
+    if (temperature > 500) {
+      temperature = 500;
+    }
 
     return true; 
 }
 
 void setup() {
   pinMode(PWM_IN_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  Serial.begin(115200);
 
-  add_repeating_timer_ms(-INTERVAL_MS, timer_callback, NULL, &timer);
+  if (!FIXED_TEMPERATURE_MODE) {
+    add_repeating_timer_ms(-INTERVAL_MS, timer_callback, NULL, &timer);
+  }
+
+  // Have valid readings ready before the first master request.
+  updateChannels();
 
   // Initialize minimal register defaults
   for (uint8_t i = 0; i < sizeof(regs); ++i) {
@@ -204,18 +253,14 @@ void loop() {
     if (millis() - lastPrint > 100) {
         lastPrint = millis();
         
-        // Grab a snapshot of the current physics state
-        float currentTemp = temperature; 
-        
-        // Calculate the simulated ADC value
-        // (This is the value you would send to your master board)
-        uint16_t simulatedADC = temperatureToADC(currentTemp);
-        // For now we'll just assume the temperature of all the batteries is the same everywhere
-        for (int i = 0; i < 8; i++) {
-          channels[i] = simulatedADC;
-        }
+        updateChannels();
 
-        Serial.println(temperature);
+        // Log actual channel codes, including when fixed mode is selected.
+        for (uint8_t i = 0; i < 8; i++) {
+          Serial.print(channels[i]);
+          Serial.print(' ');
+        }
+        Serial.println();
       
       
         // Visual heartbeat
